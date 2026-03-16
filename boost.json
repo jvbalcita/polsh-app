@@ -10,7 +10,9 @@
     "mcp": true,
     "nightwatch_mcp": false,
     "packages": [
-        "laravel/fortify"
+        "laravel/fortify",
+        "spatie/laravel-medialibrary",
+        "spatie/laravel-permission"
     ],
     "sail": false,
     "skills": [
@@ -19,6 +21,8 @@
         "pest-testing",
         "inertia-vue-development",
         "tailwindcss-development",
-        "fortify-development"
+        "fortify-development",
+        "medialibrary-development",
+        "laravel-permission-development"
     ]
 }
