@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\GithubAuthController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\PresetController;
 use App\Http\Controllers\SessionController;
 use App\Models\ExportSession;
@@ -34,6 +35,10 @@ Route::get('editor', function (Request $request) {
 // GitHub OAuth
 Route::get('auth/github', [GithubAuthController::class, 'redirectToGithub'])->name('auth.github');
 Route::get('auth/github/callback', [GithubAuthController::class, 'handleGithubCallback'])->name('auth.github.callback');
+
+// Google OAuth
+Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
 // Presets (auth-gated JSON API)
 Route::middleware('auth')->group(function () {
