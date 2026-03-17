@@ -159,7 +159,7 @@ function styleGradient(s: (typeof styles)[0]): string {
                 class="mb-6 text-center text-[11px] font-semibold uppercase tracking-widest"
                 style="color: rgba(255,255,255,0.25)"
             >
-                12 ready-to-use styles
+                18 ready-to-use styles
             </p>
             <div class="flex gap-3 overflow-x-auto px-6 pb-2" style="scrollbar-width: none">
                 <div

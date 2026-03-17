@@ -1,0 +1,11 @@
+{
+    "slug": "warm-studio",
+    "name": "Warm Studio",
+    "background": { "type": "gradient", "colors": ["#1c0800", "#2d1400"], "angle": 150 },
+    "border": { "type": "none", "width": 0, "opacity": 0, "blur": 0 },
+    "shadow": { "opacity": 0.5, "blur": 50, "offsetY": 18, "color": "#8b3a00" },
+    "radius": 16,
+    "noise": 0.035,
+    "padding": 52,
+    "chrome": null
+}
