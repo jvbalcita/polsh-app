@@ -18,17 +18,6 @@ class User extends Authenticatable
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -88,9 +77,7 @@ class User extends Authenticatable
 
     public function isPro(): bool
     {
-        return $this->subscriptions()->where('status', 'active')
-            ->where('current_period_end', '>', now())
-            ->exists();
+        return in_array($this->plan, ['pro', 'team']);
     }
 
     public function subscriptionEndsAt(): ?Carbon

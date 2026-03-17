@@ -106,6 +106,10 @@ class CheckSubscriptionRenewals implements ShouldQueue
     {
         Subscription::where('status', 'past_due')
             ->where('current_period_end', '<=', now()->subDays(7))
-            ->update(['status' => 'expired']);
+            ->with('user')
+            ->each(function (Subscription $subscription) {
+                $subscription->update(['status' => 'expired']);
+                $subscription->user->update(['plan' => 'free']);
+            });
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\PaymentFailed;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\User;
 use App\Services\PayMongoService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -103,6 +104,8 @@ class BillingController extends Controller
 
     public function cancel(Request $request): RedirectResponse
     {
+        // Marks subscription as cancelled — plan remains 'pro' until period expires.
+        // ProcessSubscriptionRenewals job resets plan to 'free' on expiry.
         $request->user()->cancelSubscription();
 
         return redirect()->route('billing.portal')->with('cancelled', true);
@@ -205,5 +208,7 @@ class BillingController extends Controller
             'status' => 'paid',
             'paid_at' => now(),
         ]);
+
+        User::where('id', $userId)->update(['plan' => 'pro']);
     }
 }

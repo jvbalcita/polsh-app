@@ -35,18 +35,20 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $isPro = $request->user()?->isPro() ?? false;
+        $user = $request->user();
+        $isPro = $user?->isPro() ?? false;
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'plan' => $user?->plan,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'isPro' => $isPro,
             'imageLimit' => $isPro ? 10 : 3,
-            'teamId' => $request->user()?->currentTeam()?->id,
+            'teamId' => $user?->currentTeam()?->id,
         ];
     }
 }
