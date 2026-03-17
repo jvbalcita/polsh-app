@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 @import 'tailwindcss';
 
@@ -8,8 +8,6 @@
 
 @import "shadcn/tailwind.css";
 
-@import "@fontsource-variable/jetbrains-mono";
-
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -17,7 +15,7 @@
 
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'DM Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
@@ -68,7 +66,7 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
     --font-mono:
-        'JetBrains Mono Variable', monospace;
+        'DM Mono', monospace;
     --radius-xl:
         calc(var(--radius) * 1.4);
     --radius-2xl:
@@ -110,7 +108,7 @@
     body,
     html {
         --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+            'DM Sans', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
     }
@@ -183,6 +181,19 @@
         oklch(0.723 0.014 214.4);
     --sidebar:
         oklch(0.987 0.002 197.1);
+
+    --polsh-bg: #0a0a0c;
+    --polsh-surface: #111114;
+    --polsh-surface-2: #1a1a1f;
+    --polsh-border: rgba(255,255,255,0.08);
+    --polsh-border-active: rgba(255,255,255,0.18);
+    --polsh-accent: #e0ff4f;
+    --polsh-accent-dim: rgba(224,255,79,0.12);
+    --polsh-accent-glow: rgba(224,255,79,0.06);
+    --polsh-accent-border: rgba(224,255,79,0.4);
+    --polsh-text-1: #f0f0f2;
+    --polsh-text-2: #8a8a9a;
+    --polsh-text-3: #4a4a5a;
 }
 
 .dark {

@@ -120,7 +120,7 @@ function formatDate(dateStr: string | null): string {
 <template>
     <Head title="API Keys" />
 
-    <div class="min-h-screen" style="background: #080808; font-family: 'Geist', sans-serif">
+    <div class="min-h-screen" style="background: #080808">
         <!-- Topbar -->
         <header class="flex h-11 items-center justify-between border-b border-white/8 px-6" style="background: #111111">
             <div class="flex items-center gap-3">

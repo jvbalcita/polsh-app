@@ -67,7 +67,7 @@ function styleGradient(s: (typeof styles)[0]): string {
 <template>
     <Head title="Polsh — Polish your screenshots" />
 
-    <div class="min-h-screen select-none overflow-x-hidden" style="background: #080808; font-family: 'Geist', sans-serif; color: #e8e8e8">
+    <div class="min-h-screen select-none overflow-x-hidden" style="background: #080808; color: #e8e8e8">
         <!-- Nav -->
         <nav
             class="flex h-12 items-center justify-between border-b px-6 md:px-10"

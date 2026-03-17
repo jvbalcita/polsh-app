@@ -58,7 +58,7 @@ function relativeTime(dateString: string): string {
 
     <div
         class="min-h-screen"
-        style="background: #080808; font-family: 'Geist', sans-serif"
+        style="background: #080808"
     >
         <!-- Topbar -->
         <header
