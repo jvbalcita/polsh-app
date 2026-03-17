@@ -78,6 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::inertia('docs/api', 'Docs/Api')->name('docs.api');
 
+Route::inertia('changelog', 'Changelog')->name('changelog');
+
 require __DIR__.'/billing.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/teams.php';
