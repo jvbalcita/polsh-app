@@ -1,0 +1,11 @@
+{
+    "slug": "browser-light",
+    "name": "Browser Light",
+    "background": { "type": "solid", "colors": ["#f1f5f9", "#f1f5f9"], "angle": 0 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.18, "blur": 0 },
+    "shadow": { "opacity": 0.15, "blur": 35, "offsetY": 12, "color": "#94a3b8" },
+    "radius": 12,
+    "noise": 0.01,
+    "padding": 40,
+    "chrome": "browser"
+}

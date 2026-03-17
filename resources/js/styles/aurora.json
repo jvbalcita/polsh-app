@@ -1,0 +1,11 @@
+{
+    "slug": "aurora",
+    "name": "Aurora",
+    "background": { "type": "gradient", "colors": ["#0f172a", "#0d2137"], "angle": 120 },
+    "border": { "type": "glow", "width": 1, "opacity": 0.6, "blur": 20 },
+    "shadow": { "opacity": 0.65, "blur": 70, "offsetY": 10, "color": "#06b6d4" },
+    "radius": 14,
+    "noise": 0.04,
+    "padding": 48,
+    "chrome": null
+}

@@ -1,0 +1,11 @@
+{
+    "slug": "sakura-mesh",
+    "name": "Sakura Mesh",
+    "background": { "type": "gradient", "colors": ["#fce4ec", "#f3e5f5"], "angle": 120 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.25, "blur": 0 },
+    "shadow": { "opacity": 0.22, "blur": 50, "offsetY": 20, "color": "#ec4899" },
+    "radius": 20,
+    "noise": 0.05,
+    "padding": 52,
+    "chrome": null
+}

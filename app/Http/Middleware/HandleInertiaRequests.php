@@ -35,6 +35,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $isPro = $request->user()?->isPro() ?? false;
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -42,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'isPro' => $isPro,
+            'imageLimit' => $isPro ? 10 : 3,
+            'teamId' => $request->user()?->currentTeam()?->id,
         ];
     }
 }

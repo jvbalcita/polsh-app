@@ -1,0 +1,11 @@
+{
+    "slug": "grid-light",
+    "name": "Grid Light",
+    "background": { "type": "solid", "colors": ["#fafafa", "#fafafa"], "angle": 0 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.12, "blur": 0 },
+    "shadow": { "opacity": 0.1, "blur": 25, "offsetY": 8, "color": "#64748b" },
+    "radius": 10,
+    "noise": 0,
+    "padding": 44,
+    "chrome": null
+}

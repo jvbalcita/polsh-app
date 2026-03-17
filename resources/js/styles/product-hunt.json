@@ -1,0 +1,11 @@
+{
+    "slug": "product-hunt",
+    "name": "Product Hunt",
+    "background": { "type": "gradient", "colors": ["#ff6b35", "#f7c59f"], "angle": 135 },
+    "border": { "type": "none", "width": 0, "opacity": 0, "blur": 0 },
+    "shadow": { "opacity": 0.3, "blur": 40, "offsetY": 16, "color": "#cc4a10" },
+    "radius": 20,
+    "noise": 0.02,
+    "padding": 56,
+    "chrome": null
+}

@@ -162,7 +162,6 @@ public function getActivitylogOptions(): LogOptions
 ## Permissions (spatie/laravel-permission)
 
 - `User` carries `HasRoles`.
-- Baseline roles (`admin`, `user`) are seeded by `RolesAndPermissionsSeeder`.
 - Assign roles at registration or via admin tooling — never hard-code role checks in views.
 - Gate role-specific routes via `can:` middleware or `Gate::allows()`.
 
@@ -194,7 +193,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.5.2
+- php - 8.4.18
 - inertiajs/inertia-laravel (INERTIA_LARAVEL) - v2
 - laravel/fortify (FORTIFY) - v1
 - laravel/framework (LARAVEL) - v12

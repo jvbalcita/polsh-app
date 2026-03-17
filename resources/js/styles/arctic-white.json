@@ -1,0 +1,11 @@
+{
+    "slug": "arctic-white",
+    "name": "Arctic White",
+    "background": { "type": "gradient", "colors": ["#f0f4f8", "#dce8f5"], "angle": 160 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.18, "blur": 0 },
+    "shadow": { "opacity": 0.15, "blur": 40, "offsetY": 16, "color": "#94a3b8" },
+    "radius": 16,
+    "noise": 0.02,
+    "padding": 48,
+    "chrome": null
+}

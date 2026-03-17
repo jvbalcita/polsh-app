@@ -1,0 +1,11 @@
+{
+    "slug": "dark-studio",
+    "name": "Dark Studio",
+    "background": { "type": "gradient", "colors": ["#111111", "#1a1a1a"], "angle": 180 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.18, "blur": 0 },
+    "shadow": { "opacity": 0.9, "blur": 80, "offsetY": 30, "color": "#000000" },
+    "radius": 16,
+    "noise": 0.03,
+    "padding": 60,
+    "chrome": null
+}
