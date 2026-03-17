@@ -8,6 +8,8 @@ const STYLES = [
     'obsidian-glass', 'neon-halo', 'arctic-white', 'terminal-dark',
     'sakura-mesh', 'aurora', 'product-hunt', 'og-minimal',
     'grid-light', 'dark-studio', 'browser-light', 'browser-dark',
+    'warm-studio', 'cyber-pink', 'slate-card', 'forest-dark',
+    'paper-white', 'retro-amber',
 ];
 
 const curlExample = `curl -X POST https://polsh.app/api/v1/polish \\
@@ -304,6 +306,32 @@ const codeExamples: Record<string, string> = {
                         class="rounded border border-white/10 px-2.5 py-1 font-mono text-[11px] text-white/50"
                         style="background: rgba(255,255,255,0.04)"
                     >{{ slug }}</code>
+                </div>
+            </section>
+
+            <!-- Webhooks -->
+            <section class="mb-10">
+                <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">Webhooks</h2>
+                <div class="rounded-xl border border-white/8 p-5 space-y-4" style="background: #111111">
+                    <p class="text-[13px] text-white/60">
+                        For 4× resolution jobs (async), set a <code class="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[11px] text-[#e0ff4f]/80">webhook_url</code>
+                        on your API key. Polsh will POST to that URL when the job completes.
+                    </p>
+                    <div>
+                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-widest text-white/25">Payload</p>
+                        <pre class="overflow-x-auto rounded border border-white/8 p-3 font-mono text-[11px] text-white/50" style="background: rgba(0,0,0,0.5)">{
+  "event":     "glaze.complete",
+  "url":       "https://cdn.polsh.app/polished/uuid.png",
+  "style":     "obsidian-glass",
+  "format":    "png",
+  "job_id":    "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-03-18T10:00:00.000000Z"
+}</pre>
+                    </div>
+                    <p class="text-[11px] text-white/30">
+                        Configure your webhook URL when creating an API key at
+                        <Link href="/dashboard/api-keys" class="text-[#e0ff4f]/60 hover:text-[#e0ff4f] transition-colors">/dashboard/api-keys</Link>.
+                    </p>
                 </div>
             </section>
         </div>

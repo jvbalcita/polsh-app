@@ -6,6 +6,7 @@ use App\Services\PolshImageProcessor;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessPolishJob implements ShouldQueue
@@ -21,6 +22,7 @@ class ProcessPolishJob implements ShouldQueue
         public readonly string $imageUrl,
         public readonly array $style,
         public readonly array $settings,
+        public readonly ?string $webhookUrl = null,
     ) {}
 
     public function handle(PolshImageProcessor $processor): void
@@ -40,6 +42,17 @@ class ProcessPolishJob implements ShouldQueue
                 'status' => 'done',
                 'url' => $url,
             ], now()->addHour());
+
+            if ($this->webhookUrl) {
+                Http::post($this->webhookUrl, [
+                    'event' => 'glaze.complete',
+                    'url' => $url,
+                    'style' => $this->style['slug'] ?? null,
+                    'format' => $this->settings['exportFormat'] ?? 'png',
+                    'job_id' => $this->jobId,
+                    'timestamp' => now()->toISOString(),
+                ]);
+            }
         } catch (\Throwable $e) {
             Cache::put("polsh_job_{$this->jobId}", [
                 'status' => 'failed',

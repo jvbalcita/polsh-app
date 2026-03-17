@@ -17,6 +17,8 @@ class PolishController extends Controller
         'obsidian-glass', 'neon-halo', 'arctic-white', 'terminal-dark',
         'sakura-mesh', 'aurora', 'product-hunt', 'og-minimal',
         'grid-light', 'dark-studio', 'browser-light', 'browser-dark',
+        'warm-studio', 'cyber-pink', 'slate-card', 'forest-dark',
+        'paper-white', 'retro-amber',
     ];
 
     private const VALID_FORMATS = ['png', 'jpeg', 'webp'];
@@ -63,7 +65,9 @@ class PolishController extends Controller
 
             Cache::put("polsh_job_{$jobId}", ['status' => 'pending'], now()->addHour());
 
-            ProcessPolishJob::dispatch($jobId, $validated['image_url'], $style, $settings);
+            $apiKey = $request->attributes->get('api_key');
+
+            ProcessPolishJob::dispatch($jobId, $validated['image_url'], $style, $settings, $apiKey?->webhook_url);
 
             return response()->json([
                 'job_id' => $jobId,

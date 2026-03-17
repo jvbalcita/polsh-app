@@ -16,7 +16,7 @@ class ApiKeyController extends Controller
         $apiKeys = $request->user()
             ->apiKeys()
             ->latest()
-            ->get(['id', 'name', 'key_prefix', 'last_used_at', 'requests_today', 'requests_reset_at', 'revoked_at', 'created_at']);
+            ->get(['id', 'name', 'key_prefix', 'last_used_at', 'requests_today', 'requests_reset_at', 'revoked_at', 'webhook_url', 'created_at']);
 
         return Inertia::render('Dashboard/ApiKeys', [
             'apiKeys' => $apiKeys,
@@ -27,6 +27,7 @@ class ApiKeyController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:60'],
+            'webhook_url' => ['nullable', 'url', 'max:500'],
         ]);
 
         // Generate a high-entropy bearer token: "pk_" prefix + 40 random hex chars
@@ -36,6 +37,7 @@ class ApiKeyController extends Controller
 
         $apiKey = $request->user()->apiKeys()->create([
             'name' => $request->input('name'),
+            'webhook_url' => $request->input('webhook_url'),
             'key' => $hash,
             'key_prefix' => $prefix,
             'requests_reset_at' => now(),
