@@ -2,8 +2,6 @@
 
 @import 'tailwindcss';
 
-@import 'tw-animate-css';
-
 @import "tw-animate-css";
 
 @import "shadcn/tailwind.css";
@@ -104,15 +102,6 @@
     }
 }
 
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'DM Sans', ui-sans-serif, system-ui, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-            'Noto Color Emoji';
-    }
-}
 
 :root {
     --background:

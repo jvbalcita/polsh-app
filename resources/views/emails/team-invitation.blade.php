@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team Invitation</title>
     <style>
-        body { margin: 0; padding: 0; background: #0e0e0e; font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { margin: 0; padding: 0; background: #0e0e0e; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
         .container { max-width: 520px; margin: 48px auto; background: #111111; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
         .header { padding: 28px 32px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
         .logo { font-size: 18px; font-weight: 700; color: #e0ff4f; letter-spacing: -0.02em; }
