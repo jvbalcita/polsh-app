@@ -12,9 +12,12 @@ class SessionController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $sessions = ExportSession::where('user_id', $request->user()->id)
+        $user = $request->user();
+        $limit = $user->isPro() ? 50 : 10;
+
+        $sessions = ExportSession::where('user_id', $user->id)
             ->latest()
-            ->limit(20)
+            ->limit($limit)
             ->get(['id', 'style_slug', 'image_count', 'thumbnail_url', 'created_at']);
 
         return response()->json($sessions);

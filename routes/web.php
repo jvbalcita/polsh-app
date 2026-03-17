@@ -57,9 +57,12 @@ Route::middleware('auth')->group(function () {
 
 // Export history page
 Route::get('history', function (Request $request) {
-    $sessions = ExportSession::where('user_id', $request->user()->id)
+    $user = $request->user();
+    $limit = $user->isPro() ? 50 : 10;
+
+    $sessions = ExportSession::where('user_id', $user->id)
         ->latest()
-        ->limit(20)
+        ->limit($limit)
         ->get(['id', 'style_slug', 'settings', 'image_count', 'thumbnail_url', 'created_at']);
 
     return Inertia::render('History', ['sessions' => $sessions]);
