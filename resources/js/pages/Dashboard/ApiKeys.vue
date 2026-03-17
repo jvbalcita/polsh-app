@@ -10,6 +10,7 @@ interface ApiKey {
     requests_today: number;
     requests_reset_at: string;
     revoked_at: string | null;
+    webhook_url: string | null;
     created_at: string;
 }
 
@@ -27,6 +28,7 @@ const dailyLimit = hasTeam ? 5000 : 500;
 const showCreateForm = ref(false);
 const isCreating = ref(false);
 const newKeyName = ref('');
+const newWebhookUrl = ref('');
 const createError = ref('');
 
 // Revealed key state — shown once after creation
@@ -49,7 +51,7 @@ async function createKey(): Promise<void> {
         const res = await fetch('/dashboard/api-keys', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
-            body: JSON.stringify({ name: newKeyName.value.trim() }),
+            body: JSON.stringify({ name: newKeyName.value.trim(), webhook_url: newWebhookUrl.value.trim() || null }),
         });
 
         if (!res.ok) {
@@ -65,6 +67,7 @@ async function createKey(): Promise<void> {
         revealedKeyName.value = data.name;
         showCreateForm.value = false;
         newKeyName.value = '';
+        newWebhookUrl.value = '';
 
         // Add to list with a placeholder (no real key shown)
         props.apiKeys.unshift({
@@ -75,6 +78,7 @@ async function createKey(): Promise<void> {
             requests_today: 0,
             requests_reset_at: new Date().toISOString(),
             revoked_at: null,
+            webhook_url: null,
             created_at: new Date().toISOString(),
         });
     } finally {
@@ -120,7 +124,7 @@ function formatDate(dateStr: string | null): string {
 <template>
     <Head title="API Keys" />
 
-    <div class="min-h-screen" style="background: #080808; font-family: 'Geist', sans-serif">
+    <div class="min-h-screen" style="background: #080808">
         <!-- Topbar -->
         <header class="flex h-11 items-center justify-between border-b border-white/8 px-6" style="background: #111111">
             <div class="flex items-center gap-3">
@@ -232,7 +236,7 @@ function formatDate(dateStr: string | null): string {
                     style="background: #111111"
                 >
                     <p class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">New key</p>
-                    <div class="flex gap-2">
+                    <div class="mb-2 flex gap-2">
                         <input
                             v-model="newKeyName"
                             type="text"
@@ -243,6 +247,20 @@ function formatDate(dateStr: string | null): string {
                             @keydown.enter="createKey"
                             @keydown.escape="showCreateForm = false"
                         />
+                    </div>
+                    <div class="mb-2 flex gap-2">
+                        <input
+                            v-model="newWebhookUrl"
+                            type="url"
+                            maxlength="500"
+                            placeholder="https://your-server.com/webhook (optional)"
+                            class="min-w-0 flex-1 rounded border px-3 py-1.5 text-[12px] outline-none"
+                            style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #e0e0e0"
+                            @keydown.escape="showCreateForm = false"
+                        />
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="min-w-0 flex-1" />
                         <button
                             type="button"
                             :disabled="isCreating || !newKeyName.trim()"

@@ -1,0 +1,11 @@
+{
+    "slug": "forest-dark",
+    "name": "Forest Dark",
+    "background": { "type": "gradient", "colors": ["#020d08", "#0d1f10"], "angle": 155 },
+    "border": { "type": "glass", "width": 1, "opacity": 0.18, "blur": 8 },
+    "shadow": { "opacity": 0.45, "blur": 55, "offsetY": 16, "color": "#0a2a0e" },
+    "radius": 16,
+    "noise": 0.03,
+    "padding": 52,
+    "chrome": null
+}

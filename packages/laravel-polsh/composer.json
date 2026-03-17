@@ -1,0 +1,28 @@
+{
+    "name": "polsh/laravel-polsh",
+    "description": "Official Laravel integration for Polsh — screenshot styling API",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/http": "^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Polsh\\LaravelPolsh\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Polsh\\LaravelPolsh\\PolshServiceProvider"
+            ],
+            "aliases": {
+                "Polsh": "Polsh\\LaravelPolsh\\Facades\\Polsh"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

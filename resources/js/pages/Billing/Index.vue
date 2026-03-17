@@ -22,7 +22,14 @@ const showCancelDialog = ref(false)
 const checkoutForm = useForm({ plan: '' })
 const cancelForm = useForm({})
 
+function trackEvent(name: string): void {
+    if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible(name)
+    }
+}
+
 function checkout(plan: string) {
+    trackEvent('billing_checkout_started')
     checkoutForm.plan = plan
     checkoutForm.post(billing.checkout.url())
 }

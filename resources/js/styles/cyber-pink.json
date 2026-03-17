@@ -1,0 +1,11 @@
+{
+    "slug": "cyber-pink",
+    "name": "Cyber Pink",
+    "background": { "type": "gradient", "colors": ["#0d000d", "#1a001a"], "angle": 145 },
+    "border": { "type": "neon", "width": 1, "opacity": 0.9, "blur": 0 },
+    "shadow": { "opacity": 0.8, "blur": 70, "offsetY": 0, "color": "#ff2d78" },
+    "radius": 12,
+    "noise": 0.02,
+    "padding": 56,
+    "chrome": null
+}

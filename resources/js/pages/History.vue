@@ -17,11 +17,11 @@ const props = defineProps<{
 const page = usePage();
 const isPro = page.props.isPro as boolean;
 
-const FREE_HISTORY_LIMIT = 3;
+const FREE_HISTORY_LIMIT = 10;
 
-// Free users see only the 3 most recent exports
-const visibleSessions = isPro ? props.sessions : props.sessions.slice(0, FREE_HISTORY_LIMIT);
-const hasMore = !isPro && props.sessions.length > FREE_HISTORY_LIMIT;
+// Free users see only the 10 most recent exports; server already limits the query
+const visibleSessions = props.sessions;
+const hasMore = !isPro && props.sessions.length >= FREE_HISTORY_LIMIT;
 
 const localSessions = ref<ExportSession[]>(visibleSessions);
 
@@ -58,7 +58,7 @@ function relativeTime(dateString: string): string {
 
     <div
         class="min-h-screen"
-        style="background: #080808; font-family: 'Geist', sans-serif"
+        style="background: #080808"
     >
         <!-- Topbar -->
         <header

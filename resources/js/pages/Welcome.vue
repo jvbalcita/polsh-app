@@ -67,7 +67,7 @@ function styleGradient(s: (typeof styles)[0]): string {
 <template>
     <Head title="Polsh — Polish your screenshots" />
 
-    <div class="min-h-screen select-none overflow-x-hidden" style="background: #080808; font-family: 'Geist', sans-serif; color: #e8e8e8">
+    <div class="min-h-screen select-none overflow-x-hidden" style="background: #080808; color: #e8e8e8">
         <!-- Nav -->
         <nav
             class="flex h-12 items-center justify-between border-b px-6 md:px-10"
@@ -159,7 +159,7 @@ function styleGradient(s: (typeof styles)[0]): string {
                 class="mb-6 text-center text-[11px] font-semibold uppercase tracking-widest"
                 style="color: rgba(255,255,255,0.25)"
             >
-                12 ready-to-use styles
+                18 ready-to-use styles
             </p>
             <div class="flex gap-3 overflow-x-auto px-6 pb-2" style="scrollbar-width: none">
                 <div
@@ -282,6 +282,10 @@ function styleGradient(s: (typeof styles)[0]): string {
 
         <!-- Footer -->
         <footer class="border-t px-6 py-6 text-center text-xs" style="border-color: rgba(255,255,255,0.07); color: rgba(255,255,255,0.2)">
+            <div class="mb-3 flex items-center justify-center gap-5">
+                <a href="/changelog" class="transition-colors hover:text-white/60 text-[12px]" style="color: rgba(255,255,255,0.3)">Changelog</a>
+                <a href="/docs/api" class="transition-colors hover:text-white/60 text-[12px]" style="color: rgba(255,255,255,0.3)">API Docs</a>
+            </div>
             polsh.app — built for developers, by developers
         </footer>
     </div>

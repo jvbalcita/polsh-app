@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\GithubAuthController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\PresetController;
 use App\Http\Controllers\SessionController;
 use App\Models\ExportSession;
@@ -35,6 +36,10 @@ Route::get('editor', function (Request $request) {
 Route::get('auth/github', [GithubAuthController::class, 'redirectToGithub'])->name('auth.github');
 Route::get('auth/github/callback', [GithubAuthController::class, 'handleGithubCallback'])->name('auth.github.callback');
 
+// Google OAuth
+Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
 // Presets (auth-gated JSON API)
 Route::middleware('auth')->group(function () {
     Route::get('presets', [PresetController::class, 'index'])->name('presets.index');
@@ -52,9 +57,12 @@ Route::middleware('auth')->group(function () {
 
 // Export history page
 Route::get('history', function (Request $request) {
-    $sessions = ExportSession::where('user_id', $request->user()->id)
+    $user = $request->user();
+    $limit = $user->isPro() ? 50 : 10;
+
+    $sessions = ExportSession::where('user_id', $user->id)
         ->latest()
-        ->limit(20)
+        ->limit($limit)
         ->get(['id', 'style_slug', 'settings', 'image_count', 'thumbnail_url', 'created_at']);
 
     return Inertia::render('History', ['sessions' => $sessions]);
@@ -69,6 +77,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::inertia('docs/api', 'Docs/Api')->name('docs.api');
+
+Route::inertia('changelog', 'Changelog')->name('changelog');
 
 require __DIR__.'/billing.php';
 require __DIR__.'/settings.php';

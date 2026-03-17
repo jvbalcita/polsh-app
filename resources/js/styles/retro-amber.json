@@ -1,0 +1,11 @@
+{
+    "slug": "retro-amber",
+    "name": "Retro Amber",
+    "background": { "type": "gradient", "colors": ["#1a0f00", "#2d1c00"], "angle": 140 },
+    "border": { "type": "glow", "width": 1, "opacity": 0.75, "blur": 6 },
+    "shadow": { "opacity": 0.65, "blur": 60, "offsetY": 8, "color": "#c67c00" },
+    "radius": 14,
+    "noise": 0.03,
+    "padding": 52,
+    "chrome": null
+}

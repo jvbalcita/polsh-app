@@ -41,7 +41,7 @@ onMounted(() => {
     -->
     <div
         class="flex h-screen w-screen select-none flex-col overflow-hidden"
-        style="background: #080808; font-family: 'Geist', sans-serif"
+        style="background: #080808"
     >
         <!-- Topbar -->
         <header

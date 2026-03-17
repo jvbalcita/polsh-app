@@ -77,7 +77,7 @@ function isOwner(member: Member): boolean {
 
     <div
         class="min-h-screen"
-        style="background: #080808; font-family: 'Geist', sans-serif"
+        style="background: #080808"
     >
         <!-- Topbar -->
         <header

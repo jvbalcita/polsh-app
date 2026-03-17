@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\TeamInvitationMail;
 use App\Models\Team;
 use App\Models\TeamInvitation;
+use App\Notifications\TeamInvitationNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -83,10 +83,11 @@ class TeamController extends Controller
             'team_id' => $team->id,
             'email' => $validated['email'],
             'token' => Str::uuid(),
-            'expires_at' => now()->addDays(7),
+            'expires_at' => now()->addHours(48),
         ]);
 
-        Mail::to($validated['email'])->queue(new TeamInvitationMail($team, $invitation));
+        Notification::route('mail', $validated['email'])
+            ->notify(new TeamInvitationNotification($team, $invitation));
 
         return redirect()->route('teams.settings')->with('invited', true);
     }

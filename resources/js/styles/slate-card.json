@@ -1,0 +1,11 @@
+{
+    "slug": "slate-card",
+    "name": "Slate Card",
+    "background": { "type": "gradient", "colors": ["#0d1117", "#161b22"], "angle": 160 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.12, "blur": 0 },
+    "shadow": { "opacity": 0.35, "blur": 45, "offsetY": 14, "color": "#1a2a3a" },
+    "radius": 14,
+    "noise": 0.015,
+    "padding": 48,
+    "chrome": null
+}
