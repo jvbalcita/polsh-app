@@ -94,7 +94,6 @@ public function getActivitylogOptions(): LogOptions
 ## Permissions (spatie/laravel-permission)
 
 - `User` carries `HasRoles`.
-- Baseline roles (`admin`, `user`) are seeded by `RolesAndPermissionsSeeder`.
 - Assign roles at registration or via admin tooling — never hard-code role checks in views.
 - Gate role-specific routes via `can:` middleware or `Gate::allows()`.
 

@@ -1,0 +1,11 @@
+{
+    "slug": "terminal-dark",
+    "name": "Terminal Dark",
+    "background": { "type": "solid", "colors": ["#0c0c0c", "#0c0c0c"], "angle": 0 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.35, "blur": 0 },
+    "shadow": { "opacity": 0.55, "blur": 40, "offsetY": 12, "color": "#00ff41" },
+    "radius": 8,
+    "noise": 0.03,
+    "padding": 40,
+    "chrome": "macos"
+}

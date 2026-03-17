@@ -1,0 +1,11 @@
+{
+    "slug": "obsidian-glass",
+    "name": "Obsidian Glass",
+    "background": { "type": "gradient", "colors": ["#0d0d1a", "#1a0d2e"], "angle": 135 },
+    "border": { "type": "glass", "width": 1, "opacity": 0.25, "blur": 12 },
+    "shadow": { "opacity": 0.75, "blur": 60, "offsetY": 20, "color": "#6b21a8" },
+    "radius": 16,
+    "noise": 0.04,
+    "padding": 48,
+    "chrome": null
+}

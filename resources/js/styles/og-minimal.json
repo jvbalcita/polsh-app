@@ -1,0 +1,11 @@
+{
+    "slug": "og-minimal",
+    "name": "OG Minimal",
+    "background": { "type": "solid", "colors": ["#ffffff", "#ffffff"], "angle": 0 },
+    "border": { "type": "subtle", "width": 1, "opacity": 0.1, "blur": 0 },
+    "shadow": { "opacity": 0.08, "blur": 30, "offsetY": 8, "color": "#000000" },
+    "radius": 12,
+    "noise": 0,
+    "padding": 40,
+    "chrome": null
+}

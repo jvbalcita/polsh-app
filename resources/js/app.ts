@@ -1,7 +1,9 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { createPinia } from 'pinia';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
+import VueKonva from 'vue-konva';
 import '../css/app.css';
 import { initializeTheme } from '@/composables/useAppearance';
 
@@ -17,6 +19,8 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)
+            .use(createPinia())
+            .use(VueKonva)
             .mount(el);
     },
     progress: {

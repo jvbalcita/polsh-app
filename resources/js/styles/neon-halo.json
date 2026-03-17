@@ -1,0 +1,11 @@
+{
+    "slug": "neon-halo",
+    "name": "Neon Halo",
+    "background": { "type": "gradient", "colors": ["#020010", "#0a0020"], "angle": 145 },
+    "border": { "type": "neon", "width": 1, "opacity": 0.9, "blur": 0 },
+    "shadow": { "opacity": 0.85, "blur": 80, "offsetY": 0, "color": "#a855f7" },
+    "radius": 12,
+    "noise": 0.02,
+    "padding": 56,
+    "chrome": null
+}

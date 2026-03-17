@@ -19,6 +19,10 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            isPro: boolean;
+            imageLimit: number;
+            teamId?: number | null;
+            sessionData?: { style_slug: string; settings: Record<string, unknown> } | null;
             [key: string]: unknown;
         };
     }
