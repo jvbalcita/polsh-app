@@ -110,8 +110,15 @@ export const useEditorStore = defineStore('editor', () => {
         teamPresets.value = teamPresets.value.filter((p) => p.id !== id);
     }
 
+    function trackEvent(name: string): void {
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible(name);
+        }
+    }
+
     function applyStyle(style: StyleConfig): void {
         activeStyle.value = style;
+        trackEvent('style_applied');
         settings.value.padding = style.padding;
         settings.value.radius = style.radius;
         settings.value.shadowOpacity = style.shadow.opacity;

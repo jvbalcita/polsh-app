@@ -242,6 +242,12 @@ function buildSVG(style: StyleConfig, settings: EditorSettings, screenshotSrc: s
 // Composable
 // ---------------------------------------------------------------------------
 
+function trackEvent(name: string): void {
+    if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible(name);
+    }
+}
+
 export function useExport() {
     const store = useEditorStore();
     const isExporting = ref(false);
@@ -252,6 +258,7 @@ export function useExport() {
     ): Promise<void> {
         const stage = stageInstance.value;
         if (!stage || store.images.length === 0) return;
+        trackEvent('export_single');
 
         const slug = store.activeStyle?.slug ?? 'polsh';
         const ext = extFromFormat(format);
@@ -269,6 +276,7 @@ export function useExport() {
     async function exportAll(format: string, scale: number): Promise<void> {
         const stage = stageInstance.value;
         if (!stage || store.images.length === 0) return;
+        trackEvent('export_zip');
 
         isExporting.value = true;
         const savedIndex = store.activeIndex;

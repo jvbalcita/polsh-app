@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useForm } from '@inertiajs/vue3'
 import billing from '@/routes/billing'
 
-defineProps<{
+const props = defineProps<{
     open: boolean
 }>()
 
@@ -12,6 +13,21 @@ defineEmits<{
 }>()
 
 const checkoutForm = useForm({ plan: '' })
+
+function trackEvent(name: string): void {
+    if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible(name)
+    }
+}
+
+watch(
+    () => props.open,
+    (value) => {
+        if (value) {
+            trackEvent('upgrade_modal_shown')
+        }
+    },
+)
 
 function checkout(plan: string) {
     checkoutForm.plan = plan

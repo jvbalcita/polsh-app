@@ -38,6 +38,9 @@
 
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
+
+        {{-- Analytics --}}
+        <script defer data-domain="polsh.app" src="https://plausible.io/js/script.tagged-events.js"></script>
     </head>
     <body class="font-sans antialiased">
         @inertia
