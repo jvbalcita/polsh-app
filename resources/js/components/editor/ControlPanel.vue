@@ -732,28 +732,29 @@ function cancelSavePreset(): void {
 
 /* ── Background type selector ── */
 .bg-type-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     margin-bottom: 14px;
 }
 
 .bg-type-btn {
-    flex: 1;
-    min-width: 0;
-    padding: 4px 6px;
+    padding: 5px 4px;
     font-family: 'DM Mono', monospace;
     font-size: 9px;
     font-weight: 500;
     letter-spacing: 0.03em;
     text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     background: transparent;
     color: #8a8a9a;
     cursor: pointer;
     transition: border-color 150ms, color 150ms, background 150ms;
-    white-space: nowrap;
 }
 
 .bg-type-btn:hover {

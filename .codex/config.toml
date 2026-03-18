@@ -1,4 +1,4 @@
 [mcp_servers.laravel-boost]
-command = "php"
+command = "vendor/bin/sail"
 args = ["artisan", "boost:mcp"]
-cwd = "/Users/jackvincent.balcita/Documents/dev/artisans/polsh"
+cwd = "/var/www/html"

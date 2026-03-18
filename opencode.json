@@ -5,10 +5,22 @@
             "type": "local",
             "enabled": true,
             "command": [
-                "php",
+                "vendor/bin/sail",
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "shadcnVue": {
+            "type": "local",
+            "enabled": true,
+            "command": [
+                "npx",
+                "shadcn-vue@latest",
+                "mcp"
+            ]
         }
-    }
+    },
+    "plugin": [
+        "superpowers@git+https://github.com/obra/superpowers.git"
+    ]
 }
