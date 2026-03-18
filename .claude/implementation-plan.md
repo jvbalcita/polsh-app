@@ -59,7 +59,7 @@ using indigo/purple. All code must use `#e0ff4f`.
 | [Phase 6](#phase-6--api-docs-testing-qa--production-deployment) | API docs, testing, QA, deployment | ✅ |
 | [Phase 7](#phase-7--gap-fixes--pre-marketplace-polish) | Gap fixes & pre-marketplace polish | ✅ |
 | [Phase 7.5](#phase-75--bug-fixes--design-overhaul) | Bug fixes & design overhaul | ✅ |
-| [**Phase 7.6**](#phase-76--per-image-style-isolation--five-layer-architecture) | **Per-image isolation & five-layer architecture** ← NEW | 🔲 |
+| [**Phase 7.6**](#phase-76--per-image-style-isolation--five-layer-architecture) | **Per-image isolation & five-layer architecture** | ✅ |
 | [Phase 8](#phase-8--community-style-marketplace-core) | Community style marketplace core | 🔲 |
 | [Phase 9](#phase-9--marketplace-payouts-creator-profiles--ratings) | Marketplace payouts, creator profiles, ratings | 🔲 |
 | [Phase 10](#phase-10--growth-packs-affiliates--roadmap-votes) | Growth: packs, affiliates, roadmap votes | 🔲 |
@@ -412,8 +412,8 @@ git push && git push origin --tags
 ---
 
 ## Phase 7.6 — Per-Image Style Isolation & Five-Layer Architecture
-> **Duration:** ~1 week | **Roadmap:** Pre-V2 polish continued | **Status:** 🔲 PENDING
-> **Git tag:** `v1.3.1`
+> **Duration:** ~1 week | **Roadmap:** Pre-V2 polish continued | **Status:** ✅ COMPLETED
+> **Git tag:** `v1.3.1` ✅
 > **Design reference:** `.claude/design-guide.md` Sections 14–19
 >
 > Discovered after Phase 7.5 shipped. Two new issues identified:
