@@ -1,9 +1,7 @@
-# Polsh — Design Guide & Phase 7.5 Specs
-> **polsh.app** · Phase 7.5 reference document
-> Bug fixes + design overhaul · Target tag: `v1.3.0`
->
-> Place this file at `.claude/design-guide.md` in the project root.
-> Claude Code should read this file before starting any Part 3 work.
+# Polsh — Design System & Product Spec
+> **polsh.app** · Living reference document
+> Place at `.claude/design-guide.md` — Claude Code reads this before any UI work.
+> Last updated: March 2026
 
 ---
 
@@ -14,7 +12,7 @@
 3. [Typography](#3-typography)
 4. [Spacing & Sizing](#4-spacing--sizing)
 5. [Component Patterns](#5-component-patterns)
-6. [Bug Fixes](#6-bug-fixes)
+6. [Bug Fixes — Phase 7.5](#6-bug-fixes--phase-75)
 7. [Landing Page Redesign](#7-landing-page-redesign)
 8. [Editor Redesign](#8-editor-redesign)
 9. [Billing Page Redesign](#9-billing-page-redesign)
@@ -22,6 +20,13 @@
 11. [Motion & Animation](#11-motion--animation)
 12. [Responsive Breakpoints](#12-responsive-breakpoints)
 13. [Accessibility](#13-accessibility)
+14. [Per-Image Style Isolation](#14-per-image-style-isolation)
+15. [Editor Architecture — The Five Layers](#15-editor-architecture--the-five-layers)
+16. [Frame System](#16-frame-system)
+17. [Background System](#17-background-system)
+18. [Canvas Size System](#18-canvas-size-system)
+19. [Layout System](#19-layout-system)
+20. [Competitive Positioning vs Shotframe](#20-competitive-positioning-vs-shotframe)
 
 ---
 
@@ -290,7 +295,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
 ---
 
-## 6. Bug Fixes
+## 6. Bug Fixes — Phase 7.5
 
 ### Bug 1 — Cannot add a second image (ImageStrip crash)
 
@@ -1380,5 +1385,443 @@ transition: transform 200ms ease, border-color 200ms ease;
 ---
 
 *Polsh Design Guide · Phase 7.5 · v1.3.0*
+*Implementation plan: `.claude/implementation-plan.md`*
+*Last updated: March 2026*
+
+---
+
+## 14. Per-Image Style Isolation
+
+### The bug
+
+Currently `useEditorStore` holds one global `activeStyle` plus one set of
+adjustment values (padding, radius, shadow, etc.) for the entire session.
+When a style or control is changed, it overwrites the settings for all images
+because there is no per-image state.
+
+### The fix — per-image settings in the images array
+
+Each image object in `images[]` must carry its own complete settings snapshot:
+
+```ts
+// resources/js/types/editor.ts
+interface SessionImage {
+  id: string
+  url: string                     // object URL or uploaded path
+  name: string
+  width: number
+  height: number
+  locked: boolean
+
+  // Per-image settings — independent from all other images
+  settings: ImageSettings
+}
+
+interface ImageSettings {
+  styleSlug: string               // which named style is active
+  backgroundType: 'gradient' | 'solid' | 'mesh' | 'image' | 'transparent'
+  backgroundValue: string         // CSS gradient string, hex color, or image URL
+  frameType: string               // 'none' | 'macos-dark' | 'browser-light' | etc.
+  padding: number                 // 0–120px
+  radius: number                  // 0–40px
+  shadow: number                  // 0–100
+  shadowBlur: number              // 0–80px
+  shadowColor: string             // hex
+  border: number                  // 0–4px
+  borderColor: string             // hex
+  noiseGrain: number              // 0–30%
+  aspectRatio: string             // '16:9' | '1:1' | 'og' | '4:5' | 'free'
+}
+
+// Default settings (used when a new image is added)
+const DEFAULT_SETTINGS: ImageSettings = {
+  styleSlug: 'obsidian-glass',
+  backgroundType: 'gradient',
+  backgroundValue: 'linear-gradient(135deg, #0a0a0c 0%, #1a1a2e 100%)',
+  frameType: 'none',
+  padding: 48,
+  radius: 12,
+  shadow: 50,
+  shadowBlur: 40,
+  shadowColor: '#000000',
+  border: 1,
+  borderColor: 'rgba(255,255,255,0.1)',
+  noiseGrain: 3,
+  aspectRatio: '16:9',
+}
+```
+
+### Store changes
+
+```ts
+// useEditorStore — key changes
+
+// REMOVE: global activeStyle, padding, radius, shadow, etc.
+// ADD: computed getters that read from images[activeIndex].settings
+
+const activeSettings = computed<ImageSettings | null>(() =>
+  images.value[activeIndex.value]?.settings ?? null
+)
+
+const activeStyleSlug = computed(() =>
+  activeSettings.value?.styleSlug ?? 'obsidian-glass'
+)
+
+// When a control changes, write ONLY to the active image's settings
+function updateSetting<K extends keyof ImageSettings>(
+  key: K,
+  value: ImageSettings[K]
+) {
+  const img = images.value[activeIndex.value]
+  if (!img || img.locked) return
+  img.settings = { ...img.settings, [key]: value }
+  saveToLocalStorage()
+}
+
+// Apply to all: copies active image settings to all UNLOCKED images
+function applyToAll() {
+  const source = images.value[activeIndex.value]
+  if (!source) return
+  images.value.forEach((img) => {
+    if (!img.locked && img.id !== source.id) {
+      img.settings = { ...source.settings }
+    }
+  })
+  showToast(`Applied to ${images.value.filter(i => !i.locked).length} images`)
+}
+
+// Add image: new images always get DEFAULT_SETTINGS (or copy from active if preferred)
+function addImage(file: SessionImage) {
+  images.value.push({
+    ...file,
+    settings: { ...DEFAULT_SETTINGS },
+  })
+  activeIndex.value = images.value.length - 1
+}
+```
+
+### Canvas rendering change
+
+`FrameCanvas.vue` must consume `activeSettings` rather than individual
+store properties:
+
+```ts
+// Before (wrong — reads global store props)
+const padding = store.padding
+const radius = store.radius
+
+// After (correct — reads per-image settings)
+const settings = store.activeSettings
+const padding = settings?.padding ?? 48
+const radius = settings?.radius ?? 12
+```
+
+### Control panel binding change
+
+Every slider and control in `ControlPanel.vue` must bind to
+`store.updateSetting('padding', value)` rather than setting
+`store.padding = value` directly.
+
+---
+
+## 15. Editor Architecture — The Five Layers
+
+This is the conceptual model that separates Polsh from every competitor
+that lumps everything into one "style" concept.
+
+```
+┌─────────────────────────────────────────────────────┐
+│  LAYER 1: CANVAS SIZE                               │
+│  What are the output dimensions?                    │
+│  Twitter · LinkedIn · Square · Stories · Custom     │
+├─────────────────────────────────────────────────────┤
+│  LAYER 2: BACKGROUND                                │
+│  What is behind the screenshot?                     │
+│  Gradient · Solid · Mesh · Abstract · Transparent   │
+├─────────────────────────────────────────────────────┤
+│  LAYER 3: FRAME                                     │
+│  What wraps the screenshot?                         │
+│  None · macOS · Browser · Terminal · iPhone · iPad  │
+├─────────────────────────────────────────────────────┤
+│  LAYER 4: ADJUSTMENTS                               │
+│  Fine-tune the composition                          │
+│  Padding · Radius · Shadow · Noise · Border         │
+├─────────────────────────────────────────────────────┤
+│  LAYER 5: LAYOUT (Phase 8+)                         │
+│  How are multiple images arranged?                  │
+│  Single · Side by side · Grid · Before/After        │
+└─────────────────────────────────────────────────────┘
+```
+
+### Why this is better than the competition
+
+Shotframe and similar tools conflate Layers 2 and 3 — their "style" is
+really a background + maybe a frame + some adjustments all baked together.
+This makes it impossible to mix and match: you can't take the "neon halo"
+background with the "macOS dark" frame.
+
+Polsh's five-layer model means any combination works:
+- macOS frame + abstract background + heavy shadow → works
+- Browser frame + transparent background (for web mockups) → works
+- No frame + solid lime background + zero noise → works
+- iPhone bezel + mesh gradient + max radius → works
+
+**Named styles become presets** — a "style" in Polsh is just a saved
+combination of all five layer settings. Users can still pick a style
+card to instantly apply a curated look, but they can also mix freely.
+
+### Migration path from current architecture
+
+In Phase 7.5: fix per-image isolation (Section 14) and separate the
+controls into Background, Frame, and Adjustments tabs in the right panel.
+The "named styles" picker on the left becomes a "Quick presets" strip.
+
+In Phase 8: add Layout system. In Phase 9+: add community preset marketplace.
+
+### UI layout for the right panel — tabbed controls
+
+```
+┌─────────────────────────────────────┐
+│  [ Background ] [ Frame ] [ Adjust ] │  ← tab strip
+├─────────────────────────────────────┤
+│                                     │
+│  (content changes per tab)          │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+- Tabs in DM Mono 11px uppercase
+- Active tab: lime underline 2px, lime text
+- Inactive: muted text
+- No icons in tabs — text only, keep it tight
+
+---
+
+## 16. Frame System
+
+Frames are overlays that simulate a device or application chrome.
+They are rendered **on top of** the screenshot inside the Konva canvas,
+not behind it. The screenshot is clipped and positioned inside the
+frame's content area.
+
+### Available frames
+
+| Frame ID | Name | Description | Plan |
+|---|---|---|---|
+| `none` | No Frame | Screenshot floats on background with shadow | Free |
+| `macos-dark` | macOS Dark | Dark title bar, traffic light buttons (dark) | Free |
+| `macos-light` | macOS Light | Light title bar, traffic light buttons (light) | Free |
+| `browser-chrome` | Browser | Address bar, tab strip — neutral gray | Free |
+| `browser-arc` | Arc Browser | Arc-style sidebar chrome | Pro |
+| `terminal` | Terminal | Dark terminal window, prompt header | Free |
+| `iphone-15` | iPhone 15 | iPhone 15 Pro titanium bezel | Pro |
+| `ipad-pro` | iPad Pro | iPad Pro silver bezel | Pro |
+| `window-minimal` | Minimal Window | Three dots only, no title bar | Free |
+| `code-editor` | Code Editor | VS Code-style title + tab bar | Free |
+
+### How frames are rendered in Konva
+
+```
+┌──────────────────────────────────┐
+│  [•][•][•]  My App         [—][□][×]  ← Frame chrome layer (Konva shapes)
+├──────────────────────────────────┤
+│                                  │
+│   [  screenshot image  ]         │  ← Screenshot, clipped to content area
+│                                  │
+└──────────────────────────────────┘
+↑
+Entire thing sits on top of the background layer
+```
+
+The frame is drawn as Konva `Rect`, `Line`, `Circle`, and `Text` nodes.
+The screenshot is clipped using Konva's `clipFunc` to the content area
+of the frame (below the chrome bar).
+
+### Frame options (appear in Frame tab when a frame is selected)
+
+- **Title text** — editable string shown in the title bar (default: "My App")
+- **URL text** — for browser frames, the address bar URL (default: "example.com")
+- **Window buttons** — toggle: show/hide the traffic light / close buttons
+- **Tab name** — for browser frames, tab label text
+
+### Why padding works differently with frames
+
+When `frameType !== 'none'`, the padding slider controls the space
+**outside** the frame (between frame edge and canvas edge).
+When `frameType === 'none'`, padding controls the space between the
+screenshot edges and the canvas edge.
+
+This distinction must be clear in the UI — show a small tooltip or
+label change when a frame is active:
+- No frame: "Padding — space around screenshot"
+- Frame active: "Padding — space around frame"
+
+---
+
+## 17. Background System
+
+Backgrounds sit behind the screenshot (and its frame if any).
+They fill the entire canvas.
+
+### Background types
+
+| Type | Description | Controls |
+|---|---|---|
+| `gradient` | CSS linear or radial gradient | Start color, end color, angle, type |
+| `solid` | Single flat color | Color picker |
+| `mesh` | Soft multi-point gradient | 4 color points, blend intensity |
+| `noise` | Solid color with grain texture | Base color, grain amount, grain size |
+| `abstract` | Bundled abstract SVG/PNG images | Image picker (12 bundled options) |
+| `transparent` | Checkerboard (for PNG export) | None |
+| `custom-image` | User-uploaded background image | Upload + fit/fill/stretch mode |
+
+### Named style backgrounds
+
+When a named style is applied from the quick presets strip, it sets both
+the `backgroundType` and the frame, padding, and other defaults. The user
+can then change any individual layer without "breaking" the style — styles
+are just a starting point, not a locked configuration.
+
+### Background tab UI
+
+```
+TYPE
+[ Gradient ] [ Solid ] [ Mesh ] [ Abstract ] [ Image ] [ None ]
+
+(when Gradient selected:)
+Start color  [●]  #0d0d1a
+End color    [●]  #1a1a2e
+Angle        ────●───  135°
+Type         [ Linear ] [ Radial ]
+
+(when Abstract selected:)
+[img1] [img2] [img3] [img4]    ← 4×3 grid of bundled abstract options
+[img5] [img6] [img7] [img8]
+[img9] ...
+```
+
+---
+
+## 18. Canvas Size System
+
+Canvas size determines the **output dimensions** of the final exported image.
+This is separate from the aspect ratio concept — it's about real pixel sizes.
+
+### Preset canvas sizes
+
+| Preset | Dimensions | Use case |
+|---|---|---|
+| `twitter-landscape` | 1200 × 675px | Twitter / X post |
+| `twitter-square` | 1080 × 1080px | Twitter / X square post |
+| `linkedin` | 1200 × 627px | LinkedIn post |
+| `og-image` | 1200 × 630px | Open Graph / link preview |
+| `dribbble` | 1600 × 1200px | Dribbble shot |
+| `stories` | 1080 × 1920px | Instagram / TikTok stories |
+| `product-hunt` | 1270 × 760px | Product Hunt gallery |
+| `github-social` | 1280 × 640px | GitHub social preview |
+| `free` | custom | User enters width + height |
+
+### UI placement
+
+Canvas size lives in its own row **above the canvas area**, not in the
+right panel. It's a selection that affects the stage, so it should be
+immediately visible:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  [ Twitter ] [ LinkedIn ] [ OG Image ] [ Stories ] [···] │  ← canvas size bar
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│                   [ canvas ]                             │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+- Pill buttons, same style as aspect ratio buttons
+- "···" opens a dropdown with all presets + custom input
+- Changing canvas size re-renders the stage at the new ratio immediately
+- Custom: show a `width × height` input pair with a "px" suffix label
+
+---
+
+## 19. Layout System
+> **Phase 8 feature** — do not implement in Phase 7.5.
+> Documented here for architecture planning.
+
+Layout controls how multiple uploaded images are arranged on the canvas.
+
+### Layout types
+
+| Layout | Description | Max images |
+|---|---|---|
+| `single` | One image, centered (current behavior) | 1 |
+| `side-by-side` | Two images horizontally | 2 |
+| `stacked` | Two images vertically | 2 |
+| `grid-2x2` | Four images in a 2×2 grid | 4 |
+| `grid-3` | Three images: 1 large left + 2 stacked right | 3 |
+| `before-after` | Special: draggable reveal divider between 2 images | 2 |
+| `filmstrip` | Horizontal strip with equal-sized thumbnails | 2–6 |
+
+### Layout rules
+
+- Layout applies to the **canvas composition** — all images share the same
+  background, frame style, and adjustment settings in layout mode
+- Per-image isolation (Section 14) still applies to individual slots — each
+  slot can have different content but shares the layout's background/frame
+- `before-after` layout is a special interactive export — the divider
+  position is baked into the exported image at whatever position the user sets
+- Layout switcher lives above the image strip, replacing the current "+" button
+  area when more than 1 image is loaded
+
+---
+
+## 20. Competitive Positioning vs Shotframe
+
+### What Shotframe does
+
+Shotframe.space offers: backgrounds (abstract/gradient/solid), appearance
+controls (radius, shadow, padding), outlines (glass variants, inset, border),
+frames (macOS, iPhone 15 Pro), canvas sizes (Twitter, Square, LinkedIn, Stories,
+Dribbble, Custom), layouts (single, 2-slot, 3-slot, before/after), quick presets,
+and image/code mode.
+
+### Where Polsh beats them
+
+| Capability | Shotframe | Polsh |
+|---|---|---|
+| Named style presets | Quick presets only (5 generic) | 18 crafted named styles + community marketplace |
+| Per-image independent styles | ✗ | ✓ (after Phase 7.5 fix) |
+| SVG vector export | ✗ | ✓ |
+| REST API + CLI | ✗ | ✓ |
+| Batch session (edit all at once) | ✗ | ✓ |
+| Community style marketplace | ✗ | ✓ (Phase 8) |
+| Team workspaces / shared presets | ✗ | ✓ |
+| 5-layer architecture (mix & match) | ✗ (baked styles) | ✓ |
+| Code screenshot mode | ✗ | Planned Phase 9+ |
+| Frame + Background independence | ✗ | ✓ |
+
+### Where Shotframe currently beats us (gaps to close)
+
+| Gap | Target phase |
+|---|---|
+| Layout system (2-slot, grid, before/after) | Phase 8 |
+| Canvas size presets (Twitter, LinkedIn etc.) | Phase 7.5 (partial) |
+| Abstract/image backgrounds | Phase 7.5 |
+| More frame options (iPhone, iPad bezel) | Phase 8 |
+| Code screenshot mode | Phase 10+ |
+
+### Polsh's unique positioning statement
+
+> "Polsh is the screenshot tool for developers who care about craft.
+> Unlimited combinations: any background, any frame, any size —
+> with the REST API and CLI that Shotframe will never build."
+
+The API + CLI angle is the one thing Shotframe categorically cannot match
+because their product is browser-only. That is Polsh's defensible moat and
+should be prominent in all marketing copy.
+
+---
+
+*Polsh Design System & Product Spec · polsh.app*
 *Implementation plan: `.claude/implementation-plan.md`*
 *Last updated: March 2026*

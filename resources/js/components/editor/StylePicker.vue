@@ -23,9 +23,7 @@ function select(style: StyleConfig): void {
 }
 
 function applyToAll(): void {
-    if (store.activeStyle) {
-        store.applyStyle(store.activeStyle);
-    }
+    store.applyToAll();
 }
 
 function loadPreset(preset: SavedPreset): void {
@@ -121,7 +119,13 @@ onMounted(async () => {
             </div>
         </template>
 
-        <!-- Style grid — all 18 canvases stay in the DOM; v-show for filtering -->
+        <!-- Styles section header -->
+        <div class="sp-styles-header">
+            <p class="sp-section-label" style="margin: 0">PRESETS</p>
+            <p class="sp-styles-sublabel">Quick-start combinations</p>
+        </div>
+
+        <!-- Style grid — all canvases stay in the DOM; v-show for filtering -->
         <div class="sp-grid-wrap">
             <div class="sp-grid">
                 <button
@@ -258,6 +262,20 @@ onMounted(async () => {
 
 .sp-preset-row:hover .sp-preset-delete { opacity: 1; }
 .sp-preset-delete:hover { color: #ff4f4f; }
+
+/* ── Styles section header ── */
+.sp-styles-header {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 8px 10px 4px;
+    flex-shrink: 0;
+}
+
+.sp-styles-sublabel {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    color: #4a4a58;
+    margin: 2px 0 0;
+}
 
 /* ── Style grid ── */
 .sp-grid-wrap {

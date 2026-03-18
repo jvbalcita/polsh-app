@@ -1,35 +1,32 @@
 import { computed, ref, watch } from 'vue';
 import { useEditorStore } from '@/stores/editor';
-import type { EditorSettings } from '@/types/editor';
+import type { ImageSettings } from '@/types/editor';
 
 const MAX_HISTORY = 20;
 const DEBOUNCE_MS = 400;
 
 // Module-level state — history persists across the editor session
-const stack = ref<EditorSettings[]>([]);
+const stack = ref<ImageSettings[]>([]);
 const cursor = ref<number>(-1);
 let isApplying = false;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let initialized = false;
 
-function deepEqual(a: EditorSettings, b: EditorSettings): boolean {
+function deepEqual(a: ImageSettings, b: ImageSettings): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function snapshot(settings: EditorSettings): void {
+function snapshot(settings: ImageSettings): void {
     if (isApplying) return;
 
-    const entry: EditorSettings = { ...settings };
+    const entry: ImageSettings = { ...settings };
 
-    // Skip if the value is identical to the current cursor position
     if (cursor.value >= 0 && deepEqual(stack.value[cursor.value], entry)) {
         return;
     }
 
-    // Discard any "future" states that were created before the current edit
     stack.value.splice(cursor.value + 1);
 
-    // Enforce max history length by dropping the oldest entries
     if (stack.value.length >= MAX_HISTORY) {
         stack.value.shift();
     }
@@ -44,14 +41,23 @@ export function useHistory() {
     if (!initialized) {
         initialized = true;
 
-        // Seed the stack with the current state on first call
-        stack.value = [{ ...store.settings }];
-        cursor.value = 0;
+        // Seed the stack once settings become available
+        watch(
+            () => store.activeSettings,
+            (settings) => {
+                if (settings && cursor.value === -1) {
+                    stack.value = [{ ...settings }];
+                    cursor.value = 0;
+                }
+            },
+            { immediate: true },
+        );
 
         // Debounced watcher — records a snapshot 400ms after the last change
         watch(
-            () => store.settings,
+            () => store.activeSettings,
             (settings) => {
+                if (!settings) return;
                 if (debounceTimer) clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => snapshot({ ...settings }), DEBOUNCE_MS);
             },
@@ -62,10 +68,11 @@ export function useHistory() {
     const canUndo = computed(() => cursor.value > 0);
     const canRedo = computed(() => cursor.value < stack.value.length - 1);
 
-    function applyEntry(entry: EditorSettings): void {
+    function applyEntry(entry: ImageSettings): void {
+        const img = store.images[store.activeIndex];
+        if (!img) return;
         isApplying = true;
-        Object.assign(store.settings, entry);
-        // Allow one watcher tick before re-enabling snapshots
+        img.settings = { ...entry };
         setTimeout(() => {
             isApplying = false;
         }, 0);

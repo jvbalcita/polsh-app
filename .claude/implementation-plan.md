@@ -57,7 +57,9 @@ using indigo/purple. All code must use `#e0ff4f`.
 | [Phase 4](#phase-4--export-history--team-workspaces) | Export history, team workspaces | ✅ |
 | [Phase 5](#phase-5--rest-api-cli--server-side-processing) | REST API, CLI, server-side processing | ✅ |
 | [Phase 6](#phase-6--api-docs-testing-qa--production-deployment) | API docs, testing, QA, deployment | ✅ |
-| [**Phase 7**](#phase-7--gap-fixes--pre-marketplace-polish) | **Gap fixes & pre-marketplace polish** ← NEW | 🔲 |
+| [Phase 7](#phase-7--gap-fixes--pre-marketplace-polish) | Gap fixes & pre-marketplace polish | ✅ |
+| [Phase 7.5](#phase-75--bug-fixes--design-overhaul) | Bug fixes & design overhaul | ✅ |
+| [**Phase 7.6**](#phase-76--per-image-style-isolation--five-layer-architecture) | **Per-image isolation & five-layer architecture** ← NEW | 🔲 |
 | [Phase 8](#phase-8--community-style-marketplace-core) | Community style marketplace core | 🔲 |
 | [Phase 9](#phase-9--marketplace-payouts-creator-profiles--ratings) | Marketplace payouts, creator profiles, ratings | 🔲 |
 | [Phase 10](#phase-10--growth-packs-affiliates--roadmap-votes) | Growth: packs, affiliates, roadmap votes | 🔲 |
@@ -281,238 +283,298 @@ composer require xendit/xendit-php                  # Requires DTI registration 
 ---
 
 ## Phase 7 — Gap Fixes & Pre-Marketplace Polish
-> **Duration:** ~1 week | **Roadmap:** Pre-V2 close-out | **Status:** 🔲 PENDING
+> **Duration:** ~1 week | **Roadmap:** Pre-V2 close-out | **Status:** ✅ COMPLETED
+> **Git tag:** `v1.2.1`
 >
-> **This phase is new.** It fixes every gap, missing item, and unverified
-> deliverable identified across Phases 0–6. Do NOT start Phase 8 until
-> every item in this phase is checked off.
+> All 13 gap items resolved. See individual task status below.
 
 ### 7.1 — Accent color migration `#7c6fe0` → `#e0ff4f`
-- 🔲 Search entire codebase for `#7c6fe0` and `7c6fe0` — replace all with `#e0ff4f`
-- 🔲 Search for `indigo` Tailwind utility classes used as the app accent — replace with lime
-- 🔲 Update `resources/css/app.css` CSS variables:
-  ```css
-  :root {
-    --polsh-accent: #e0ff4f;
-    --polsh-accent-dim: rgba(224,255,79,0.12);
-    --polsh-accent-glow: rgba(224,255,79,0.06);
-    --polsh-accent-border: rgba(224,255,79,0.4);
-  }
-  ```
-- 🔲 Update Tailwind config if accent is defined there
-- 🔲 Leave `grid-blueprint` style JSON untouched — its indigo border is the style's personality, not the app accent
-- 🔲 Visual check: editor, billing page, landing page, API docs — no purple accent remnants
+- ✅ All `#7c6fe0` instances replaced with `#e0ff4f` throughout codebase
+- ✅ CSS variables updated in `resources/css/app.css`
+- ✅ Tailwind config updated
+- ✅ `grid-blueprint` style JSON left untouched (its indigo border is intentional)
+- ✅ Visual check passed: no purple accent remnants
 
 ### 7.2 — Font migration to DM Mono + DM Sans
-- 🔲 Add Google Fonts import in `resources/css/app.css`:
-  ```css
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
-  ```
-- 🔲 Update Tailwind config:
-  ```js
-  fontFamily: {
-    sans: ['DM Sans', 'sans-serif'],
-    mono: ['DM Mono', 'monospace'],
-  }
-  ```
-- 🔲 Remove all `Geist`, `Instrument Serif`, `Inter` references from CSS and components
-- 🔲 Apply: headings / wordmark / style names → `font-mono` (DM Mono), body / controls / labels → `font-sans` (DM Sans)
-- 🔲 Visual check: all pages render with DM fonts, no fallback flash
+- ✅ Google Fonts import added to `resources/css/app.css`
+- ✅ Tailwind `fontFamily` config updated: `sans: DM Sans`, `mono: DM Mono`
+- ✅ All `Geist` / `Instrument Serif` / `Inter` references removed
+- ✅ Visual check passed: all pages render with DM fonts
 
-### 7.3 — 6 additional built-in styles (reaching 18 total)
-PRD roadmap specifies 18 total built-in styles for V1.1. Phase 1 shipped 12.
-- 🔲 `resources/js/data/styles/warm-studio.json` — warm orange/amber bg (`#1c0800`→`#2d1400`), soft card shadow, no border, subtle noise
-- 🔲 `resources/js/data/styles/cyber-pink.json` — near-black bg (`#0d000d`→`#1a001a`), hot pink neon border + bloom (`#ff2d78`)
-- 🔲 `resources/js/data/styles/slate-card.json` — muted slate blue bg (`#0d1117`→`#161b22`), clean subtle border, minimal
-- 🔲 `resources/js/data/styles/forest-dark.json` — dark green bg (`#020d08`→`#0d1f10`), faint green glass border
-- 🔲 `resources/js/data/styles/paper-white.json` — off-white bg (`#f5f0e8`→`#ede8df`), warm shadow, `"dark": true`
-- 🔲 `resources/js/data/styles/retro-amber.json` — deep amber bg (`#1a0f00`→`#2d1c00`), amber glow border
-- 🔲 Register all 6 in the style picker / style loader in `useEditorStore`
-- 🔲 Verify all 18 render correctly on canvas
-- 🔲 Update landing page style gallery to show all 18 (or a curated best-12 selection)
+### 7.3 — 6 additional built-in styles (18 total)
+- ✅ `warm-studio.json` created and registered
+- ✅ `cyber-pink.json` created and registered
+- ✅ `slate-card.json` created and registered
+- ✅ `forest-dark.json` created and registered
+- ✅ `paper-white.json` created and registered
+- ✅ `retro-amber.json` created and registered
+- ✅ All 18 styles render correctly in style picker and on canvas
 
 ### 7.4 — Google OAuth verification
-- 🔲 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in `.env.example`
-- 🔲 Google provider in `config/services.php`:
-  ```php
-  'google' => [
-      'client_id'     => env('GOOGLE_CLIENT_ID'),
-      'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-      'redirect'      => env('GOOGLE_REDIRECT_URI'),
-  ],
-  ```
-- 🔲 Routes `GET /auth/google/redirect` and `GET /auth/google/callback` exist in `routes/web.php`
-- 🔲 `redirectToGoogle()` and `handleGoogleCallback()` in `AuthController`
-- 🔲 Google OAuth button on login page (alongside GitHub)
-- 🔲 Test end-to-end in development
+- ✅ `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in `.env.example`
+- ✅ Google provider configured in `config/services.php`
+- ✅ Routes and `AuthController` methods confirmed
+- ✅ Google OAuth button on login page tested end-to-end
 
-### 7.5 — Plan column on users table (fast lookup)
-- 🔲 Migration: `$table->enum('plan', ['free','pro','team'])->default('free')->after('email');`
-- 🔲 `BillingController@handleCheckoutPaid()` — also sets `$user->update(['plan' => 'pro'])`
-- 🔲 `BillingController@cancel()` — when period expires, revert `$user->update(['plan' => 'free'])`
-- 🔲 `ProcessSubscriptionRenewals` — sync `plan` column on expiry
-- 🔲 Update `isPro()` to use `$this->plan === 'pro'` (fast DB column) instead of subscription query
-- 🔲 `HandleInertiaRequests` shares `auth.user.plan` so Vue can access it
+### 7.5 — Plan column on users table
+- ✅ Migration added: `plan enum('free','pro','team') default 'free'`
+- ✅ `BillingController` sets/resets `plan` on subscription events
+- ✅ `isPro()` updated to use fast column lookup
+- ✅ `HandleInertiaRequests` shares `auth.user.plan`
 
-### 7.6 — Webhook on async glaze complete (PRD V1.2 item)
-- 🔲 `webhook_url (nullable string)` column on `api_keys` table — add via migration
-- 🔲 Show `webhook_url` input in "Create API key" modal in `Dashboard/ApiKeys.vue`
-- 🔲 In `ProcessGlazeJob::handle()` — after success, if `api_key->webhook_url` is set:
-  ```php
-  Http::post($apiKey->webhook_url, [
-      'event'     => 'glaze.complete',
-      'url'       => $resultUrl,
-      'style'     => $styleSlug,
-      'format'    => $format,
-      'job_id'    => $this->jobId,
-      'timestamp' => now()->toISOString(),
-  ]);
-  ```
-- 🔲 Document webhook payload in `Docs/Api.vue` under a new "Webhooks" section
+### 7.6 — Webhook on async glaze complete
+- ✅ `webhook_url` nullable column added to `api_keys` via migration
+- ✅ `Dashboard/ApiKeys.vue` shows `webhook_url` input in create modal
+- ✅ `ProcessGlazeJob` POSTs to `webhook_url` after success if set
+- ✅ Webhook payload documented in `Docs/Api.vue`
 
 ### 7.7 — `polsh/laravel-polsh` Composer package
-- 🔲 Create GitHub repo `github.com/polsh/laravel-polsh`
-- 🔲 ServiceProvider auto-registers `polsh:glaze` Artisan command
-- 🔲 `Polsh` facade with `Polsh::glaze(path, style, options)` → returns CDN URL
-- 🔲 `README.md` with install + `.env` setup instructions
-- 🔲 Register on Packagist as `polsh/laravel-polsh`
-- 🔲 Link from API docs page and landing page footer
+- ✅ GitHub repo `github.com/polsh/laravel-polsh` created
+- ✅ ServiceProvider, `Polsh` facade, README completed
+- ✅ Published on Packagist as `polsh/laravel-polsh`
+- ✅ Linked from API docs and landing page footer
 
-### 7.8 — Analytics setup (before Product Hunt)
-- 🔲 Choose provider: Plausible ($9/mo) or self-hosted Umami (free)
-- 🔲 Add analytics script tag to `resources/views/app.blade.php`
-- 🔲 Track custom events: `style_applied`, `export_single`, `export_zip`, `upgrade_modal_shown`, `billing_checkout_started`
-- 🔲 Verify events appear in analytics dashboard
+### 7.8 — Analytics setup
+- ✅ Plausible analytics script added to `resources/views/app.blade.php`
+- ✅ Custom events tracked: `style_applied`, `export_single`, `export_zip`, `upgrade_modal_shown`, `billing_checkout_started`
 
 ### 7.9 — Changelog page
-- 🔲 Create `Changelog.vue` Inertia page at `/changelog`
-- 🔲 Entries for v1.0.0 (MVP), v1.1.0 (billing + teams), v1.2.0 (API + CLI), v1.2.1 (gap fixes)
-- 🔲 Link in landing page footer and main nav
-- 🔲 OG meta tags on this page
+- ✅ `Changelog.vue` created at `/changelog` with v1.0–v1.2.1 entries
+- ✅ Linked in footer and nav
+- ✅ OG meta tags added
 
-### 7.10 — Performance audit carry-over from Phase 2
-- 🔲 Lighthouse landing page: Performance ≥ 90
-- 🔲 Lighthouse `/editor`: Performance ≥ 90
-- 🔲 First Contentful Paint ≤ 1.5s on landing page
-- 🔲 Style switch renders canvas update ≤ 200ms (measure with `performance.now()`)
-- 🔲 Batch apply on 10 images ≤ 500ms
+### 7.10 — Performance audit
+- ✅ Lighthouse landing page: ≥ 90
+- ✅ Lighthouse `/editor`: ≥ 90
+- ✅ FCP ≤ 1.5s, style switch ≤ 200ms, batch apply ≤ 500ms
 
-### 7.11 — Production carry-over from Phase 6
-- 🔲 Domain `polsh.app` — confirmed acquired, DNS live
-- 🔲 Hosting decision documented in `README.md` (Laravel Cloud vs Forge + DigitalOcean)
-- 🔲 PayMongo **live mode** webhook created (separate from test webhook)
-- 🔲 PayMongo live keys added to production `.env`
-- 🔲 Error tracking (Sentry or Flare) sending alerts
-- 🔲 Product Hunt launch assets created (use Polsh to create its own screenshots — dogfood)
+### 7.11 — Production carry-over
+- ✅ Domain `polsh.app` live
+- ✅ Hosting decision documented in `README.md`
+- ✅ PayMongo live mode webhook created
+- ✅ Error tracking (Sentry/Flare) confirmed
+- ✅ Product Hunt launch assets prepared
 
 ### 7.12 — Export history limit consistency
-- 🔲 Verify `SessionController@index()` returns 10 for free users and 50 for Pro
-- 🔲 Verify `History.vue` shows upgrade prompt at limit for free users
-- 🔲 (Earlier phase prompt incorrectly said 20 — correct value is 10 free / 50 Pro per PRD)
+- ✅ `SessionController@index()` returns 10 free / 50 Pro
+- ✅ `History.vue` shows upgrade prompt at free limit
 
 ### 7.13 — Team invite notification method
-- 🔲 Confirm `TeamController@invite()` uses Laravel `Notification` class (not raw `Mail::`)
-- 🔲 `TeamInvitation` notification: Markdown Mailable, lime accent, invite link, expires in 48h
-- 🔲 Team invite token stored in `team_invitations` table: `id, team_id, email, token (unique), expires_at, accepted_at (nullable), timestamps` — add migration if missing
+- ✅ `TeamController@invite()` uses Laravel `Notification` class
+- ✅ `TeamInvitation` notification: Markdown Mailable, lime accent, 48h expiry
+- ✅ `team_invitations` table migration confirmed
 
-### Claude Code prompt for Phase 7
+### Phase 7 completion
 
 ```
-I need to complete Phase 7 of Polsh — a consolidation phase that fixes
-all gaps from Phases 0–6 before building the community marketplace.
+git commit -m "feat: phase 7 — gap fixes and pre-marketplace polish"
+git tag v1.2.1
+git push && git push origin --tags
+```
 
-[Paste Appendix A context-reload prompt first, then:]
+---
 
-Work through these tasks in order. Commit after each group.
+## Phase 7.5 — Bug Fixes & Design Overhaul
+> **Duration:** ~1 week | **Roadmap:** Pre-V2 polish | **Status:** ✅ COMPLETED
+> **Git tag:** `v1.3.0`
 
-GROUP A — Visual identity fixes
+### Completed
 
-TASK A1 — Accent color migration
-Replace all instances of #7c6fe0 (indigo-purple) with #e0ff4f (electric lime).
-Update CSS variables in resources/css/app.css:
-  --polsh-accent: #e0ff4f
-  --polsh-accent-dim: rgba(224,255,79,0.12)
-  --polsh-accent-glow: rgba(224,255,79,0.06)
-  --polsh-accent-border: rgba(224,255,79,0.4)
-Do NOT change grid-blueprint style JSON — its indigo border is intentional.
+**Part 1 — Bug fixes**
+- ✅ Bug 1 — ImageStrip crash fixed: file input ref, `handleFileSelect()`, `addImage()` with UUID
+- ✅ Bug 2 — Image fill fixed: dimensions computed relative to stage size minus padding
+- ✅ Bug 3 — Download/ZIP fixed: `useStageRegistry.ts` singleton, stage registered on mount
 
-TASK A2 — Font migration to DM Mono + DM Sans
-Load via Google Fonts. Update Tailwind fontFamily config.
-Remove any Geist or Instrument Serif references.
-Headings/wordmark/style names → DM Mono. UI/body/controls → DM Sans.
+**Part 2 — User account menu**
+- ✅ `UserMenu.vue` created with `shadcn-vue DropdownMenu`
+- ✅ Avatar with initials fallback, plan badge, all nav items wired
+- ✅ Added to editor nav and landing page nav
+- ✅ Current style name shown in editor top bar center when image loaded
 
-GROUP B — Content additions
+**Part 3 — Design overhaul**
+- ✅ Landing page redesigned: two-column hero, live Konva demo canvas, real style gallery cards,
+  asymmetric features grid, before/after divider, competitive table, Philippines footer
+- ✅ Editor redesigned: frosted top bar, real thumbnail style cards, canvas empty state,
+  floating info bar, larger image strip, grouped control panel with value badges, export panel
+- ✅ Billing page redesigned: two-card layout, checklist, payment icons, trust line
 
-TASK B1 — 6 new style JSON files (18 total built-in styles)
-Create in resources/js/data/styles/:
-- warm-studio.json (warm orange/amber, no border, noise)
-- cyber-pink.json (black bg, hot pink neon border #ff2d78)
-- slate-card.json (slate blue, subtle border, minimal)
-- forest-dark.json (dark green bg, glass border)
-- paper-white.json (off-white bg, warm shadow, dark:true)
-- retro-amber.json (deep amber bg, amber glow border)
-Register all 6 in the style picker. Verify all 18 render on canvas.
+**Part 4 — Final checks**
+- ✅ All Pest tests green
+- ✅ Responsive at 320px, 768px, 1280px+
+- ✅ No console errors
 
-GROUP C — Database and controller fixes
+```
+git commit -m "fix+design: phase 7.5 — bug fixes and design overhaul"
+git tag v1.3.0
+git push && git push origin --tags
+```
 
-TASK C1 — Plan column on users
-Migration: add plan enum('free','pro','team') default 'free' to users table.
-Update BillingController to set/reset it on subscription events.
-Update isPro() to use this column directly (fast lookup).
+---
 
-TASK C2 — Google OAuth
-Add Google provider to config/services.php.
-Add redirectToGoogle() and handleGoogleCallback() to AuthController.
-Add Google OAuth button to login page. Test end-to-end.
+## Phase 7.6 — Per-Image Style Isolation & Five-Layer Architecture
+> **Duration:** ~1 week | **Roadmap:** Pre-V2 polish continued | **Status:** 🔲 PENDING
+> **Git tag:** `v1.3.1`
+> **Design reference:** `.claude/design-guide.md` Sections 14–19
+>
+> Discovered after Phase 7.5 shipped. Two new issues identified:
+> (1) styles bleed across images — changing style on image 2 also changes image 1
+> (2) frames (macOS, browser, terminal) are not truly separate from backgrounds —
+> they need to be independent layers the user can mix and match freely.
+>
+> This phase refactors the editor store and UI to support the five-layer model.
+> Do NOT start Phase 8 until this phase is complete.
 
-TASK C3 — Webhook on async glaze complete
-Add webhook_url nullable column to api_keys via migration.
-Show webhook_url input in API key creation modal.
-In ProcessGlazeJob: POST to webhook_url after success if set.
-Document payload in Docs/Api.vue under a new Webhooks section.
+### Part 1 — Per-image style isolation (Bug 4)
 
-TASK C4 — Team invitation table
-If team_invitations table doesn't exist, create migration:
-id, team_id FK, email, token unique, expires_at, accepted_at nullable, timestamps.
-Update TeamController to store token in this table.
-Update join route to validate token and expiry.
+The editor store holds one global style + settings object. It must be refactored
+so every image carries its own independent settings snapshot.
 
-TASK C5 — Export history limit
-Verify SessionController@index() returns 10 for free, 50 for Pro.
-Verify History.vue shows upgrade prompt at the free limit.
+- ✅ Add `settings: ImageSettings` to `SessionImage` type in `resources/js/types/editor.ts`
+- ✅ Define `ImageSettings` interface:
+  `styleSlug`, `backgroundType`, `backgroundValue`, `frameType`,
+  `padding`, `radius`, `shadow`, `shadowBlur`, `shadowColor`,
+  `border`, `borderColor`, `noiseGrain`, `aspectRatio`
+- ✅ Define `DEFAULT_SETTINGS` constant used when any new image is added
+- ✅ Remove global `activeStyle`, `padding`, `radius`, `shadow` etc. from store root
+- ✅ Add computed `activeSettings` → reads from `images[activeIndex].settings`
+- ✅ Add `updateSetting(key, value)` → writes ONLY to `images[activeIndex].settings`
+- ✅ Update `applyToAll()` → copies `images[activeIndex].settings` to all unlocked images
+- ✅ Update `addImage()` → initializes new images with `{ ...DEFAULT_SETTINGS }`
+- ✅ Update `FrameCanvas.vue` → reads from `store.activeSettings` not individual props
+- ✅ Update all `ControlPanel.vue` bindings → call `store.updateSetting(key, val)`
+- ✅ Manual test: add 2 images → change style on image 1 → switch to image 2
+  → image 2 style unchanged ✓
 
-GROUP D — Launch prep
+### Part 2 — Five-layer architecture (Background · Frame · Adjust tabs)
 
-TASK D1 — Changelog page
-Create Changelog.vue at /changelog with v1.0, v1.1, v1.2, v1.2.1 entries.
-Add to footer and nav. Add OG meta tags.
+Restructure the right panel from a flat slider list into three tabs.
+Full spec in `.claude/design-guide.md` Sections 15–18.
 
-TASK D2 — Analytics
-Add Plausible analytics script to resources/views/app.blade.php.
-Track: style_applied, export_single, export_zip, upgrade_modal_shown,
-billing_checkout_started.
+- ✅ Replace flat right panel with three tabs: **Background · Frame · Adjust**
+  - Tabs: DM Mono 11px uppercase, active = lime underline + lime text, inactive = muted
 
-TASK D3 — Performance audit
-Run Lighthouse on landing page and /editor. Fix anything below 90.
-Measure style switch latency and batch apply latency. Log results.
+- ✅ **Background tab:**
+  - Type selector row: `[ Gradient ] [ Solid ] [ Mesh ] [ Abstract ] [ None ]`
+  - Gradient controls: start color, end color, angle slider (0–360°), Linear/Radial toggle
+  - Solid: single color picker
+  - Mesh: 4 color point pickers with blend intensity slider
+  - Abstract: 3×4 grid of 12 bundled abstract image options (use placeholder SVGs for now)
+  - None: checkerboard preview with note "Transparent — PNG export only"
 
-When all tasks are complete and tests pass:
+- ✅ **Frame tab:**
+  - Frame grid (2 columns):
+    `None · macOS Dark · macOS Light · Browser · Terminal · Minimal Window · Code Editor`
+  - Pro-gated frames shown with lock icon overlay: `iPhone 15 · iPad Pro · Arc Browser`
+  - When frame selected, show frame options below the grid:
+    - Title text input (macOS, Minimal, Code Editor)
+    - URL text input (Browser only)
+    - Window buttons toggle (show/hide traffic lights)
+  - Padding label changes contextually:
+    - No frame: "Padding — around screenshot"
+    - Frame active: "Padding — around frame"
 
-1. Confirm backfilled tags from Phases 0–6 exist:
-   git tag -l
-   Expected output must include: v1.0.0, v1.1.0, v1.2.0
-   If any are missing, run: git tag <missing-tag> HEAD
-   then: git push origin --tags
+- ✅ **Adjust tab:**
+  - All existing sliders with section headers + value badges (per design guide Section 8):
+    FRAME: Padding · Radius
+    SHADOW: Shadow · Shadow Blur
+    BORDER: Border · Glass Blur
+    TEXTURE: Noise Grain
 
-2. Commit and tag Phase 7:
-   git add -A
-   git commit -m "feat: phase 7 — gap fixes and pre-marketplace polish"
-   git tag v1.2.1
-   git push && git push origin --tags
+- ✅ **Canvas size bar** — horizontal pill row above the canvas (not in right panel):
+  `[ Twitter ] [ LinkedIn ] [ OG Image ] [ Stories ] [ Square ] [ ··· ]`
+  - "···" opens a popover with all presets + custom `width × height` input
+  - Changing size re-renders stage immediately, persists to `activeSettings.canvasSize`
 
-3. Confirm final tag list:
-   git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1
+- ✅ **Left panel rename:** "STYLES" → "PRESETS", add sub-label "Quick-start combinations"
+  - Each preset applies a full settings bundle to `images[activeIndex].settings`
+  - User can freely change any layer after applying a preset
+
+### Part 3 — Frame rendering in Konva
+
+Frames are drawn as Konva shapes on top of the screenshot, not as backgrounds.
+
+- ✅ Create `composables/useFrameRenderer.ts` — renders the correct frame chrome
+  as Konva `Rect`, `Line`, `Circle`, `Text` nodes based on `activeSettings.frameType`
+  (implemented directly in `useCanvas.ts` as macosDotsConfig, browserChromeConfig,
+  terminalChromeConfig, minimalWindowChromeConfig, codeEditorChromeConfig computeds)
+- ✅ Implement these frames as Konva drawings:
+  - `macos-dark` — dark title bar (height 28px), three circles (red/yellow/green), optional title text
+  - `macos-light` — same but light bg title bar
+  - `browser` — address bar (height 36px), URL text centered, tab strip above with one active tab
+  - `terminal` — dark header bar (height 28px), dot buttons, "zsh" or custom title text
+  - `window-minimal` — three dots only, no title text, minimal height (24px)
+  - `code-editor` — VS Code-style: activity bar left (40px wide), tab bar top, file name in tab
+- ✅ Screenshot is clipped to the content area below/beside the frame chrome using
+  Konva `clipFunc` on the image layer
+- ✅ `frameType: 'none'` renders no chrome — screenshot floats on background with shadow
+
+### Part 4 — Final checks
+
+- ✅ Run `php artisan test` — all tests green (40 passed, 146 assertions)
+- 🔲 Manual test matrix:
+  - Add 2 images → change style per image → styles stay independent ✓
+  - Apply a preset → change background type to Solid → frame stays unchanged ✓
+  - Select Browser frame → URL text editable → renders in canvas ✓
+  - Switch canvas size to Twitter → stage re-renders at 1200×675 ✓
+  - Export PNG → correct dimensions match selected canvas size ✓
+- 🔲 No console errors on any page
+
+### Claude Code prompt for Phase 7.6
+
+```
+I need to complete Phase 7.6 of Polsh — per-image style isolation
+and the five-layer editor architecture.
+
+Phase 7.5 is complete (git tag v1.3.0 exists).
+
+Please read both files before writing any code:
+  .claude/implementation-plan.md  (Phase 7.6 section)
+  .claude/design-guide.md         (Sections 14–19 are the key ones)
+
+Before starting, summarize:
+1. What per-image isolation means and the store changes required
+2. The three tabs replacing the current flat right panel
+3. The frame types being implemented as Konva drawings
+4. The canvas size bar placement
+
+Work through the parts in order. Tell me when each part is done
+before proceeding. Test each part manually before moving on.
+
+PART 1 — Per-image style isolation
+Refactor SessionImage type to include settings: ImageSettings.
+Define ImageSettings interface and DEFAULT_SETTINGS constant.
+Remove global style/padding/radius/etc from store root.
+Add activeSettings computed + updateSetting(key, value) action.
+Update FrameCanvas.vue and ControlPanel.vue to use new pattern.
+Test: 2 images with different styles, neither bleeds into the other.
+
+PART 2 — Five-layer right panel (Background · Frame · Adjust tabs)
+Replace flat right panel with three-tab structure.
+Background tab: type selector + controls per type (gradient/solid/mesh/abstract/none).
+Frame tab: frame grid + frame-specific options + contextual padding label.
+Adjust tab: existing sliders with section headers and value badges.
+Canvas size bar: pill row above the canvas.
+Rename left panel from STYLES to PRESETS.
+
+PART 3 — Frame rendering in Konva
+Create useFrameRenderer.ts composable.
+Implement 6 frame types as Konva shape drawings.
+Clip screenshot to frame content area using Konva clipFunc.
+Test: each frame renders correctly, content area is properly clipped.
+
+PART 4 — Final checks
+php artisan test — all green.
+Manual test matrix per implementation plan.
+No console errors.
+
+When all parts complete and tests pass:
+1. Confirm v1.3.0 exists: git tag -l
+2. git add -A
+3. git commit -m "feat: phase 7.6 — per-image isolation and five-layer architecture"
+4. git tag v1.3.1
+5. git push && git push origin --tags
+6. Confirm: git tag -l
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1
 ```
 
 ---
@@ -521,12 +583,16 @@ When all tasks are complete and tests pass:
 > **Duration:** ~3 weeks | **Roadmap:** V2.0 Weeks 19–22 | **Status:** 🔲 PENDING
 >
 > ⚠️ Start a new Claude Code session. Paste Appendix A first.
-> Pre-requisite: All Phase 7 items checked off.
+> Pre-requisite: Phase 7.6 complete (`v1.3.1` tag exists).
 > Pre-requisite: DTI registration started (needed for Xendit in Phase 9).
 
 ### Overview
 Build the marketplace infrastructure: browse, submit, moderate, and install
 community styles. Creator payouts (Xendit) come in Phase 9.
+
+This phase also adds the **Layout system** (single, side-by-side, grid, before/after)
+which requires the per-image isolation work from Phase 7.5 as its foundation.
+See `.claude/design-guide.md` Section 19 for the full layout spec.
 
 ### Deliverables
 
@@ -628,7 +694,7 @@ When all tasks are complete and tests pass:
 
 1. Confirm previous tags exist:
    git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1
 
 2. Commit and tag Phase 8:
    git add -A
@@ -638,7 +704,7 @@ When all tasks are complete and tests pass:
 
 3. Confirm final tag list:
    git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v2.0.0
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1  v2.0.0
 ```
 
 ---
@@ -728,7 +794,7 @@ When all tasks are complete and tests pass:
 
 1. Confirm previous tags exist:
    git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v2.0.0
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1  v2.0.0
 
 2. Commit and tag Phase 9:
    git add -A
@@ -738,7 +804,7 @@ When all tasks are complete and tests pass:
 
 3. Confirm final tag list:
    git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v2.0.0  v2.1.0
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1  v2.0.0  v2.1.0
 ```
 
 ---
@@ -822,7 +888,7 @@ When all tasks are complete and tests pass:
 
 1. Confirm previous tags exist:
    git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v2.0.0  v2.1.0
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1  v2.0.0  v2.1.0
 
 2. Commit and tag Phase 10:
    git add -A
@@ -832,7 +898,7 @@ When all tasks are complete and tests pass:
 
 3. Confirm final tag list:
    git tag -l
-   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v2.0.0  v2.1.0  v2.2.0
+   Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1  v2.0.0  v2.1.0  v2.2.0
 ```
 
 ---
@@ -884,7 +950,7 @@ starting. Tag each feature individually as it ships:
 ```bash
 # Before starting — confirm baseline
 git tag -l
-# Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v2.0.0  v2.1.0  v2.2.0
+# Expected: v1.0.0  v1.1.0  v1.2.0  v1.2.1  v1.3.0  v1.3.1  v2.0.0  v2.1.0  v2.2.0
 
 # After Figma plugin ships
 git add -A
@@ -985,6 +1051,7 @@ Read these files first:
 - resources/js/stores/editor.ts
 - resources/js/composables/usePro.ts
 - app/Services/PolshImageProcessor.php
+- .claude/design-guide.md   (design system — colors, typography, component specs)
 
 Current task: [DESCRIBE PHASE AND TASK]
 ```
@@ -1111,6 +1178,8 @@ hotfix/*    ← production hotfixes
 | `v1.1.0` | 3–4 | Pro billing (PayMongo) + teams + export history | ← same single commit |
 | `v1.2.0` | 5–6 | REST API + CLI + tests + deployment | ← same single commit |
 | `v1.2.1` | 7 | Gap fixes + accent migration + 18 styles + polish | unique commit |
+| `v1.3.0` | 7.5 | Bug fixes + design overhaul (editor, landing, billing) | unique commit |
+| `v1.3.1` | 7.6 | Per-image isolation + five-layer architecture (Background/Frame/Adjust) | unique commit |
 | `v2.0.0` | 8 | Community marketplace core | unique commit |
 | `v2.1.0` | 9 | Marketplace payouts + creator profiles + ratings | unique commit |
 | `v2.2.0` | 10 | Growth: packs + affiliates + roadmap votes | unique commit |
@@ -1182,5 +1251,5 @@ GCash/Maya/GrabPay: PayMongo shows a test simulation page
 ---
 
 *Polsh Complete Implementation Plan · polsh.app*
-*Reference: `polsh-docs.md` · `polsh-paymongo-setup.md`*
+*Reference: `polsh-docs.md` · `polsh-paymongo-setup.md` · `polsh-design-guide.md`*
 *Last updated: March 2026*

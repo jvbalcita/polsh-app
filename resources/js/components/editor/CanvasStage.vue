@@ -19,15 +19,15 @@ const canvas = useCanvas(containerWidth, containerHeight);
 const noiseCanvas = ref<HTMLCanvasElement | null>(null);
 
 watch(
-    () => store.settings.noiseGrain,
+    () => store.activeSettings?.noiseGrain,
     (grain) => {
-        noiseCanvas.value = grain > 0 ? createNoiseCanvas(grain) : null;
+        noiseCanvas.value = grain && grain > 0 ? createNoiseCanvas(grain) : null;
     },
     { immediate: true },
 );
 
 const noiseConfig = computed(() => {
-    if (!noiseCanvas.value || store.settings.noiseGrain <= 0) return null;
+    if (!noiseCanvas.value || !store.activeSettings || store.activeSettings.noiseGrain <= 0) return null;
     const { w, h } = canvas.cardDimensions.value;
     return {
         x: 0,
@@ -37,14 +37,12 @@ const noiseConfig = computed(() => {
         fillPatternImage: noiseCanvas.value,
         fillPatternRepeat: 'repeat',
         globalCompositeOperation: 'overlay',
-        opacity: Math.min(1, store.settings.noiseGrain * 2),
+        opacity: Math.min(1, store.activeSettings.noiseGrain * 2),
         listening: false,
     };
 });
 
 // Konva stage ref — used by useExport to call toDataURL.
-// Must watch instead of onMounted because v-stage has v-if="containerWidth > 0",
-// so the stage isn't in the DOM yet when onMounted fires (ResizeObserver hasn't measured).
 const stageRef = ref<VueKonvaRef<Konva.Stage> | null>(null);
 
 watch(stageRef, (ref) => {
@@ -113,10 +111,14 @@ function onClickUpload(): void {
                     <!-- Card background (gradient or solid) -->
                     <v-rect :config="canvas.cardBgConfig.value" />
 
-                    <!-- macOS chrome -->
+                    <!-- macOS chrome (dark or light) -->
                     <template v-if="canvas.macosDotsConfig.value">
                         <v-rect :config="canvas.macosDotsConfig.value.barConfig" />
                         <v-line :config="canvas.macosDotsConfig.value.separatorConfig" />
+                        <v-text
+                            v-if="canvas.macosDotsConfig.value.titleConfig"
+                            :config="canvas.macosDotsConfig.value.titleConfig"
+                        />
                         <v-circle
                             v-for="dot in canvas.macosDotsConfig.value.dots"
                             :key="dot.fill"
@@ -137,6 +139,40 @@ function onClickUpload(): void {
                             :key="dot.fill"
                             :config="dot"
                         />
+                    </template>
+
+                    <!-- Terminal chrome -->
+                    <template v-if="canvas.terminalChromeConfig.value">
+                        <v-rect :config="canvas.terminalChromeConfig.value.barConfig" />
+                        <v-line :config="canvas.terminalChromeConfig.value.separatorConfig" />
+                        <v-text :config="canvas.terminalChromeConfig.value.titleConfig" />
+                        <v-circle
+                            v-for="dot in canvas.terminalChromeConfig.value.dots"
+                            :key="dot.fill"
+                            :config="dot"
+                        />
+                    </template>
+
+                    <!-- Minimal window chrome -->
+                    <template v-if="canvas.minimalWindowChromeConfig.value">
+                        <v-rect :config="canvas.minimalWindowChromeConfig.value.barConfig" />
+                        <v-line :config="canvas.minimalWindowChromeConfig.value.separatorConfig" />
+                        <v-circle
+                            v-for="dot in canvas.minimalWindowChromeConfig.value.dots"
+                            :key="dot.fill"
+                            :config="dot"
+                        />
+                    </template>
+
+                    <!-- Code editor chrome -->
+                    <template v-if="canvas.codeEditorChromeConfig.value">
+                        <v-rect :config="canvas.codeEditorChromeConfig.value.activityBarConfig" />
+                        <v-line :config="canvas.codeEditorChromeConfig.value.activityBarBorderConfig" />
+                        <v-rect :config="canvas.codeEditorChromeConfig.value.tabBarConfig" />
+                        <v-line :config="canvas.codeEditorChromeConfig.value.tabBarBorderConfig" />
+                        <v-rect :config="canvas.codeEditorChromeConfig.value.activeTabConfig" />
+                        <v-line :config="canvas.codeEditorChromeConfig.value.activeTabBorderTopConfig" />
+                        <v-text :config="canvas.codeEditorChromeConfig.value.tabTextConfig" />
                     </template>
 
                     <!-- User image -->

@@ -25,7 +25,7 @@ const RESOLUTIONS = [
     { label: '4×', value: 4, pro: true },
 ] as const;
 
-const isSVG = computed(() => store.settings.exportFormat === 'svg');
+const isSVG = computed(() => store.exportSettings.exportFormat === 'svg');
 const hasImages = computed(() => store.images.length > 0);
 const hasMultiple = computed(() => store.images.length > 1);
 
@@ -34,16 +34,16 @@ function onDownload(): void {
     if (isSVG.value) {
         exportSVG();
     } else {
-        const fmt = store.settings.exportFormat as 'png' | 'webp' | 'jpeg';
-        const scale = store.settings.exportResolution as 1 | 2 | 4;
+        const fmt = store.exportSettings.exportFormat as 'png' | 'webp' | 'jpeg';
+        const scale = store.exportSettings.exportResolution as 1 | 2 | 4;
         exportSingle(fmt, scale);
     }
 }
 
 function onExportAll(): void {
     if (!hasImages.value) return;
-    const fmt = isSVG.value ? 'png' : store.settings.exportFormat;
-    exportAll(fmt, store.settings.exportResolution);
+    const fmt = isSVG.value ? 'png' : store.exportSettings.exportFormat;
+    exportAll(fmt, store.exportSettings.exportResolution);
 }
 </script>
 
@@ -61,11 +61,11 @@ function onExportAll(): void {
                 type="button"
                 class="rounded border py-1 text-[10px] font-semibold transition-colors"
                 :class="[
-                    store.settings.exportFormat === fmt.key
+                    store.exportSettings.exportFormat === fmt.key
                         ? 'border-[#e0ff4f]/40 bg-[#e0ff4f]/10 text-[#e0ff4f]'
                         : 'border-white/10 text-white/35 hover:border-white/20 hover:text-white/55',
                 ]"
-                @click="fmt.key === 'svg' && !isPro ? (showUpgrade = true) : (store.settings.exportFormat = fmt.key)"
+                @click="fmt.key === 'svg' && !isPro ? (showUpgrade = true) : (store.exportSettings.exportFormat = fmt.key)"
             >
                 {{ fmt.label }}
             </button>
@@ -80,11 +80,11 @@ function onExportAll(): void {
                     type="button"
                     class="relative flex-1 rounded border py-1.5 text-[10px] font-semibold transition-colors"
                     :class="[
-                        store.settings.exportResolution === res.value
+                        store.exportSettings.exportResolution === res.value
                             ? 'border-[#e0ff4f]/40 bg-[#e0ff4f]/10 text-[#e0ff4f]'
                             : 'border-white/10 text-white/35 hover:border-white/20 hover:text-white/55',
                     ]"
-                    @click="'pro' in res && res.pro && !isPro ? (showUpgrade = true) : (store.settings.exportResolution = res.value)"
+                    @click="'pro' in res && res.pro && !isPro ? (showUpgrade = true) : (store.exportSettings.exportResolution = res.value)"
                 >
                     {{ res.label }}
                     <!-- Pro badge -->

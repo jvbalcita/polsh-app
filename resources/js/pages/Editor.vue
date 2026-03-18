@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import CanvasStage from '@/components/editor/CanvasStage.vue';
 import ControlPanel from '@/components/editor/ControlPanel.vue';
@@ -10,9 +10,8 @@ import UserMenu from '@/components/UserMenu.vue';
 import { useHistory } from '@/composables/useHistory';
 import { useKeyboard } from '@/composables/useKeyboard';
 import { useEditorStore } from '@/stores/editor';
+import { CANVAS_SIZES } from '@/composables/useCanvas';
 import allStyles from '@/styles';
-import type { EditorSettings } from '@/types/editor';
-
 // Initialize history tracking and global keyboard shortcuts for this page
 useHistory();
 useKeyboard();
@@ -23,16 +22,41 @@ const store = useEditorStore();
 const activeStyleName = computed(() => store.activeStyle?.name ?? '');
 const hasImages = computed(() => store.images.length > 0);
 
-// Restore editor state from a previous export session (when ?session= is in the URL)
-onMounted(() => {
-    const sessionData = page.props.sessionData as { style_slug: string; settings: EditorSettings } | null;
-    if (!sessionData) return;
+// ── Canvas size bar ─────────────────────────────────────────────────────────
+// Quick-access pills shown above the canvas
+const QUICK_SIZES = ['twitter-landscape', 'linkedin', 'og-image', 'stories', 'twitter-square'] as const;
 
+const activeCanvasSize = computed(() => store.activeSettings?.canvasSize ?? 'twitter-landscape');
+
+function selectSize(key: string): void {
+    store.updateSetting('canvasSize', key);
+    showSizePopover.value = false;
+}
+
+const showSizePopover = ref(false);
+
+// Custom size state
+const customW = ref(1200);
+const customH = ref(675);
+
+function applyCustomSize(): void {
+    const w = Math.max(100, Math.min(4000, customW.value));
+    const h = Math.max(100, Math.min(4000, customH.value));
+    // Store as a virtual key encoding the dimensions
+    store.updateSetting('canvasSize', `custom-${w}x${h}`);
+    showSizePopover.value = false;
+}
+
+// Restore editor state from a previous export session (when ?session= is in the URL)
+// Session data restore is skipped in Phase 7.6+ since per-image settings require
+// an active image to be present; this feature will be revisited in Phase 8.
+onMounted(() => {
+    const sessionData = page.props.sessionData as { style_slug: string } | null;
+    if (!sessionData) return;
     const style = allStyles.find((s) => s.slug === sessionData.style_slug);
     if (style) {
         store.applyStyle(style);
     }
-    Object.assign(store.settings, sessionData.settings);
 });
 </script>
 
@@ -81,9 +105,75 @@ onMounted(() => {
 
             <!-- Center: Canvas + Image Strip -->
             <main class="flex min-w-0 flex-1 flex-col overflow-hidden">
+                <!-- Canvas size bar -->
+                <div class="canvas-size-bar">
+                    <button
+                        v-for="key in QUICK_SIZES"
+                        :key="key"
+                        type="button"
+                        class="csb-pill"
+                        :class="{ 'csb-pill--active': activeCanvasSize === key }"
+                        @click="selectSize(key)"
+                    >
+                        {{ CANVAS_SIZES[key].label }}
+                    </button>
+
+                    <!-- More sizes (···) -->
+                    <div class="csb-more-wrap">
+                        <button
+                            type="button"
+                            class="csb-pill"
+                            :class="{ 'csb-pill--active': !QUICK_SIZES.includes(activeCanvasSize as any) }"
+                            @click="showSizePopover = !showSizePopover"
+                        >
+                            ···
+                        </button>
+
+                        <!-- Popover -->
+                        <div v-if="showSizePopover" class="csb-popover" @click.stop>
+                            <p class="csb-popover-label">All sizes</p>
+                            <button
+                                v-for="(meta, key) in CANVAS_SIZES"
+                                :key="key"
+                                type="button"
+                                class="csb-popover-row"
+                                :class="{ 'csb-popover-row--active': activeCanvasSize === key }"
+                                @click="selectSize(key)"
+                            >
+                                <span class="csb-popover-name">{{ meta.label }}</span>
+                                <span class="csb-popover-dim">{{ meta.w }}×{{ meta.h }}</span>
+                            </button>
+
+                            <div class="csb-popover-divider"></div>
+                            <p class="csb-popover-label">Custom</p>
+                            <div class="csb-custom-row">
+                                <input
+                                    v-model.number="customW"
+                                    type="number"
+                                    min="100"
+                                    max="4000"
+                                    class="csb-custom-input"
+                                    placeholder="W"
+                                />
+                                <span class="csb-custom-sep">×</span>
+                                <input
+                                    v-model.number="customH"
+                                    type="number"
+                                    min="100"
+                                    max="4000"
+                                    class="csb-custom-input"
+                                    placeholder="H"
+                                />
+                                <span class="csb-custom-unit">px</span>
+                                <button type="button" class="csb-custom-apply" @click="applyCustomSize">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Canvas stage (fills remaining height minus strip) -->
-                <div class="min-h-0 flex-1">
-                    <CanvasStage />
+                <div class="min-h-0 flex-1" @click.self="showSizePopover = false">
+                    <CanvasStage @click="showSizePopover = false" />
                 </div>
                 <!-- Image strip (auto-hides when empty) -->
                 <ImageStrip />
@@ -137,4 +227,145 @@ onMounted(() => {
     transition: opacity 300ms ease;
     white-space: nowrap;
 }
+
+/* ── Canvas size bar ── */
+.canvas-size-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: #0d0d10;
+    flex-shrink: 0;
+}
+
+.csb-pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #8a8a9a;
+    cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+    white-space: nowrap;
+}
+
+.csb-pill:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #f0f0f2;
+}
+
+.csb-pill--active {
+    border-color: #e0ff4f;
+    color: #e0ff4f;
+    background: rgba(224, 255, 79, 0.06);
+}
+
+.csb-more-wrap {
+    position: relative;
+}
+
+.csb-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 200;
+    background: #1a1a1f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.csb-popover-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: #4a4a58;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 4px 4px;
+}
+
+.csb-popover-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 5px 8px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 100ms ease;
+}
+
+.csb-popover-row:hover { background: rgba(255, 255, 255, 0.05); }
+
+.csb-popover-row--active .csb-popover-name { color: #e0ff4f; }
+
+.csb-popover-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: #f0f0f2;
+}
+
+.csb-popover-dim {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #4a4a58;
+}
+
+.csb-popover-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 6px 0;
+}
+
+.csb-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+}
+
+.csb-custom-input {
+    width: 60px;
+    padding: 4px 6px;
+    background: #111114;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #f0f0f2;
+    outline: none;
+    text-align: center;
+}
+
+.csb-custom-input:focus { border-color: rgba(224, 255, 79, 0.4); }
+
+.csb-custom-sep,
+.csb-custom-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #4a4a58;
+}
+
+.csb-custom-apply {
+    margin-left: 4px;
+    padding: 4px 8px;
+    background: rgba(224, 255, 79, 0.1);
+    border: 1px solid rgba(224, 255, 79, 0.35);
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #e0ff4f;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+
+.csb-custom-apply:hover { background: rgba(224, 255, 79, 0.18); }
 </style>

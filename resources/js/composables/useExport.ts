@@ -3,7 +3,7 @@ import { markRaw, ref } from 'vue';
 import type Konva from 'konva';
 import { usePage } from '@inertiajs/vue3';
 import { useEditorStore } from '@/stores/editor';
-import type { EditorSettings } from '@/types/editor';
+import type { ImageSettings } from '@/types/editor';
 import type { StyleConfig } from '@/types/style';
 
 // ---------------------------------------------------------------------------
@@ -51,7 +51,6 @@ function saveSession(imageCount: number): void {
     const stage = stageInstance.value;
     const page = usePage();
 
-    // Only save for authenticated users
     if (!stage || !page.props.auth?.user) return;
 
     const store = useEditorStore();
@@ -62,13 +61,13 @@ function saveSession(imageCount: number): void {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf },
         body: JSON.stringify({
-            style_slug: store.activeStyle?.slug ?? '',
-            settings: store.settings,
+            style_slug: store.activeSettings?.styleSlug ?? '',
+            settings: store.activeSettings,
             image_count: imageCount,
             thumbnail_url: thumbnail,
         }),
     }).catch(() => {
-        // Fire-and-forget — silently ignore network errors
+        // Fire-and-forget
     });
 }
 
@@ -85,8 +84,12 @@ const ASPECT_RATIOS: Record<string, number> = {
 };
 
 const CHROME_HEIGHTS: Record<string, number> = {
-    macos: 36,
+    'macos-dark': 28,
+    'macos-light': 28,
     browser: 72,
+    terminal: 28,
+    'window-minimal': 24,
+    'code-editor': 36,
 };
 
 function angleToSVGGradient(
@@ -97,7 +100,7 @@ function angleToSVGGradient(
     const rad = ((angle - 90) * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
-    const mag = Math.abs(cos * w / 2) + Math.abs(sin * h / 2);
+    const mag = Math.abs((cos * w) / 2) + Math.abs((sin * h) / 2);
     const cx = w / 2;
     const cy = h / 2;
     const x1 = cx - cos * mag;
@@ -112,103 +115,95 @@ function angleToSVGGradient(
     };
 }
 
-function hexToRgba(hex: string, opacity: number): string {
-    const h = hex.replace('#', '');
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-    return `rgba(${r},${g},${b},${opacity})`;
-}
-
-function borderStrokeColor(style: StyleConfig): string {
+function borderStrokeColorFromStyle(style: StyleConfig, borderColor: string): string {
     switch (style.border.type) {
         case 'glass':
-            return `rgba(255,255,255,${style.border.opacity})`;
+        case 'subtle':
+            return borderColor;
         case 'neon':
             return '#a855f7';
         case 'glow':
             return '#06b6d4';
-        case 'subtle':
-            return `rgba(255,255,255,${style.border.opacity})`;
         default:
             return 'none';
     }
 }
 
-function buildSVG(style: StyleConfig, settings: EditorSettings, screenshotSrc: string): string {
+function buildSVG(style: StyleConfig, settings: ImageSettings, screenshotSrc: string): string {
     const ratio = ASPECT_RATIOS[settings.aspectRatio] ?? 16 / 9;
     const W = 1920;
     const H = Math.round(W / ratio);
-    const chrome = style.chrome ?? null;
-    const chromeH = chrome ? (CHROME_HEIGHTS[chrome] ?? 0) : 0;
+    const chromeH = CHROME_HEIGHTS[settings.frameType] ?? 0;
+    const activityBarW = settings.frameType === 'code-editor' ? 40 : 0;
     const pad = settings.padding;
     const r = settings.radius;
-    const bw = settings.borderWidth;
-    const strokeColor = style.border.type !== 'none' ? borderStrokeColor(style) : 'none';
+    const bw = settings.border;
+    const strokeColor = style.border.type !== 'none' ? borderStrokeColorFromStyle(style, settings.borderColor) : 'none';
 
-    // Content area for the embedded image
-    const imgX = pad;
+    const imgX = pad + activityBarW;
     const imgY = pad + chromeH;
-    const imgW = W - pad * 2;
+    const imgW = W - pad * 2 - activityBarW;
     const imgH = H - pad * 2 - chromeH;
 
-    // Fit screenshot while preserving its aspect ratio
-    // (We don't know the screenshot ratio here so we just fill the area — SVG preserveAspectRatio handles it)
-
     // Background fill
-    const bg = style.background;
     let bgFill = '';
     let gradientDef = '';
-    if (bg.type === 'solid') {
-        bgFill = bg.colors[0];
+    if (settings.backgroundType === 'solid') {
+        bgFill = settings.solidColor;
+    } else if (settings.backgroundType === 'transparent') {
+        bgFill = 'transparent';
     } else {
-        const pts = angleToSVGGradient(bg.angle, W, H);
+        // gradient
+        const pts = angleToSVGGradient(settings.gradientAngle, W, H);
         gradientDef = `
   <linearGradient id="bg-grad" gradientUnits="userSpaceOnUse"
     x1="${pts.x1}%" y1="${pts.y1}%" x2="${pts.x2}%" y2="${pts.y2}%">
-    <stop offset="0%" stop-color="${bg.colors[0]}"/>
-    <stop offset="100%" stop-color="${bg.colors[1]}"/>
+    <stop offset="0%" stop-color="${settings.gradientStart}"/>
+    <stop offset="100%" stop-color="${settings.gradientEnd}"/>
   </linearGradient>`;
         bgFill = 'url(#bg-grad)';
     }
 
-    // Shadow filter
-    const shadow = style.shadow;
-    const sBlur = settings.shadowBlur;
-    const sOpacity = settings.shadowOpacity;
-    const sOffsetY = settings.shadowOffsetY;
-    const shadowDef = sOpacity > 0 ? `
+    const sOpacity = settings.shadow / 100;
+    const shadowDef =
+        sOpacity > 0
+            ? `
   <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-    <feDropShadow dx="0" dy="${sOffsetY}" stdDeviation="${sBlur / 2}"
-      flood-color="${shadow.color}" flood-opacity="${sOpacity}"/>
-  </filter>` : '';
+    <feDropShadow dx="0" dy="4" stdDeviation="${settings.shadowBlur / 2}"
+      flood-color="${settings.shadowColor}" flood-opacity="${sOpacity}"/>
+  </filter>`
+            : '';
 
     const shadowAttr = sOpacity > 0 ? ' filter="url(#shadow)"' : '';
 
-    // macOS chrome dots
-    const macosDots =
-        chrome === 'macos'
-            ? `
-  <rect x="0" y="0" width="${W}" height="${chromeH}" fill="#2d2d2d"/>
-  <circle cx="14" cy="18" r="6" fill="#ff5f57"/>
-  <circle cx="34" cy="18" r="6" fill="#febc2e"/>
-  <circle cx="54" cy="18" r="6" fill="#28c840"/>`
-            : '';
+    // macOS chrome
+    const ismacos = settings.frameType === 'macos-dark' || settings.frameType === 'macos-light';
+    const macosDots = ismacos
+        ? `
+  <rect x="0" y="0" width="${W}" height="${chromeH}" fill="${settings.frameType === 'macos-dark' ? '#2d2d2d' : '#e8e8e8'}"/>
+  ${settings.frameShowButtons ? `<circle cx="14" cy="14" r="5" fill="#ff5f57"/><circle cx="30" cy="14" r="5" fill="#febc2e"/><circle cx="46" cy="14" r="5" fill="#28c840"/>` : ''}`
+        : '';
 
     // Browser chrome
     const browserChrome =
-        chrome === 'browser'
+        settings.frameType === 'browser'
             ? (() => {
-                const urlBoxW = Math.min(400, W * 0.3);
-                return `
+                  const urlBoxW = Math.min(400, W * 0.3);
+                  return `
   <rect x="0" y="0" width="${W}" height="36" fill="#1a1a1a"/>
   <rect x="76" y="6" width="200" height="30" rx="6" fill="#2d2d2d"/>
   <rect x="0" y="36" width="${W}" height="36" fill="#2d2d2d"/>
   <rect x="${(W - urlBoxW) / 2}" y="44" width="${urlBoxW}" height="20" rx="10" fill="#1a1a1a"/>
-  <circle cx="14" cy="18" r="5" fill="#ff5f57"/>
-  <circle cx="30" cy="18" r="5" fill="#febc2e"/>
-  <circle cx="46" cy="18" r="5" fill="#28c840"/>`;
-            })()
+  ${settings.frameShowButtons ? `<circle cx="14" cy="18" r="5" fill="#ff5f57"/><circle cx="30" cy="18" r="5" fill="#febc2e"/><circle cx="46" cy="18" r="5" fill="#28c840"/>` : ''}`;
+              })()
+            : '';
+
+    // Terminal chrome
+    const terminalChrome =
+        settings.frameType === 'terminal'
+            ? `
+  <rect x="0" y="0" width="${W}" height="${chromeH}" fill="#1e1e1e"/>
+  ${settings.frameShowButtons ? `<circle cx="14" cy="14" r="5" fill="#ff5f57"/><circle cx="30" cy="14" r="5" fill="#febc2e"/><circle cx="46" cy="14" r="5" fill="#28c840"/>` : ''}`
             : '';
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -225,7 +220,7 @@ function buildSVG(style: StyleConfig, settings: EditorSettings, screenshotSrc: s
     <clipPath id="card-clip">
       <rect width="${W}" height="${H}" rx="${r}"/>
     </clipPath>
-    ${macosDots}${browserChrome}
+    ${macosDots}${browserChrome}${terminalChrome}
 
     <!-- Screenshot -->
     <image x="${imgX}" y="${imgY}" width="${imgW}" height="${imgH}"
@@ -260,7 +255,7 @@ export function useExport() {
         if (!stage || store.images.length === 0) return;
         trackEvent('export_single');
 
-        const slug = store.activeStyle?.slug ?? 'polsh';
+        const slug = store.activeSettings?.styleSlug ?? 'polsh';
         const ext = extFromFormat(format);
 
         const dataUrl = stage.toDataURL({
@@ -287,7 +282,6 @@ export function useExport() {
         try {
             for (let i = 0; i < store.images.length; i++) {
                 store.setActiveIndex(i);
-                // Two rAF passes: Vue reactive update → Konva draw cycle
                 await waitFrame();
 
                 const dataUrl = stage.toDataURL({
@@ -313,12 +307,12 @@ export function useExport() {
     }
 
     function exportSVG(): void {
-        const store2 = useEditorStore();
-        const style = store2.activeStyle;
-        const image = store2.activeImage;
-        if (!style || !image) return;
+        const style = store.activeStyle;
+        const image = store.activeImage;
+        const settings = store.activeSettings;
+        if (!style || !image || !settings) return;
 
-        const svgString = buildSVG(style, store2.settings, image.src);
+        const svgString = buildSVG(style, settings, image.src);
         const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         triggerDownload(url, `polsh-${style.slug}.svg`);
