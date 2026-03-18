@@ -1,15 +1,40 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useEditorStore } from '@/stores/editor';
 
 const store = useEditorStore();
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+function triggerFileInput(): void {
+    fileInputRef.value?.click();
+}
+
+async function handleFileSelect(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    for (const file of Array.from(input.files)) {
+        await store.addImage(file).catch(() => {});
+    }
+    input.value = '';
+}
 </script>
 
 <template>
     <div
         v-if="store.images.length > 0"
-        class="flex h-[88px] items-center gap-2 overflow-x-auto border-t border-white/8 px-4"
-        style="background: #0e0e0e"
+        class="flex h-[72px] items-center gap-2 overflow-x-auto border-t border-white/8 px-4"
+        style="background: #111114; scrollbar-width: none"
     >
+        <!-- Hidden file input — persistent ref so the browser never GC's it before change fires -->
+        <input
+            ref="fileInputRef"
+            type="file"
+            accept="image/*"
+            multiple
+            style="display: none"
+            @change="handleFileSelect"
+        />
+
         <!-- div instead of button to avoid invalid button-in-button nesting -->
         <div
             v-for="(image, index) in store.images"
@@ -22,7 +47,7 @@ const store = useEditorStore();
                     ? 'border-[#e0ff4f] ring-1 ring-[#e0ff4f]/40'
                     : 'border-white/12 hover:border-white/30',
             ]"
-            style="width: 112px; height: 64px"
+            style="width: 64px; height: 40px"
             @click="store.setActiveIndex(index)"
             @keydown.enter.space="store.setActiveIndex(index)"
         >
@@ -52,19 +77,9 @@ const store = useEditorStore();
         <!-- Add more button -->
         <button
             type="button"
-            class="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-white/15 text-white/30 transition-colors hover:border-white/30 hover:text-white/50"
-            @click="
-                () => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.multiple = true;
-                    input.onchange = () => {
-                        Array.from(input.files ?? []).forEach((f) => store.addImage(f).catch(() => {}));
-                    };
-                    input.click();
-                }
-            "
+            class="flex shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-white/15 text-white/30 transition-colors hover:border-[#e0ff4f]/40 hover:text-[#e0ff4f]/70"
+            style="width: 64px; height: 40px"
+            @click="triggerFileInput"
         >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path

@@ -18,7 +18,7 @@ export function useKeyboard(): void {
         // Cmd+S → export single
         if (meta && !e.shiftKey && e.key === 's') {
             e.preventDefault();
-            const fmt = store.settings.exportFormat as 'png' | 'webp' | 'jpeg';
+            const fmt = store.settings.exportFormat as 'png' | 'webp' | 'jpeg' | 'svg';
             const scale = store.settings.exportResolution as 1 | 2 | 4;
             await exportSingle(fmt === 'svg' ? 'png' : fmt, scale);
             return;

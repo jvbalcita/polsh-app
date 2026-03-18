@@ -26,7 +26,7 @@ const hasMore = !isPro && props.sessions.length >= FREE_HISTORY_LIMIT;
 const localSessions = ref<ExportSession[]>(visibleSessions);
 
 function reopen(sessionId: number): void {
-    router.visit('/editor', { data: { session: sessionId } });
+    router.visit(`/editor?session=${sessionId}`);
 }
 
 async function deleteSession(sessionId: number): Promise<void> {

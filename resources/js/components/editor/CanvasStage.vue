@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useElementSize } from '@vueuse/core';
 import type { VueKonvaRef } from 'vue-konva';
 import type Konva from 'konva';
@@ -42,13 +42,15 @@ const noiseConfig = computed(() => {
     };
 });
 
-// Konva stage ref — used by useExport to call toDataURL
+// Konva stage ref — used by useExport to call toDataURL.
+// Must watch instead of onMounted because v-stage has v-if="containerWidth > 0",
+// so the stage isn't in the DOM yet when onMounted fires (ResizeObserver hasn't measured).
 const stageRef = ref<VueKonvaRef<Konva.Stage> | null>(null);
 
-onMounted(() => {
-    const stage = stageRef.value?.getNode();
+watch(stageRef, (ref) => {
+    const stage = ref?.getNode();
     if (stage) registerStage(stage);
-});
+}, { flush: 'post' });
 
 // Drag-and-drop / click-to-upload
 const isDragOver = ref(false);
@@ -86,8 +88,7 @@ function onClickUpload(): void {
 <template>
     <div
         ref="containerRef"
-        class="relative h-full w-full overflow-hidden"
-        style="background: #080808"
+        class="canvas-stage-container relative h-full w-full overflow-hidden"
         @drop="onDrop"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
@@ -160,55 +161,28 @@ function onClickUpload(): void {
         <Transition name="fade">
             <div
                 v-if="store.images.length === 0"
-                class="absolute inset-0 flex flex-col items-center justify-center gap-4"
+                class="absolute inset-0 flex flex-col items-center justify-center"
                 :class="isDragOver ? 'pointer-events-none' : ''"
             >
-                <!-- Drag overlay ring -->
+                <!-- Drag overlay -->
                 <div
                     v-if="isDragOver"
-                    class="absolute inset-8 rounded-2xl border-2 border-dashed border-[#e0ff4f]/50 bg-[#e0ff4f]/5"
+                    class="absolute inset-6 rounded-2xl border-2 border-dashed border-[#e0ff4f]/60 bg-[#e0ff4f]/4"
                 />
 
                 <button
                     type="button"
-                    class="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/4 px-10 py-8 text-center transition-all hover:border-white/20 hover:bg-white/6"
+                    class="canvas-empty"
+                    :class="{ 'drag-over': isDragOver }"
                     @click="onClickUpload"
                 >
-                    <svg
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        class="text-white/30"
-                    >
-                        <path
-                            d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                        <polyline
-                            points="17 8 12 3 7 8"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                        <line
-                            x1="12"
-                            y1="3"
-                            x2="12"
-                            y2="15"
-                            stroke-linecap="round"
-                        />
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="empty-icon" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    <div>
-                        <p class="text-sm font-medium text-white/60">
-                            Drop screenshots here
-                        </p>
-                        <p class="mt-1 text-xs text-white/30">
-                            or click to upload · PNG, JPG, WebP
-                        </p>
-                    </div>
+                    <p class="empty-title">Drop screenshots here</p>
+                    <p class="empty-hint">or click to upload · PNG, JPG, WebP</p>
                 </button>
             </div>
         </Transition>
@@ -219,7 +193,7 @@ function onClickUpload(): void {
                 v-if="isDragOver && store.images.length > 0"
                 class="pointer-events-none absolute inset-0 flex items-center justify-center"
             >
-                <div class="absolute inset-4 rounded-2xl border-2 border-dashed border-[#e0ff4f]/60 bg-[#e0ff4f]/5" />
+                <div class="absolute inset-4 rounded-2xl border-2 border-dashed border-[#e0ff4f]/50 bg-[#e0ff4f]/4" />
                 <p class="relative text-sm font-medium text-[#e0ff4f]">
                     Drop to add image
                 </p>
@@ -229,10 +203,56 @@ function onClickUpload(): void {
 </template>
 
 <style scoped>
+.canvas-stage-container {
+    background-color: #0a0a0c;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.canvas-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 48px 56px;
+    border: 1.5px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: transparent;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 200ms ease, background 200ms ease;
+}
+
+.canvas-empty:hover,
+.canvas-empty.drag-over {
+    border-color: rgba(224, 255, 79, 0.4);
+    background: rgba(224, 255, 79, 0.03);
+}
+
+.empty-icon {
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 4px;
+}
+
+.empty-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: #8a8a9a;
+    margin: 0;
+}
+
+.empty-hint {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #4a4a5a;
+    margin: 0;
+}
+
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.15s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
