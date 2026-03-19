@@ -17,7 +17,9 @@ function deepEqual(a: ImageSettings, b: ImageSettings): boolean {
 }
 
 function snapshot(settings: ImageSettings): void {
-    if (isApplying) return;
+    if (isApplying) {
+return;
+}
 
     const entry: ImageSettings = { ...settings };
 
@@ -57,8 +59,14 @@ export function useHistory() {
         watch(
             () => store.activeSettings,
             (settings) => {
-                if (!settings) return;
-                if (debounceTimer) clearTimeout(debounceTimer);
+                if (!settings) {
+return;
+}
+
+                if (debounceTimer) {
+clearTimeout(debounceTimer);
+}
+
                 debounceTimer = setTimeout(() => snapshot({ ...settings }), DEBOUNCE_MS);
             },
             { deep: true },
@@ -70,7 +78,11 @@ export function useHistory() {
 
     function applyEntry(entry: ImageSettings): void {
         const img = store.images[store.activeIndex];
-        if (!img) return;
+
+        if (!img) {
+return;
+}
+
         isApplying = true;
         img.settings = { ...entry };
         setTimeout(() => {
@@ -79,13 +91,19 @@ export function useHistory() {
     }
 
     function undo(): void {
-        if (!canUndo.value) return;
+        if (!canUndo.value) {
+return;
+}
+
         cursor.value -= 1;
         applyEntry(stack.value[cursor.value]);
     }
 
     function redo(): void {
-        if (!canRedo.value) return;
+        if (!canRedo.value) {
+return;
+}
+
         cursor.value += 1;
         applyEntry(stack.value[cursor.value]);
     }

@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import ProductPageHeader from '@/components/ProductPageHeader.vue';
+import { editor } from '@/routes';
+import { portal as billingPortal } from '@/routes/billing';
+import { destroy } from '@/routes/sessions';
 
 interface ExportSession {
     id: number;
@@ -21,18 +25,18 @@ const FREE_HISTORY_LIMIT = 10;
 
 // Free users see only the 10 most recent exports; server already limits the query
 const visibleSessions = props.sessions;
-const hasMore = !isPro && props.sessions.length >= FREE_HISTORY_LIMIT;
+const hasMore = !isPro && props.sessions.length === FREE_HISTORY_LIMIT;
 
 const localSessions = ref<ExportSession[]>(visibleSessions);
 
 function reopen(sessionId: number): void {
-    router.visit(`/editor?session=${sessionId}`);
+    router.visit(editor({ query: { session: sessionId } }));
 }
 
 async function deleteSession(sessionId: number): Promise<void> {
     const xsrf = decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '');
 
-    await fetch(`/sessions/${sessionId}`, {
+    await fetch(destroy.url(sessionId), {
         method: 'DELETE',
         headers: { 'X-XSRF-TOKEN': xsrf },
     });
@@ -43,12 +47,27 @@ async function deleteSession(sessionId: number): Promise<void> {
 function relativeTime(dateString: string): string {
     const diff = Date.now() - new Date(dateString).getTime();
     const minutes = Math.floor(diff / 60_000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
+
+    if (minutes < 1) {
+return 'just now';
+}
+
+    if (minutes < 60) {
+return `${minutes}m ago`;
+}
+
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+
+    if (hours < 24) {
+return `${hours}h ago`;
+}
+
     const days = Math.floor(hours / 24);
-    if (days < 30) return `${days}d ago`;
+
+    if (days < 30) {
+return `${days}d ago`;
+}
+
     return new Date(dateString).toLocaleDateString();
 }
 </script>
@@ -60,31 +79,12 @@ function relativeTime(dateString: string): string {
         class="min-h-screen"
         style="background: #080808"
     >
-        <!-- Topbar -->
-        <header
-            class="flex h-11 items-center justify-between border-b border-white/8 px-6"
-            style="background: #111111"
-        >
-            <div class="flex items-center gap-3">
-                <Link
-                    href="/editor"
-                    class="text-sm font-semibold tracking-tight"
-                    style="color: #e0ff4f"
-                >
-                    polsh
-                </Link>
-                <span class="text-xs text-white/20">/ history</span>
-            </div>
-            <Link
-                href="/editor"
-                class="flex items-center gap-1.5 text-[11px] text-white/35 transition-colors hover:text-white/60"
-            >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <polyline points="15 18 9 12 15 6"/>
-                </svg>
-                Back to editor
-            </Link>
-        </header>
+        <ProductPageHeader
+            context="/ history"
+            :home-href="editor()"
+            :trailing-href="editor()"
+            trailing-label="Back to editor"
+        />
 
         <div class="mx-auto max-w-5xl px-6 py-10">
             <!-- Page header -->
@@ -96,8 +96,7 @@ function relativeTime(dateString: string): string {
             <!-- Empty state -->
             <div
                 v-if="localSessions.length === 0"
-                class="flex flex-col items-center justify-center rounded-xl border border-white/8 py-20 text-center"
-                style="background: #111111"
+                class="polsh-panel flex flex-col items-center justify-center rounded-xl border border-white/8 py-20 text-center"
             >
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" class="mb-4 text-white/20">
                     <circle cx="12" cy="12" r="10"/>
@@ -106,7 +105,7 @@ function relativeTime(dateString: string): string {
                 <p class="text-sm font-medium text-white/40">No exports yet</p>
                 <p class="mt-1 text-xs text-white/20">Export an image from the editor to see it here</p>
                 <Link
-                    href="/editor"
+                    :href="editor()"
                     class="mt-5 rounded-md px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-80"
                     style="background: #e0ff4f; color: #080808"
                 >
@@ -123,11 +122,10 @@ function relativeTime(dateString: string): string {
                 <div
                     v-for="session in localSessions"
                     :key="session.id"
-                    class="group overflow-hidden rounded-xl border border-white/8 transition-colors hover:border-white/15"
-                    style="background: #111111"
+                    class="polsh-panel group overflow-hidden rounded-xl border border-white/8 transition-colors hover:border-white/15"
                 >
                     <!-- Thumbnail -->
-                    <div class="relative aspect-video overflow-hidden border-b border-white/8" style="background: #0a0a0a">
+                    <div class="polsh-stage relative aspect-video overflow-hidden border-b border-white/8">
                         <img
                             v-if="session.thumbnail_url"
                             :src="session.thumbnail_url"
@@ -183,17 +181,16 @@ function relativeTime(dateString: string): string {
             <!-- Pro upgrade nudge for free users who have more history -->
             <div
                 v-if="hasMore"
-                class="mt-6 rounded-xl border border-[#e0ff4f]/15 px-6 py-5 text-center"
-                style="background: rgba(224,255,79,0.04)"
+                class="polsh-upgrade-shell mt-6 rounded-xl border border-[#e0ff4f]/15 px-6 py-5 text-center"
             >
                 <p class="text-sm font-medium text-white/60">
-                    Free tier shows your 3 most recent exports.
+                    Free tier shows your 10 most recent exports.
                 </p>
                 <p class="mt-1 text-xs text-white/35">
-                    Upgrade to Pro to access your full export history (up to 20 exports).
+                    Upgrade to Pro to access your full export history (up to 50 exports).
                 </p>
                 <Link
-                    href="/billing"
+                    :href="billingPortal()"
                     class="mt-4 inline-block rounded-md px-5 py-2 text-xs font-semibold transition-opacity hover:opacity-80"
                     style="background: #e0ff4f; color: #080808"
                 >

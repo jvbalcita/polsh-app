@@ -252,11 +252,33 @@
         oklch(0.218 0.008 223.9);
 }
 
-@layer base {
-    * {
-        @apply border-border outline-ring/50;
+@layer utilities {
+    .polsh-page-shell {
+        background: #080808;
     }
-    body {
-        @apply bg-background text-foreground;
+
+    .polsh-header-shell {
+        background: #111111;
+    }
+
+    .polsh-panel {
+        background: #111111;
+    }
+
+    .polsh-stage {
+        background: #0a0a0a;
+    }
+
+    .polsh-upgrade-shell {
+        background: rgba(224,255,79,0.04);
+    }
+
+    .polsh-brand {
+        color: #e0ff4f;
+    }
+
+    .polsh-cta {
+        background: #e0ff4f;
+        color: #080808;
     }
 }

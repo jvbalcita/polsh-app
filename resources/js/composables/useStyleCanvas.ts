@@ -87,8 +87,10 @@ export function loadDemoImage(): Promise<HTMLImageElement> {
     return new Promise((resolve) => {
         if (demoImgCache) {
             resolve(demoImgCache);
+
             return;
         }
+
         const blob = new Blob([DEMO_SVG], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
         const img = new Image();
@@ -112,17 +114,37 @@ function rrPath(
     ctx.beginPath();
     ctx.moveTo(x + cr, y);
     ctx.lineTo(x + w - cr, y);
-    if (cr > 0) ctx.arcTo(x + w, y, x + w, y + cr, cr);
-    else ctx.lineTo(x + w, y);
+
+    if (cr > 0) {
+ctx.arcTo(x + w, y, x + w, y + cr, cr);
+} else {
+ctx.lineTo(x + w, y);
+}
+
     ctx.lineTo(x + w, y + h - cr);
-    if (cr > 0) ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
-    else ctx.lineTo(x + w, y + h);
+
+    if (cr > 0) {
+ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
+} else {
+ctx.lineTo(x + w, y + h);
+}
+
     ctx.lineTo(x + cr, y + h);
-    if (cr > 0) ctx.arcTo(x, y + h, x, y + h - cr, cr);
-    else ctx.lineTo(x, y + h);
+
+    if (cr > 0) {
+ctx.arcTo(x, y + h, x, y + h - cr, cr);
+} else {
+ctx.lineTo(x, y + h);
+}
+
     ctx.lineTo(x, y + cr);
-    if (cr > 0) ctx.arcTo(x, y, x + cr, y, cr);
-    else ctx.lineTo(x, y);
+
+    if (cr > 0) {
+ctx.arcTo(x, y, x + cr, y, cr);
+} else {
+ctx.lineTo(x, y);
+}
+
     ctx.closePath();
 }
 
@@ -138,7 +160,11 @@ export function renderStyleFrame(
     canvas.height = cssH * dpr;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+
+    if (!ctx) {
+return;
+}
+
     ctx.scale(dpr, dpr);
 
     // Stage background
@@ -176,6 +202,7 @@ export function renderStyleFrame(
 
     // Background
     const { background } = style;
+
     if (background.type === 'solid') {
         ctx.fillStyle = background.colors[0];
         ctx.fillRect(cardX, cardY, cardW, cardH);
@@ -204,6 +231,7 @@ export function renderStyleFrame(
         const pad = Math.max(style.padding * padScale * 0.38, 4);
         const imgAreaW = cardW - pad * 2;
         const imgAreaH = cardH - pad * 2;
+
         if (imgAreaW > 0 && imgAreaH > 0) {
             const scale = Math.min(imgAreaW / img.naturalWidth, imgAreaH / img.naturalHeight);
             const scaledW = img.naturalWidth * scale;

@@ -11,10 +11,15 @@ function triggerFileInput(): void {
 
 async function handleFileSelect(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
+
+    if (!input.files?.length) {
+return;
+}
+
     for (const file of Array.from(input.files)) {
         await store.addImage(file).catch(() => {});
     }
+
     input.value = '';
 }
 </script>

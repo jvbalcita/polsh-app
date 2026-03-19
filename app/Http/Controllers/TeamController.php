@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Teams\InviteTeamMemberRequest;
+use App\Http\Requests\Teams\StoreTeamRequest;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Notifications\TeamInvitationNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -45,15 +48,11 @@ class TeamController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreTeamRequest $request): RedirectResponse
     {
         $user = $request->user();
 
-        abort_unless($request->boolean('isPro') || $user->isPro(), 403, 'Pro subscription required.');
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:60'],
-        ]);
+        $validated = $request->validated();
 
         $team = Team::create([
             'name' => $validated['name'],
@@ -69,15 +68,11 @@ class TeamController extends Controller
         return redirect()->route('teams.settings');
     }
 
-    public function invite(Request $request, Team $team): RedirectResponse
+    public function invite(InviteTeamMemberRequest $request, Team $team): RedirectResponse
     {
-        $user = $request->user();
+        Gate::authorize('invite', $team);
 
-        abort_unless($user->isTeamOwner($team), 403);
-
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         $invitation = TeamInvitation::create([
             'team_id' => $team->id,
@@ -100,7 +95,12 @@ class TeamController extends Controller
 
         $user = $request->user();
 
-        // Don't add if already a member
+        abort_unless(
+            strcasecmp($user->email, $invitation->email) === 0,
+            403,
+            'This invitation is for a different email address.'
+        );
+
         if (! $invitation->team->users()->where('user_id', $user->id)->exists()) {
             $invitation->team->users()->attach($user->id, [
                 'role' => 'member',
@@ -115,10 +115,9 @@ class TeamController extends Controller
 
     public function leave(Request $request, Team $team): RedirectResponse
     {
-        $user = $request->user();
+        Gate::authorize('leave', $team);
 
-        // Owners cannot leave their own team
-        abort_if($user->isTeamOwner($team), 403, 'Owners cannot leave their team.');
+        $user = $request->user();
 
         $team->users()->detach($user->id);
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import {
     Dialog,
     DialogContent,
@@ -7,8 +9,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import billing from '@/routes/billing';
 
 interface Subscription {
@@ -19,7 +19,7 @@ interface Subscription {
     cancelled_at: string | null;
 }
 
-const props = defineProps<{
+defineProps<{
     subscription: Subscription | null;
     isPro: boolean;
 }>();

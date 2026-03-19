@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
+import { computed, onMounted, ref } from 'vue';
 import CanvasStage from '@/components/editor/CanvasStage.vue';
 import ControlPanel from '@/components/editor/ControlPanel.vue';
 import ExportPanel from '@/components/editor/ExportPanel.vue';
 import ImageStrip from '@/components/editor/ImageStrip.vue';
 import StylePicker from '@/components/editor/StylePicker.vue';
 import UserMenu from '@/components/UserMenu.vue';
+import { CANVAS_SIZES } from '@/composables/useCanvas';
 import { useHistory } from '@/composables/useHistory';
 import { useKeyboard } from '@/composables/useKeyboard';
 import { useEditorStore } from '@/stores/editor';
-import { CANVAS_SIZES } from '@/composables/useCanvas';
 import allStyles from '@/styles';
 // Initialize history tracking and global keyboard shortcuts for this page
 useHistory();
@@ -52,8 +52,13 @@ function applyCustomSize(): void {
 // an active image to be present; this feature will be revisited in Phase 8.
 onMounted(() => {
     const sessionData = page.props.sessionData as { style_slug: string } | null;
-    if (!sessionData) return;
+
+    if (!sessionData) {
+return;
+}
+
     const style = allStyles.find((s) => s.slug === sessionData.style_slug);
+
     if (style) {
         store.applyStyle(style);
     }

@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use GdImage;
+use Illuminate\Support\Facades\Http;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use RuntimeException;
+use Throwable;
 
 class PolshImageProcessor
 {
@@ -19,11 +21,7 @@ class PolshImageProcessor
      */
     public function process(string $imageUrl, array $style, array $settings): string
     {
-        $imageData = @file_get_contents($imageUrl);
-
-        if ($imageData === false) {
-            throw new RuntimeException("Failed to fetch image from URL: {$imageUrl}");
-        }
+        $imageData = $this->fetchImage($imageUrl);
 
         $screenshot = @imagecreatefromstring($imageData);
 
@@ -335,5 +333,70 @@ class PolshImageProcessor
         $parts = explode(':', $ratio);
 
         return (float) $parts[0] / (float) $parts[1];
+    }
+
+    private function fetchImage(string $imageUrl): string
+    {
+        $host = parse_url($imageUrl, PHP_URL_HOST);
+
+        if (! is_string($host) || $host === '') {
+            throw new RuntimeException("Failed to fetch image from URL: {$imageUrl}");
+        }
+
+        $host = trim($host, '[]');
+
+        if ($this->isBlockedHost($host)) {
+            throw new RuntimeException('Private and reserved network image URLs are not allowed.');
+        }
+
+        try {
+            return Http::accept('image/*')
+                ->withoutRedirecting()
+                ->timeout(10)
+                ->get($imageUrl)
+                ->throw()
+                ->body();
+        } catch (Throwable $exception) {
+            throw new RuntimeException("Failed to fetch image from URL: {$imageUrl}", previous: $exception);
+        }
+    }
+
+    private function isBlockedHost(string $host): bool
+    {
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return ! filter_var(
+                $host,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            );
+        }
+
+        $resolvedHosts = gethostbynamel($host) ?: [];
+
+        if (function_exists('dns_get_record')) {
+            $ipv6Records = dns_get_record($host, DNS_AAAA);
+
+            foreach ($ipv6Records as $ipv6Record) {
+                if (isset($ipv6Record['ipv6'])) {
+                    $resolvedHosts[] = $ipv6Record['ipv6'];
+                }
+            }
+        }
+
+        foreach (array_unique($resolvedHosts) as $resolvedHost) {
+            if (! filter_var(
+                $resolvedHost,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            )) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

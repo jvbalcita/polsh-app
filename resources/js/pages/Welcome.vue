@@ -3,8 +3,11 @@ import { Head, Link } from '@inertiajs/vue3';
 import { Layers, Palette, FileCode, Zap, Archive } from 'lucide-vue-next';
 import { ref, onMounted, onUnmounted } from 'vue';
 import UserMenu from '@/components/UserMenu.vue';
-import { editor } from '@/routes';
+import { changelog, editor } from '@/routes';
+import { github as githubRoute } from '@/routes/auth';
+import { api as apiDocs } from '@/routes/docs';
 import styles from '@/styles';
+import type { StyleConfig } from '@/types/style';
 
 // ── Demo image — inline SVG blob, no file asset needed ───────────────────────
 const DEMO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
@@ -92,8 +95,10 @@ function loadDemoImage(): Promise<HTMLImageElement> {
     return new Promise((resolve) => {
         if (demoImgCache) {
             resolve(demoImgCache);
+
             return;
         }
+
         const blob = new Blob([DEMO_SVG], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
         const img = new Image();
@@ -118,17 +123,37 @@ function rrPath(
     ctx.beginPath();
     ctx.moveTo(x + cr, y);
     ctx.lineTo(x + w - cr, y);
-    if (cr > 0) ctx.arcTo(x + w, y, x + w, y + cr, cr);
-    else ctx.lineTo(x + w, y);
+
+    if (cr > 0) {
+ctx.arcTo(x + w, y, x + w, y + cr, cr);
+} else {
+ctx.lineTo(x + w, y);
+}
+
     ctx.lineTo(x + w, y + h - cr);
-    if (cr > 0) ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
-    else ctx.lineTo(x + w, y + h);
+
+    if (cr > 0) {
+ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
+} else {
+ctx.lineTo(x + w, y + h);
+}
+
     ctx.lineTo(x + cr, y + h);
-    if (cr > 0) ctx.arcTo(x, y + h, x, y + h - cr, cr);
-    else ctx.lineTo(x, y + h);
+
+    if (cr > 0) {
+ctx.arcTo(x, y + h, x, y + h - cr, cr);
+} else {
+ctx.lineTo(x, y + h);
+}
+
     ctx.lineTo(x, y + cr);
-    if (cr > 0) ctx.arcTo(x, y, x + cr, y, cr);
-    else ctx.lineTo(x, y);
+
+    if (cr > 0) {
+ctx.arcTo(x, y, x + cr, y, cr);
+} else {
+ctx.lineTo(x, y);
+}
+
     ctx.closePath();
 }
 
@@ -144,7 +169,11 @@ function renderStyleFrame(
     canvas.height = cssH * dpr;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+
+    if (!ctx) {
+return;
+}
+
     ctx.scale(dpr, dpr);
 
     // Stage background
@@ -183,6 +212,7 @@ function renderStyleFrame(
 
     // Background
     const { background } = style;
+
     if (background.type === 'solid') {
         ctx.fillStyle = background.colors[0];
         ctx.fillRect(cardX, cardY, cardW, cardH);
@@ -213,6 +243,7 @@ function renderStyleFrame(
         const imgAreaY = cardY + pad;
         const imgAreaW = cardW - pad * 2;
         const imgAreaH = cardH - pad * 2;
+
         if (imgAreaW > 0 && imgAreaH > 0) {
             const scale = Math.min(
                 imgAreaW / img.naturalWidth,
@@ -252,9 +283,17 @@ let heroCycleTimer: ReturnType<typeof setInterval> | null = null;
 
 async function renderHero(slug: string): Promise<void> {
     const canvas = heroCanvas.value;
-    if (!canvas) return;
+
+    if (!canvas) {
+return;
+}
+
     const style = styles.find((s) => s.slug === slug);
-    if (!style) return;
+
+    if (!style) {
+return;
+}
+
     const img = await loadDemoImage();
     renderStyleFrame(canvas, style, img);
 }
@@ -287,7 +326,11 @@ let baIsDragging = false;
 
 function baMoveAt(clientX: number): void {
     const container = baContainerRef.value;
-    if (!container) return;
+
+    if (!container) {
+return;
+}
+
     const rect = container.getBoundingClientRect();
     baDivPct.value = Math.min(
         Math.max(((clientX - rect.left) / rect.width) * 100, 0),
@@ -301,7 +344,9 @@ function onBaMouseDown(e: MouseEvent): void {
 }
 
 function onWindowMouseMove(e: MouseEvent): void {
-    if (baIsDragging) baMoveAt(e.clientX);
+    if (baIsDragging) {
+baMoveAt(e.clientX);
+}
 }
 
 function onWindowMouseUp(): void {
@@ -309,7 +354,10 @@ function onWindowMouseUp(): void {
 }
 
 function onBaTouchMove(e: TouchEvent): void {
-    if (e.cancelable) e.preventDefault();
+    if (e.cancelable) {
+e.preventDefault();
+}
+
     baMoveAt(e.touches[0].clientX);
 }
 
@@ -323,14 +371,22 @@ function onBaKeyDown(e: KeyboardEvent): void {
 
 function renderBefore(img: HTMLImageElement): void {
     const canvas = baBeforeCanvas.value;
-    if (!canvas) return;
+
+    if (!canvas) {
+return;
+}
+
     const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
     const cssW = canvas.offsetWidth || 760;
     const cssH = canvas.offsetHeight || 420;
     canvas.width = cssW * dpr;
     canvas.height = cssH * dpr;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+
+    if (!ctx) {
+return;
+}
+
     ctx.scale(dpr, dpr);
     ctx.fillStyle = '#1a1a22';
     ctx.fillRect(0, 0, cssW, cssH);
@@ -407,7 +463,10 @@ onMounted(async () => {
     // Style gallery
     styles.forEach((style, i) => {
         const canvas = galleryRefs.value[i];
-        if (canvas) renderStyleFrame(canvas, style, img);
+
+        if (canvas) {
+renderStyleFrame(canvas, style, img);
+}
     });
 
     // Before canvas (raw, greyed by CSS filter)
@@ -423,7 +482,10 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    if (heroCycleTimer) clearInterval(heroCycleTimer);
+    if (heroCycleTimer) {
+clearInterval(heroCycleTimer);
+}
+
     window.removeEventListener('mousemove', onWindowMouseMove);
     window.removeEventListener('mouseup', onWindowMouseUp);
 });
@@ -464,7 +526,7 @@ onUnmounted(() => {
                     <Link :href="editor()" class="btn-primary"
                         >Open the editor →</Link
                     >
-                    <a href="/auth/github" class="btn-ghost">
+                    <a :href="githubRoute.url()" class="btn-ghost">
                         <svg
                             width="16"
                             height="16"
@@ -721,8 +783,8 @@ onUnmounted(() => {
                     <p class="footer-ph">Made in the Philippines 🇵🇭</p>
                 </div>
                 <div class="footer-links">
-                    <a href="/changelog" class="footer-link">Changelog</a>
-                    <a href="/docs/api" class="footer-link">API Docs</a>
+                    <Link :href="changelog()" class="footer-link">Changelog</Link>
+                    <Link :href="apiDocs()" class="footer-link">API Docs</Link>
                 </div>
                 <div class="footer-social">
                     <a

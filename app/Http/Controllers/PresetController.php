@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Presets\StorePresetRequest;
 use App\Models\Preset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PresetController extends Controller
 {
@@ -28,18 +30,12 @@ class PresetController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StorePresetRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'style_slug' => ['required', 'string', 'max:60'],
-            'customizations' => ['required', 'array'],
-            'team_id' => ['nullable', 'integer'],
-        ]);
+        $validated = $request->validated();
 
         $teamId = $validated['team_id'] ?? null;
 
-        // Verify membership before assigning to a team
         if ($teamId !== null) {
             $user = $request->user();
             $isMember = $user->teams()->where('team_id', $teamId)->exists();
@@ -56,9 +52,9 @@ class PresetController extends Controller
         return response()->json($preset->only(['id', 'name', 'style_slug', 'customizations', 'team_id']), 201);
     }
 
-    public function destroy(Preset $preset, Request $request): JsonResponse
+    public function destroy(Preset $preset): JsonResponse
     {
-        abort_if($preset->user_id !== $request->user()->id, 403);
+        Gate::authorize('delete', $preset);
 
         $preset->delete();
 

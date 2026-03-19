@@ -119,7 +119,7 @@ defineProps<{
 
         <div class="grid grid-cols-2 gap-3">
             <a
-                :href="githubRoute()"
+                :href="githubRoute.url()"
                 class="flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -128,7 +128,7 @@ defineProps<{
                 GitHub
             </a>
             <a
-                :href="googleRoute()"
+                :href="googleRoute.url()"
                 class="flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
             >
                 <svg class="h-4 w-4" viewBox="0 0 24 24">

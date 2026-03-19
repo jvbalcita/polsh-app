@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { useEditorStore, type SavedPreset } from '@/stores/editor';
-import type { StyleConfig } from '@/types/style';
+import { ref, computed, onMounted } from 'vue';
 import { loadDemoImage, renderStyleFrame } from '@/composables/useStyleCanvas';
+import { useEditorStore  } from '@/stores/editor';
+import type {SavedPreset} from '@/stores/editor';
+import type { StyleConfig } from '@/types/style';
 
 const store = useEditorStore();
 const page = usePage();
@@ -49,7 +50,10 @@ onMounted(async () => {
     const img = await loadDemoImage();
     store.allStyles.forEach((style, i) => {
         const canvas = canvasRefs.value[i];
-        if (canvas) renderStyleFrame(canvas, style, img);
+
+        if (canvas) {
+renderStyleFrame(canvas, style, img);
+}
     });
 });
 </script>

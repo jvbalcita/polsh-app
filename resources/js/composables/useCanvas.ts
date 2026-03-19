@@ -1,4 +1,5 @@
-import { computed, type Ref } from 'vue';
+import { computed  } from 'vue';
+import type {Ref} from 'vue';
 import { useEditorStore } from '@/stores/editor';
 import type { StyleConfig } from '@/types/style';
 
@@ -39,6 +40,7 @@ function angleToGradientPoints(
     const mag = Math.abs((cos * width) / 2) + Math.abs((sin * height) / 2);
     const cx = width / 2;
     const cy = height / 2;
+
     return {
         start: { x: cx - cos * mag, y: cy - sin * mag },
         end: { x: cx + cos * mag, y: cy + sin * mag },
@@ -53,6 +55,7 @@ export function createNoiseCanvas(intensity: number): HTMLCanvasElement {
     const ctx = canvas.getContext('2d')!;
     const imageData = ctx.createImageData(size, size);
     const data = imageData.data;
+
     for (let i = 0; i < data.length; i += 4) {
         const val = Math.floor(Math.random() * 255);
         data[i] = val;
@@ -60,7 +63,9 @@ export function createNoiseCanvas(intensity: number): HTMLCanvasElement {
         data[i + 2] = val;
         data[i + 3] = Math.round(intensity * 255);
     }
+
     ctx.putImageData(imageData, 0, 0);
+
     return canvas;
 }
 
@@ -79,11 +84,26 @@ function getBorderStrokeColor(style: StyleConfig, borderColor: string): string {
 }
 
 function chromeHeightForFrame(frameType: string): number {
-    if (frameType === 'macos-dark' || frameType === 'macos-light') return CHROME_HEIGHT_MACOS;
-    if (frameType === 'browser') return CHROME_HEIGHT_BROWSER;
-    if (frameType === 'terminal') return CHROME_HEIGHT_TERMINAL;
-    if (frameType === 'window-minimal') return CHROME_HEIGHT_MINIMAL;
-    if (frameType === 'code-editor') return CHROME_HEIGHT_CODE_EDITOR_TAB;
+    if (frameType === 'macos-dark' || frameType === 'macos-light') {
+return CHROME_HEIGHT_MACOS;
+}
+
+    if (frameType === 'browser') {
+return CHROME_HEIGHT_BROWSER;
+}
+
+    if (frameType === 'terminal') {
+return CHROME_HEIGHT_TERMINAL;
+}
+
+    if (frameType === 'window-minimal') {
+return CHROME_HEIGHT_MINIMAL;
+}
+
+    if (frameType === 'code-editor') {
+return CHROME_HEIGHT_CODE_EDITOR_TAB;
+}
+
     return 0;
 }
 
@@ -97,6 +117,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
     const cardDimensions = computed<{ w: number; h: number }>(() => {
         const sizeKey = store.activeSettings?.canvasSize ?? '';
         let ratio: number;
+
         if (sizeKey.startsWith('custom-')) {
             const [cw, ch] = sizeKey.slice(7).split('x').map(Number);
             ratio = (cw && ch) ? cw / ch : 16 / 9;
@@ -104,14 +125,17 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
             const size = CANVAS_SIZES[sizeKey];
             ratio = size ? size.w / size.h : (ASPECT_RATIOS[store.activeSettings?.aspectRatio ?? '16:9'] ?? 16 / 9);
         }
+
         const maxW = containerWidth.value - CANVAS_MARGIN * 2;
         const maxH = containerHeight.value - CANVAS_MARGIN * 2;
         let w = maxW;
         let h = w / ratio;
+
         if (h > maxH) {
             h = maxH;
             w = h * ratio;
         }
+
         return { w: Math.floor(w), h: Math.floor(h) };
     });
 
@@ -125,6 +149,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         const { w, h } = cardDimensions.value;
         const ch = chromeHeight.value;
         const aw = activityBarWidth.value;
+
         return {
             x: pad + aw,
             y: pad + ch,
@@ -150,6 +175,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
     const shadowRectConfig = computed(() => {
         const s = store.activeSettings;
         const { w, h } = cardDimensions.value;
+
         return {
             x: cardX.value,
             y: cardY.value,
@@ -191,7 +217,9 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         const { w, h } = cardDimensions.value;
         const base = { x: 0, y: 0, width: w, height: h, listening: false };
 
-        if (!s) return { ...base, fill: '#0a0a0c' };
+        if (!s) {
+return { ...base, fill: '#0a0a0c' };
+}
 
         if (s.backgroundType === 'solid') {
             return { ...base, fill: s.solidColor };
@@ -205,6 +233,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         if (s.gradientIsRadial) {
             const cx = w / 2;
             const cy = h / 2;
+
             return {
                 ...base,
                 fillRadialGradientStartPoint: { x: cx, y: cy },
@@ -216,6 +245,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         }
 
         const pts = angleToGradientPoints(s.gradientAngle, w, h);
+
         return {
             ...base,
             fillLinearGradientStartPoint: pts.start,
@@ -226,9 +256,16 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const imageConfig = computed(() => {
         const img = store.activeImage;
-        if (!img) return null;
+
+        if (!img) {
+return null;
+}
+
         const { x, y, width, height } = contentArea.value;
-        if (width <= 0 || height <= 0) return null;
+
+        if (width <= 0 || height <= 0) {
+return null;
+}
 
         const imgAspect = img.naturalWidth / img.naturalHeight;
         const areaAspect = width / height;
@@ -259,9 +296,11 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
     const borderConfig = computed(() => {
         const s = store.activeSettings;
         const style = store.activeStyle;
+
         if (!s || !style || style.border.type === 'none' || s.border <= 0) {
             return null;
         }
+
         const { w, h } = cardDimensions.value;
         const bw = s.border;
         const strokeColor = getBorderStrokeColor(style, s.borderColor);
@@ -285,9 +324,17 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const macosDotsConfig = computed(() => {
         const s = store.activeSettings;
-        if (!s) return null;
+
+        if (!s) {
+return null;
+}
+
         const ft = s.frameType;
-        if (ft !== 'macos-dark' && ft !== 'macos-light') return null;
+
+        if (ft !== 'macos-dark' && ft !== 'macos-light') {
+return null;
+}
+
         const { w } = cardDimensions.value;
         const isDark = ft === 'macos-dark';
         const barFill = isDark ? '#2d2d2d' : '#e8e8e8';
@@ -300,6 +347,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
                   { x: 46, y: 14, radius: 5, fill: '#28c840' },
               ]
             : [];
+
         return {
             barConfig: { x: 0, y: 0, width: w, height: CHROME_HEIGHT_MACOS, fill: barFill, listening: false },
             separatorConfig: {
@@ -329,7 +377,11 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const browserChromeConfig = computed(() => {
         const s = store.activeSettings;
-        if (!s || s.frameType !== 'browser') return null;
+
+        if (!s || s.frameType !== 'browser') {
+return null;
+}
+
         const { w } = cardDimensions.value;
         const tabBg = '#1a1a1a';
         const barBg = '#2d2d2d';
@@ -345,6 +397,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
                   { x: 46, y: 18, radius: 5, fill: '#28c840' },
               ]
             : [];
+
         return {
             tabBarConfig: { x: 0, y: 0, width: w, height: 36, fill: tabBg, listening: false },
             activeTabConfig: { x: 76, y: 6, width: 140, height: 30, fill: tabActiveBg, cornerRadius: [6, 6, 0, 0], listening: false },
@@ -358,7 +411,11 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const terminalChromeConfig = computed(() => {
         const s = store.activeSettings;
-        if (!s || s.frameType !== 'terminal') return null;
+
+        if (!s || s.frameType !== 'terminal') {
+return null;
+}
+
         const { w } = cardDimensions.value;
         const dots = s.frameShowButtons
             ? [
@@ -367,6 +424,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
                   { x: 46, y: 14, radius: 5, fill: '#28c840' },
               ]
             : [];
+
         return {
             barConfig: { x: 0, y: 0, width: w, height: CHROME_HEIGHT_TERMINAL, fill: '#1e1e1e', listening: false },
             separatorConfig: {
@@ -394,7 +452,11 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const minimalWindowChromeConfig = computed(() => {
         const s = store.activeSettings;
-        if (!s || s.frameType !== 'window-minimal') return null;
+
+        if (!s || s.frameType !== 'window-minimal') {
+return null;
+}
+
         const { w } = cardDimensions.value;
         const dots = s.frameShowButtons
             ? [
@@ -403,6 +465,7 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
                   { x: 46, y: 12, radius: 5, fill: '#28c840' },
               ]
             : [];
+
         return {
             barConfig: { x: 0, y: 0, width: w, height: CHROME_HEIGHT_MINIMAL, fill: '#2a2a2a', listening: false },
             separatorConfig: {
@@ -417,11 +480,16 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const codeEditorChromeConfig = computed(() => {
         const s = store.activeSettings;
-        if (!s || s.frameType !== 'code-editor') return null;
+
+        if (!s || s.frameType !== 'code-editor') {
+return null;
+}
+
         const { w, h } = cardDimensions.value;
         const tabH = CHROME_HEIGHT_CODE_EDITOR_TAB;
         const aw = 40;
         const filename = s.frameTitle || 'index.ts';
+
         return {
             activityBarConfig: { x: 0, y: 0, width: aw, height: h, fill: '#1e1e1e', listening: false },
             activityBarBorderConfig: {

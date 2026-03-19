@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
 import { useElementSize } from '@vueuse/core';
-import type { VueKonvaRef } from 'vue-konva';
 import type Konva from 'konva';
-import { useEditorStore } from '@/stores/editor';
+import { ref, watch, computed } from 'vue';
+import type { VueKonvaRef } from 'vue-konva';
 import { useCanvas, createNoiseCanvas } from '@/composables/useCanvas';
 import { registerStage } from '@/composables/useExport';
+import { useEditorStore } from '@/stores/editor';
 
 const store = useEditorStore();
 
@@ -27,8 +27,12 @@ watch(
 );
 
 const noiseConfig = computed(() => {
-    if (!noiseCanvas.value || !store.activeSettings || store.activeSettings.noiseGrain <= 0) return null;
+    if (!noiseCanvas.value || !store.activeSettings || store.activeSettings.noiseGrain <= 0) {
+return null;
+}
+
     const { w, h } = canvas.cardDimensions.value;
+
     return {
         x: 0,
         y: 0,
@@ -47,7 +51,10 @@ const stageRef = ref<VueKonvaRef<Konva.Stage> | null>(null);
 
 watch(stageRef, (ref) => {
     const stage = ref?.getNode();
-    if (stage) registerStage(stage);
+
+    if (stage) {
+registerStage(stage);
+}
 }, { flush: 'post' });
 
 // Drag-and-drop / click-to-upload

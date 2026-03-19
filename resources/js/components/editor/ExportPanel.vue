@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { useEditorStore } from '@/stores/editor';
-import { useExport } from '@/composables/useExport';
+import { computed, ref } from 'vue';
 import UpgradeModal from '@/components/editor/UpgradeModal.vue';
+import { useExport } from '@/composables/useExport';
+import { useEditorStore } from '@/stores/editor';
 
 const store = useEditorStore();
 const { exportSingle, exportAll, exportSVG, isExporting } = useExport();
@@ -30,7 +30,10 @@ const hasImages = computed(() => store.images.length > 0);
 const hasMultiple = computed(() => store.images.length > 1);
 
 function onDownload(): void {
-    if (!hasImages.value) return;
+    if (!hasImages.value) {
+return;
+}
+
     if (isSVG.value) {
         exportSVG();
     } else {
@@ -41,7 +44,10 @@ function onDownload(): void {
 }
 
 function onExportAll(): void {
-    if (!hasImages.value) return;
+    if (!hasImages.value) {
+return;
+}
+
     const fmt = isSVG.value ? 'png' : store.exportSettings.exportFormat;
     exportAll(fmt, store.exportSettings.exportResolution);
 }

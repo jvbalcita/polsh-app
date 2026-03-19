@@ -1,7 +1,7 @@
-import JSZip from 'jszip';
-import { markRaw, ref } from 'vue';
-import type Konva from 'konva';
 import { usePage } from '@inertiajs/vue3';
+import JSZip from 'jszip';
+import type Konva from 'konva';
+import { markRaw, ref } from 'vue';
 import { useEditorStore } from '@/stores/editor';
 import type { ImageSettings } from '@/types/editor';
 import type { StyleConfig } from '@/types/style';
@@ -30,8 +30,14 @@ function triggerDownload(url: string, filename: string): void {
 }
 
 function mimeFromFormat(format: string): string {
-    if (format === 'jpeg') return 'image/jpeg';
-    if (format === 'webp') return 'image/webp';
+    if (format === 'jpeg') {
+return 'image/jpeg';
+}
+
+    if (format === 'webp') {
+return 'image/webp';
+}
+
     return 'image/png';
 }
 
@@ -51,7 +57,9 @@ function saveSession(imageCount: number): void {
     const stage = stageInstance.value;
     const page = usePage();
 
-    if (!stage || !page.props.auth?.user) return;
+    if (!stage || !page.props.auth?.user) {
+return;
+}
 
     const store = useEditorStore();
     const thumbnail = stage.toDataURL({ pixelRatio: 0.25, mimeType: 'image/png' });
@@ -107,6 +115,7 @@ function angleToSVGGradient(
     const y1 = cy - sin * mag;
     const x2 = cx + cos * mag;
     const y2 = cy + sin * mag;
+
     return {
         x1: Math.round((x1 / w) * 100),
         y1: Math.round((y1 / h) * 100),
@@ -148,6 +157,7 @@ function buildSVG(style: StyleConfig, settings: ImageSettings, screenshotSrc: st
     // Background fill
     let bgFill = '';
     let gradientDef = '';
+
     if (settings.backgroundType === 'solid') {
         bgFill = settings.solidColor;
     } else if (settings.backgroundType === 'transparent') {
@@ -189,6 +199,7 @@ function buildSVG(style: StyleConfig, settings: ImageSettings, screenshotSrc: st
         settings.frameType === 'browser'
             ? (() => {
                   const urlBoxW = Math.min(400, W * 0.3);
+
                   return `
   <rect x="0" y="0" width="${W}" height="36" fill="#1a1a1a"/>
   <rect x="76" y="6" width="200" height="30" rx="6" fill="#2d2d2d"/>
@@ -252,7 +263,11 @@ export function useExport() {
         scale: 1 | 2 | 4,
     ): Promise<void> {
         const stage = stageInstance.value;
-        if (!stage || store.images.length === 0) return;
+
+        if (!stage || store.images.length === 0) {
+return;
+}
+
         trackEvent('export_single');
 
         const slug = store.activeSettings?.styleSlug ?? 'polsh';
@@ -270,7 +285,11 @@ export function useExport() {
 
     async function exportAll(format: string, scale: number): Promise<void> {
         const stage = stageInstance.value;
-        if (!stage || store.images.length === 0) return;
+
+        if (!stage || store.images.length === 0) {
+return;
+}
+
         trackEvent('export_zip');
 
         isExporting.value = true;
@@ -310,7 +329,10 @@ export function useExport() {
         const style = store.activeStyle;
         const image = store.activeImage;
         const settings = store.activeSettings;
-        if (!style || !image || !settings) return;
+
+        if (!style || !image || !settings) {
+return;
+}
 
         const svgString = buildSVG(style, settings, image.src);
         const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });

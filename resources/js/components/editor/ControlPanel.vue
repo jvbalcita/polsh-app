@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { useEditorStore } from '@/stores/editor';
+import { computed, ref } from 'vue';
 import UpgradeModal from '@/components/editor/UpgradeModal.vue';
+import { useEditorStore } from '@/stores/editor';
 
 const store = useEditorStore();
 const page = usePage();
@@ -73,6 +73,7 @@ const hasFrame = computed(() => s.value?.frameType !== 'none');
 const isBrowserFrame = computed(() => s.value?.frameType === 'browser');
 const hasTitle = computed(() => {
     const ft = s.value?.frameType;
+
     return ft === 'macos-dark' || ft === 'macos-light' || ft === 'terminal' || ft === 'window-minimal' || ft === 'code-editor';
 });
 
@@ -91,15 +92,20 @@ const userHasTeam = computed(() => !!userTeamId.value);
 function openSavePreset(): void {
     if (!isPro.value && store.presets.length >= FREE_PRESET_LIMIT) {
         showPresetLimit.value = true;
+
         return;
     }
+
     showPresetLimit.value = false;
     presetName.value = store.activeStyle?.name ?? 'My Preset';
     showNameInput.value = true;
 }
 
 async function confirmSavePreset(): Promise<void> {
-    if (!presetName.value.trim()) return;
+    if (!presetName.value.trim()) {
+return;
+}
+
     isSaving.value = true;
     const teamId = shareWithTeam.value && userTeamId.value ? userTeamId.value : null;
     await store.savePreset(presetName.value.trim(), teamId);

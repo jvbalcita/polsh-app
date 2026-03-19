@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Billing\CheckoutRequest;
 use App\Mail\PaymentFailed;
 use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\PayMongoService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,12 +35,8 @@ class BillingController extends Controller
         ]);
     }
 
-    public function checkout(Request $request): RedirectResponse
+    public function checkout(CheckoutRequest $request): RedirectResponse
     {
-        $request->validate([
-            'plan' => ['required', 'in:pro_monthly,pro_yearly'],
-        ]);
-
         $user = $request->user();
         $plan = $request->input('plan');
 
@@ -87,12 +86,12 @@ class BillingController extends Controller
             return redirect()->route('billing.portal')->with('error', 'Payment not completed.');
         }
 
-        // Extract plan from description field
-        preg_match('/plan:(\w+)/', $attributes['description'] ?? '', $planMatch);
-        $plan = $planMatch[1] ?? 'pro_monthly';
+        ['userId' => $checkoutUserId, 'plan' => $plan] = $this->extractCheckoutMetadata(
+            $attributes['description'] ?? ''
+        );
 
         $this->activateSubscription(
-            userId: $user->id,
+            userId: $checkoutUserId ?? $user->id,
             plan: $plan,
             sessionId: $sessionId,
             amount: $attributes['line_items'][0]['amount'] ?? 0,
@@ -143,11 +142,9 @@ class BillingController extends Controller
             return;
         }
 
-        preg_match('/user:(\d+)/', $attributes['description'] ?? '', $userMatch);
-        preg_match('/plan:(\w+)/', $attributes['description'] ?? '', $planMatch);
-
-        $userId = $userMatch[1] ?? null;
-        $plan = $planMatch[1] ?? 'pro_monthly';
+        ['userId' => $userId, 'plan' => $plan] = $this->extractCheckoutMetadata(
+            $attributes['description'] ?? ''
+        );
 
         if (! $userId) {
             return;
@@ -185,30 +182,69 @@ class BillingController extends Controller
         int $amount,
         ?string $paymentMethodId
     ): void {
+        $startedAt = now();
         $periodEnd = $plan === 'pro_yearly'
-            ? Carbon::now()->addYear()
-            : Carbon::now()->addMonth();
+            ? Carbon::parse($startedAt)->addYear()
+            : Carbon::parse($startedAt)->addMonth();
 
-        $subscription = Subscription::create([
-            'user_id' => $userId,
-            'plan' => $plan,
-            'status' => 'active',
-            'paymongo_subscription_id' => $sessionId,
-            'paymongo_payment_method_id' => $paymentMethodId,
-            'current_period_start' => now(),
-            'current_period_end' => $periodEnd,
-        ]);
+        DB::transaction(function () use ($amount, $paymentMethodId, $periodEnd, $plan, $sessionId, $startedAt, $userId): void {
+            try {
+                $subscription = Subscription::create([
+                    'user_id' => $userId,
+                    'plan' => $plan,
+                    'status' => 'active',
+                    'paymongo_subscription_id' => $sessionId,
+                    'paymongo_payment_method_id' => $paymentMethodId,
+                    'current_period_start' => $startedAt,
+                    'current_period_end' => $periodEnd,
+                ]);
+            } catch (QueryException $exception) {
+                $subscription = Subscription::query()
+                    ->where('paymongo_subscription_id', $sessionId)
+                    ->first();
 
-        Payment::create([
-            'user_id' => $userId,
-            'subscription_id' => $subscription->id,
-            'paymongo_payment_id' => $sessionId,
-            'amount' => $amount,
-            'currency' => 'PHP',
-            'status' => 'paid',
-            'paid_at' => now(),
-        ]);
+                if (! $subscription) {
+                    throw $exception;
+                }
+            }
 
-        User::where('id', $userId)->update(['plan' => 'pro']);
+            try {
+                $payment = Payment::create([
+                    'user_id' => $userId,
+                    'subscription_id' => $subscription->id,
+                    'paymongo_payment_id' => $sessionId,
+                    'amount' => $amount,
+                    'currency' => 'PHP',
+                    'status' => 'paid',
+                    'paid_at' => $startedAt,
+                ]);
+            } catch (QueryException $exception) {
+                $payment = Payment::query()
+                    ->where('paymongo_payment_id', $sessionId)
+                    ->first();
+
+                if (! $payment) {
+                    throw $exception;
+                }
+            }
+
+            $payment->update(['subscription_id' => $subscription->id]);
+
+            User::query()->where('id', $userId)->update(['plan' => 'pro']);
+        });
+    }
+
+    /**
+     * @return array{userId: int|null, plan: string}
+     */
+    private function extractCheckoutMetadata(string $description): array
+    {
+        preg_match('/user:(\d+)/', $description, $userMatch);
+        preg_match('/plan:(\w+)/', $description, $planMatch);
+
+        return [
+            'userId' => isset($userMatch[1]) ? (int) $userMatch[1] : null,
+            'plan' => $planMatch[1] ?? 'pro_monthly',
+        ];
     }
 }

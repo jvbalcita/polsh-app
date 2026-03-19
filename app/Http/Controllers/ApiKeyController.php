@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApiKeys\StoreApiKeyRequest;
 use App\Models\ApiKey;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,13 +25,8 @@ class ApiKeyController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreApiKeyRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:60'],
-            'webhook_url' => ['nullable', 'url', 'max:500'],
-        ]);
-
         // Generate a high-entropy bearer token: "pk_" prefix + 40 random hex chars
         $plaintext = 'pk_'.bin2hex(random_bytes(20));
         $hash = hash('sha256', $plaintext);
@@ -54,7 +51,7 @@ class ApiKeyController extends Controller
 
     public function revoke(Request $request, ApiKey $apiKey): RedirectResponse
     {
-        abort_unless($request->user()->id === $apiKey->user_id, 403);
+        Gate::authorize('revoke', $apiKey);
 
         $apiKey->update(['revoked_at' => now()]);
 

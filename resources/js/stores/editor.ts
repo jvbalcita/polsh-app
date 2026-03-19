@@ -1,9 +1,10 @@
-import { defineStore } from 'pinia';
 import { usePage } from '@inertiajs/vue3';
+import { defineStore } from 'pinia';
 import { computed, markRaw, ref } from 'vue';
-import { DEFAULT_SETTINGS, type ExportSettings, type ImageSettings, type SessionImage } from '@/types/editor';
-import type { StyleConfig } from '@/types/style';
 import allStyles from '@/styles';
+import { DEFAULT_SETTINGS    } from '@/types/editor';
+import type {ExportSettings, ImageSettings, SessionImage} from '@/types/editor';
+import type { StyleConfig } from '@/types/style';
 
 export interface SavedPreset {
     id: number;
@@ -29,6 +30,7 @@ function getBorderColorFromStyle(style: StyleConfig): string {
 
 function settingsFromStyle(style: StyleConfig): Partial<ImageSettings> {
     const frameType = style.chrome === 'macos' ? 'macos-dark' : style.chrome === 'browser' ? 'browser' : 'none';
+
     return {
         styleSlug: style.slug,
         backgroundType: style.background.type,
@@ -66,6 +68,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     const activeStyle = computed<StyleConfig | null>(() => {
         const slug = activeSettings.value?.styleSlug;
+
         return slug ? (allStyles.find((s) => s.slug === slug) ?? null) : null;
     });
 
@@ -75,10 +78,15 @@ export const useEditorStore = defineStore('editor', () => {
     const presetsLoaded = ref(false);
 
     async function fetchPresets(): Promise<void> {
-        if (presetsLoaded.value) return;
+        if (presetsLoaded.value) {
+return;
+}
+
         const res = await fetch('/presets', { headers: { Accept: 'application/json' } });
+
         if (res.ok) {
             const data = await res.json();
+
             if (Array.isArray(data)) {
                 presets.value = data;
             } else {
@@ -86,6 +94,7 @@ export const useEditorStore = defineStore('editor', () => {
                 teamPresets.value = data.team ?? [];
             }
         }
+
         presetsLoaded.value = true;
     }
 
@@ -106,19 +115,29 @@ export const useEditorStore = defineStore('editor', () => {
                 team_id: teamId ?? null,
             }),
         });
-        if (!res.ok) return null;
+
+        if (!res.ok) {
+return null;
+}
+
         const preset: SavedPreset = await res.json();
+
         if (teamId) {
             teamPresets.value.unshift(preset);
         } else {
             presets.value.unshift(preset);
         }
+
         return preset;
     }
 
     function loadPreset(preset: SavedPreset): void {
         const img = images.value[activeIndex.value];
-        if (!img) return;
+
+        if (!img) {
+return;
+}
+
         img.settings = { ...img.settings, ...preset.customizations };
     }
 
@@ -141,20 +160,32 @@ export const useEditorStore = defineStore('editor', () => {
 
     function applyStyle(style: StyleConfig): void {
         const img = images.value[activeIndex.value];
-        if (!img) return;
+
+        if (!img) {
+return;
+}
+
         img.settings = { ...img.settings, ...settingsFromStyle(style) };
         trackEvent('style_applied');
     }
 
     function updateSetting<K extends keyof ImageSettings>(key: K, value: ImageSettings[K]): void {
         const img = images.value[activeIndex.value];
-        if (!img || img.locked) return;
+
+        if (!img || img.locked) {
+return;
+}
+
         img.settings = { ...img.settings, [key]: value };
     }
 
     function applyToAll(): void {
         const source = images.value[activeIndex.value];
-        if (!source) return;
+
+        if (!source) {
+return;
+}
+
         images.value.forEach((img) => {
             if (!img.locked && img.id !== source.id) {
                 img.settings = { ...source.settings };
@@ -165,6 +196,7 @@ export const useEditorStore = defineStore('editor', () => {
 
     function addImage(file: File): Promise<void> {
         const imageLimit = (page.props.imageLimit as number) ?? 3;
+
         if (images.value.length >= imageLimit) {
             return Promise.reject(new Error('IMAGE_LIMIT_REACHED'));
         }
@@ -198,8 +230,13 @@ export const useEditorStore = defineStore('editor', () => {
 
     function removeImage(id: string): void {
         const index = images.value.findIndex((img) => img.id === id);
-        if (index === -1) return;
+
+        if (index === -1) {
+return;
+}
+
         images.value.splice(index, 1);
+
         if (activeIndex.value >= images.value.length) {
             activeIndex.value = Math.max(0, images.value.length - 1);
         }

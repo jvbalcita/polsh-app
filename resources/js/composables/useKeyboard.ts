@@ -13,7 +13,10 @@ export function useKeyboard(): void {
 
         // Ignore shortcuts when the user is typing in an input/textarea
         const target = e.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+return;
+}
 
         // Cmd+S → export single
         if (meta && !e.shiftKey && e.key === 's') {
@@ -21,6 +24,7 @@ export function useKeyboard(): void {
             const fmt = store.exportSettings.exportFormat as 'png' | 'webp' | 'jpeg' | 'svg';
             const scale = store.exportSettings.exportResolution as 1 | 2 | 4;
             await exportSingle(fmt === 'svg' ? 'png' : fmt, scale);
+
             return;
         }
 
@@ -28,6 +32,7 @@ export function useKeyboard(): void {
         if (meta && e.shiftKey && e.key === 'z') {
             e.preventDefault();
             redo();
+
             return;
         }
 
@@ -35,6 +40,7 @@ export function useKeyboard(): void {
         if (meta && !e.shiftKey && e.key === 'z') {
             e.preventDefault();
             undo();
+
             return;
         }
 
@@ -56,9 +62,14 @@ export function useKeyboard(): void {
 
         try {
             const items = await navigator.clipboard.read();
+
             for (const item of items) {
                 const imageType = item.types.find((t) => t.startsWith('image/'));
-                if (!imageType) continue;
+
+                if (!imageType) {
+continue;
+}
+
                 const blob = await item.getType(imageType);
                 const ext = imageType.split('/')[1] ?? 'png';
                 const file = new File([blob], `paste.${ext}`, { type: imageType });
