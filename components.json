@@ -1,8 +1,8 @@
 {
   "$schema": "https://shadcn-vue.com/schema.json",
-  "style": "default",
+  "style": "new-york-v4",
   "tailwind": {
-    "config": "",
+    "config": "tailwind.config.js",
     "css": "resources/css/app.css",
     "baseColor": "neutral",
     "cssVariables": true,
@@ -11,8 +11,12 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
+    "composables": "@/composables",
     "utils": "@/lib/utils",
     "ui": "@/components/ui",
     "lib": "@/lib"
-  }
+  },
+  "registries": {
+        "@acme": "https://acme.com/r/{name}.json"
+    }
 }

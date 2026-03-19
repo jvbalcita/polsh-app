@@ -7,7 +7,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import UserMenuContent from '@/components/UserMenuContent.vue';
-import { github as githubRoute } from '@/routes/auth';
+import { login } from '@/routes';
 
 const page = usePage();
 const user = computed(() => (page.props.auth as any)?.user ?? null);
@@ -21,18 +21,13 @@ const initials = computed(() => {
         .join('')
         .toUpperCase();
 });
-
 </script>
 
 <template>
     <!-- Authenticated: avatar + dropdown -->
     <DropdownMenu v-if="user">
         <DropdownMenuTrigger as-child>
-            <button
-                type="button"
-                class="user-avatar-btn"
-                :title="user.name"
-            >
+            <button type="button" class="user-avatar-btn" :title="user.name">
                 <img
                     v-if="user.avatar"
                     :src="user.avatar"
@@ -49,7 +44,7 @@ const initials = computed(() => {
     </DropdownMenu>
 
     <!-- Unauthenticated: ghost "Sign in" button -->
-    <Link v-else :href="githubRoute()" class="sign-in-btn">Sign in</Link>
+    <Link v-else :href="login()" class="sign-in-btn">Sign in</Link>
 </template>
 
 <style scoped>
@@ -109,12 +104,14 @@ const initials = computed(() => {
     background: transparent;
     cursor: pointer;
     text-decoration: none;
-    transition: border-color 150ms ease, background 150ms ease;
+    transition:
+        border-color 150ms ease,
+        background 150ms ease;
     display: inline-flex;
     align-items: center;
 }
 .sign-in-btn:hover {
-    border-color: rgba(255, 255, 255, 0.20);
+    border-color: rgba(255, 255, 255, 0.2);
     background: #1a1a1f;
 }
 .sign-in-btn:focus-visible {
