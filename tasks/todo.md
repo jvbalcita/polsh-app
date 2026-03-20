@@ -11,6 +11,8 @@
 - [x] Refactor editor canvas geometry to separate card, image, and frame overlay bounds
 - [x] Refactor editor export paths to crop to edited card bounds and align SVG output
 - [x] Run targeted verification for unit tests, types, lint, and editor feature coverage
+- [x] Add premium editor image framing controls and desktop platform chrome support
+- [x] Add curated background presets and branded color picker styling
 
 ## Review
 
@@ -27,3 +29,9 @@
 - Updated `resources/js/composables/useExport.ts` so raster exports crop to the edited artifact, session thumbnails use the same crop, and SVG exports now mirror frame chrome, noise, glow/shadow bleed, custom canvas sizes, and escaped text safely.
 - Added focused regression coverage in `resources/js/composables/useCanvas.test.ts` and `resources/js/composables/useExport.test.ts` for framed image fill, cropped raster export, and SVG chrome/output parity.
 - Fresh verification on the latest code: `vendor/bin/sail npm run test:unit` passed with 5 tests, `vendor/bin/sail npm run lint:check` passed, `vendor/bin/sail npm run types:check` passed, and `vendor/bin/sail artisan test --compact tests/Feature/Editor/EditorPageTest.php` passed with 4 tests / 48 assertions.
+- Added `resources/js/composables/editorPresentation.ts` and `resources/js/composables/editorPresentation.test.ts` to centralize smart-fit image placement, desktop window controls, and curated background preset data.
+- Extended `resources/js/types/editor.ts` with per-image transform state and desktop platform state so each image keeps its own zoom/pan/platform configuration.
+- Updated `resources/js/composables/useCanvas.ts` and `resources/js/composables/useExport.ts` to share smart-fit image math, add Windows desktop controls to browser/terminal/minimal frames, and keep SVG export placement aligned with the live editor preview.
+- Updated `resources/js/components/editor/CanvasStage.vue` to render the new desktop controls in-canvas and refreshed `resources/js/components/editor/ControlPanel.vue` with background preset grids, branded color pickers, browser title editing, platform toggles, and image zoom/pan reset controls.
+- Fresh verification for this premium editor pass: `./node_modules/.bin/vitest run resources/js/composables/editorPresentation.test.ts resources/js/composables/useCanvas.test.ts resources/js/composables/useExport.test.ts --environment jsdom` passed with 11 tests, `./node_modules/.bin/eslint ...` passed on all changed editor files, and `npm run build` passed.
+- `./node_modules/.bin/vue-tsc --noEmit` still fails on pre-existing missing Wayfinder route type imports like `@/routes` and `@/routes/billing`; that issue predates this editor pass and was not introduced by these changes.

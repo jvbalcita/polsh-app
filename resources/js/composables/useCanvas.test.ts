@@ -64,4 +64,52 @@ describe('useCanvas', () => {
         expect(canvas.imageConfig.value.crop).toBeUndefined();
         expect(canvas.imageConfig.value.y).toBeGreaterThanOrEqual(72);
     });
+
+    it('supports zooming and panning the framed image without losing the viewport bounds', () => {
+        const store = useEditorStore();
+        store.images = [
+            {
+                id: 'image-2',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'browser',
+                    canvasSize: 'twitter-landscape',
+                    imageZoom: 1.8,
+                    imageOffsetX: 1,
+                    imageOffsetY: -1,
+                } as typeof DEFAULT_SETTINGS & {
+                    imageZoom: number;
+                    imageOffsetX: number;
+                    imageOffsetY: number;
+                },
+            },
+        ];
+
+        const canvas = useCanvas(ref(1400), ref(900)) as Record<string, any>;
+
+        expect(canvas.imageConfig.value.width).toBeGreaterThan(
+            canvas.imageBounds.value.width,
+        );
+        expect(canvas.imageConfig.value.x).toBeLessThan(
+            canvas.imageBounds.value.x,
+        );
+        expect(canvas.imageConfig.value.y).toBe(canvas.imageBounds.value.y);
+        expect(canvas.imageClipConfig.value).toEqual({
+            x: canvas.imageBounds.value.x,
+            y: canvas.imageBounds.value.y,
+            width: canvas.imageBounds.value.width,
+            height: canvas.imageBounds.value.height,
+            cornerRadii: {
+                topLeft: 0,
+                topRight: 0,
+                bottomRight: 10,
+                bottomLeft: 10,
+            },
+        });
+    });
 });

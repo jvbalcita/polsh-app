@@ -2,6 +2,10 @@ import { usePage } from '@inertiajs/vue3';
 import JSZip from 'jszip';
 import type Konva from 'konva';
 import { markRaw, ref } from 'vue';
+import {
+    calculateImagePlacement,
+    getDesktopWindowControls,
+} from '@/composables/editorPresentation';
 import { CANVAS_SIZES } from '@/composables/useCanvas';
 import { useEditorStore } from '@/stores/editor';
 import type { ImageSettings } from '@/types/editor';
@@ -156,6 +160,103 @@ const CHROME_HEIGHTS: Record<string, number> = {
     'code-editor': 36,
 };
 
+function frameInsetsForSettings(settings: ImageSettings): {
+    top: number;
+    left: number;
+} {
+    return {
+        top: CHROME_HEIGHTS[settings.frameType] ?? 0,
+        left: settings.frameType === 'code-editor' ? 40 : 0,
+    };
+}
+
+function buildWindowControlsSvg(
+    framePlatform: 'macos' | 'windows',
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
+): string {
+    const layout = getDesktopWindowControls({
+        framePlatform,
+        width,
+        height,
+    });
+
+    if (layout.platform === 'macos') {
+        const fills = {
+            close: '#ff5f57',
+            minimize: '#febc2e',
+            maximize: '#28c840',
+        } as const;
+
+        return layout.buttons
+            .map(
+                (button) =>
+                    `<circle cx="${offsetX + button.x}" cy="${offsetY + button.y}" r="${button.width / 2}" fill="${fills[button.kind]}"/>`,
+            )
+            .join('');
+    }
+
+    const labels = {
+        minimize: '—',
+        maximize: '□',
+        close: '×',
+    } as const;
+
+    return layout.buttons
+        .map((button) => {
+            const fill =
+                button.kind === 'close'
+                    ? 'rgba(232, 70, 88, 0.95)'
+                    : 'rgba(255,255,255,0.04)';
+            const textFill =
+                button.kind === 'close' ? '#ffffff' : 'rgba(255,255,255,0.7)';
+
+            return `<g data-platform="windows" data-window-control="${button.kind}"><rect x="${offsetX + button.x}" y="${offsetY + button.y}" width="${button.width}" height="${button.height}" fill="${fill}"/><text x="${offsetX + button.x + button.width / 2}" y="${offsetY + button.y + button.height / 2 + 4}" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="${textFill}">${labels[button.kind]}</text></g>`;
+        })
+        .join('');
+}
+
+function roundedRectPath(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    corners: {
+        topLeft: number;
+        topRight: number;
+        bottomRight: number;
+        bottomLeft: number;
+    },
+): string {
+    const topLeft = Math.min(corners.topLeft, width / 2, height / 2);
+    const topRight = Math.min(corners.topRight, width / 2, height / 2);
+    const bottomRight = Math.min(corners.bottomRight, width / 2, height / 2);
+    const bottomLeft = Math.min(corners.bottomLeft, width / 2, height / 2);
+
+    return [
+        `M ${x + topLeft} ${y}`,
+        `H ${x + width - topRight}`,
+        topRight > 0
+            ? `A ${topRight} ${topRight} 0 0 1 ${x + width} ${y + topRight}`
+            : `L ${x + width} ${y}`,
+        `V ${y + height - bottomRight}`,
+        bottomRight > 0
+            ? `A ${bottomRight} ${bottomRight} 0 0 1 ${x + width - bottomRight} ${y + height}`
+            : `L ${x + width} ${y + height}`,
+        `H ${x + bottomLeft}`,
+        bottomLeft > 0
+            ? `A ${bottomLeft} ${bottomLeft} 0 0 1 ${x} ${y + height - bottomLeft}`
+            : `L ${x} ${y + height}`,
+        `V ${y + topLeft}`,
+        topLeft > 0
+            ? `A ${topLeft} ${topLeft} 0 0 1 ${x + topLeft} ${y}`
+            : `L ${x} ${y}`,
+        'Z',
+    ].join(' ');
+}
+
 function angleToSVGGradient(
     angle: number,
     w: number,
@@ -236,6 +337,8 @@ function borderStrokeColorFromStyle(
 function buildSVG(
     style: StyleConfig,
     settings: ImageSettings,
+    imageWidth: number,
+    imageHeight: number,
     screenshotSrc: string,
 ): string {
     const { width: cardWidth, height: cardHeight } =
@@ -261,12 +364,42 @@ function buildSVG(
     const visualY = hasFrame ? frameY : 0;
     const visualWidth = hasFrame ? frameWidth : cardWidth;
     const visualHeight = hasFrame ? frameHeight : cardHeight;
-
-    const imgX = hasFrame ? frameX : pad;
-    const imgY = hasFrame ? frameY : pad;
-    const imgW = hasFrame ? frameWidth : cardWidth - pad * 2;
-    const imgH = hasFrame ? frameHeight : cardHeight - pad * 2;
-    const preserveAspectRatio = 'xMidYMid meet';
+    const insets = frameInsetsForSettings(settings);
+    const viewportX = hasFrame ? frameX + insets.left : pad;
+    const viewportY = hasFrame ? frameY + insets.top : pad;
+    const viewportWidth = hasFrame
+        ? frameWidth - insets.left
+        : cardWidth - pad * 2;
+    const viewportHeight = hasFrame
+        ? frameHeight - insets.top
+        : cardHeight - pad * 2;
+    const viewportRadius = Math.max(0, r - 2);
+    const viewportClipPath = roundedRectPath(
+        viewportX,
+        viewportY,
+        viewportWidth,
+        viewportHeight,
+        {
+            topLeft: insets.top > 0 ? 0 : viewportRadius,
+            topRight: insets.top > 0 ? 0 : viewportRadius,
+            bottomRight: viewportRadius,
+            bottomLeft: viewportRadius,
+        },
+    );
+    const imagePlacement = calculateImagePlacement({
+        viewportX,
+        viewportY,
+        viewportWidth,
+        viewportHeight,
+        imageWidth,
+        imageHeight,
+        zoom: settings.imageZoom,
+        offsetX: settings.imageOffsetX,
+        offsetY: settings.imageOffsetY,
+    });
+    const preserveAspectRatio = imagePlacement.isClipped
+        ? 'none'
+        : 'xMidYMid meet';
 
     // Background fill
     let bgFill = '';
@@ -351,16 +484,26 @@ function buildSVG(
     const browserChrome =
         settings.frameType === 'browser'
             ? (() => {
+                  const isWindows = settings.framePlatform === 'windows';
                   const urlBoxW = Math.min(260, frameWidth * 0.4);
+                  const browserControls = settings.frameShowButtons
+                      ? buildWindowControlsSvg(
+                            settings.framePlatform,
+                            frameWidth,
+                            36,
+                            frameX,
+                            frameY,
+                        )
+                      : '';
 
                   return `
-  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="36" fill="#1a1a1a"/>
-  <rect x="${frameX + 76}" y="${frameY + 6}" width="140" height="30" rx="6" fill="#2d2d2d"/>
-  <text x="${frameX + 92}" y="${frameY + 24}" font-size="11" fill="rgba(255,255,255,0.4)">${escapeXml(settings.frameTitle || 'Tab')}</text>
-  <rect x="${frameX}" y="${frameY + 36}" width="${frameWidth}" height="36" fill="#2d2d2d"/>
-  <rect x="${frameX + (frameWidth - urlBoxW) / 2}" y="${frameY + 44}" width="${urlBoxW}" height="20" rx="10" fill="#1a1a1a"/>
-  <text x="${frameX + (frameWidth - urlBoxW) / 2 + 12}" y="${frameY + 58}" font-size="11" fill="rgba(255,255,255,0.4)">${escapeXml(settings.frameUrl || 'example.com')}</text>
-  ${settings.frameShowButtons ? `<circle cx="${frameX + 14}" cy="${frameY + 18}" r="5" fill="#ff5f57"/><circle cx="${frameX + 30}" cy="${frameY + 18}" r="5" fill="#febc2e"/><circle cx="${frameX + 46}" cy="${frameY + 18}" r="5" fill="#28c840"/>` : ''}`;
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="36" fill="${isWindows ? '#20242d' : '#17181d'}"/>
+  <rect x="${frameX + (isWindows ? 18 : 76)}" y="${frameY + 6}" width="${isWindows ? 164 : 140}" height="30" rx="8" fill="${isWindows ? '#313846' : '#2d3038'}"/>
+  <text x="${frameX + (isWindows ? 34 : 92)}" y="${frameY + 24}" font-size="11" fill="${isWindows ? 'rgba(245,248,255,0.68)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameTitle || 'Tab')}</text>
+  <rect x="${frameX}" y="${frameY + 36}" width="${frameWidth}" height="36" fill="${isWindows ? '#2b313c' : '#262932'}"/>
+  <rect x="${frameX + (frameWidth - urlBoxW) / 2}" y="${frameY + 44}" width="${urlBoxW}" height="20" rx="10" fill="${isWindows ? '#161b24' : '#14171e'}"/>
+  <text x="${frameX + (frameWidth - urlBoxW) / 2 + 12}" y="${frameY + 58}" font-size="10.5" fill="${isWindows ? 'rgba(213,221,235,0.72)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameUrl || 'example.com')}</text>
+  ${browserControls}`;
               })()
             : '';
 
@@ -368,18 +511,20 @@ function buildSVG(
     const terminalChrome =
         settings.frameType === 'terminal'
             ? `
-  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="${chromeH}" fill="#1e1e1e"/>
-  <line x1="${frameX}" y1="${frameY + 27.5}" x2="${frameX + frameWidth}" y2="${frameY + 27.5}" stroke="#333333" stroke-width="1"/>
-  <text x="${frameX + frameWidth / 2}" y="${frameY + 17}" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.45)">${escapeXml(settings.frameTitle || 'zsh')}</text>
-  ${settings.frameShowButtons ? `<circle cx="${frameX + 14}" cy="${frameY + 14}" r="5" fill="#ff5f57"/><circle cx="${frameX + 30}" cy="${frameY + 14}" r="5" fill="#febc2e"/><circle cx="${frameX + 46}" cy="${frameY + 14}" r="5" fill="#28c840"/>` : ''}`
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="${chromeH}" fill="${settings.framePlatform === 'windows' ? '#111827' : '#12161d'}"/>
+  <line x1="${frameX}" y1="${frameY + 27.5}" x2="${frameX + frameWidth}" y2="${frameY + 27.5}" stroke="${settings.framePlatform === 'windows' ? '#314158' : '#27303b'}" stroke-width="1"/>
+  <text x="${frameX + (settings.framePlatform === 'windows' ? 20 : 74)}" y="${frameY + 18}" font-size="9" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.34)">${escapeXml(settings.framePlatform === 'windows' ? 'PS C:\\workspace' : '~/workspace')}</text>
+  <text x="${frameX + frameWidth / 2}" y="${frameY + 17}" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.62)">${escapeXml(settings.frameTitle || 'zsh')}</text>
+  ${settings.frameShowButtons ? buildWindowControlsSvg(settings.framePlatform, frameWidth, chromeH, frameX, frameY) : ''}`
             : '';
 
     const minimalWindowChrome =
         settings.frameType === 'window-minimal'
             ? `
-  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="24" fill="#2a2a2a"/>
-  <line x1="${frameX}" y1="${frameY + 23.5}" x2="${frameX + frameWidth}" y2="${frameY + 23.5}" stroke="#363636" stroke-width="1"/>
-  ${settings.frameShowButtons ? `<circle cx="${frameX + 14}" cy="${frameY + 12}" r="5" fill="#ff5f57"/><circle cx="${frameX + 30}" cy="${frameY + 12}" r="5" fill="#febc2e"/><circle cx="${frameX + 46}" cy="${frameY + 12}" r="5" fill="#28c840"/>` : ''}`
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="24" fill="${settings.framePlatform === 'windows' ? '#1b2330' : '#20242b'}"/>
+  <line x1="${frameX}" y1="${frameY + 23.5}" x2="${frameX + frameWidth}" y2="${frameY + 23.5}" stroke="${settings.framePlatform === 'windows' ? '#334155' : '#3a404b'}" stroke-width="1"/>
+  <text x="${frameX + frameWidth / 2}" y="${frameY + 15}" text-anchor="middle" font-size="10" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.5)">${escapeXml(settings.frameTitle || 'Window')}</text>
+  ${settings.frameShowButtons ? buildWindowControlsSvg(settings.framePlatform, frameWidth, 24, frameX, frameY) : ''}`
             : '';
 
     const codeEditorChrome =
@@ -414,7 +559,12 @@ function buildSVG(
     </clipPath>
 
     <!-- Screenshot -->
-    <image x="${imgX}" y="${imgY}" width="${imgW}" height="${imgH}"
+    <clipPath id="image-clip">
+      <path d="${viewportClipPath}"/>
+    </clipPath>
+
+    <image x="${imagePlacement.x}" y="${imagePlacement.y}" width="${imagePlacement.width}" height="${imagePlacement.height}"
+      clip-path="url(#image-clip)"
       preserveAspectRatio="${preserveAspectRatio}"
       xlink:href="${screenshotSrc}"/>
 
@@ -519,7 +669,13 @@ export function useExport() {
             return;
         }
 
-        const svgString = buildSVG(style, settings, image.src);
+        const svgString = buildSVG(
+            style,
+            settings,
+            image.naturalWidth,
+            image.naturalHeight,
+            image.src,
+        );
         const blob = new Blob([svgString], {
             type: 'image/svg+xml;charset=utf-8',
         });

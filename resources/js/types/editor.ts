@@ -7,9 +7,13 @@ export interface ImageSettings {
     gradientIsRadial: boolean;
     solidColor: string;
     frameType: string;
+    framePlatform: 'macos' | 'windows';
     frameTitle: string;
     frameUrl: string;
     frameShowButtons: boolean;
+    imageZoom: number;
+    imageOffsetX: number;
+    imageOffsetY: number;
     padding: number;
     radius: number;
     shadow: number; // 0–100 percent
@@ -31,9 +35,13 @@ export const DEFAULT_SETTINGS: ImageSettings = {
     gradientIsRadial: false,
     solidColor: '#1a1a2e',
     frameType: 'none',
+    framePlatform: 'macos',
     frameTitle: 'My App',
     frameUrl: 'example.com',
     frameShowButtons: true,
+    imageZoom: 1,
+    imageOffsetX: 0,
+    imageOffsetY: 0,
     padding: 48,
     radius: 12,
     shadow: 50,

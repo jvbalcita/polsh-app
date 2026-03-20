@@ -1,5 +1,9 @@
 import { computed } from 'vue';
 import type { Ref } from 'vue';
+import {
+    calculateImagePlacement,
+    getDesktopWindowControls,
+} from '@/composables/editorPresentation';
 import { useEditorStore } from '@/stores/editor';
 import type { StyleConfig } from '@/types/style';
 
@@ -31,6 +35,24 @@ const CHROME_HEIGHT_TERMINAL = 28;
 const CHROME_HEIGHT_MINIMAL = 24;
 const CHROME_HEIGHT_CODE_EDITOR_TAB = 36;
 const CANVAS_MARGIN = 64;
+
+interface CanvasWindowControl {
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+    radius?: number;
+    fill: string;
+    cornerRadius?: number;
+    kind: 'close' | 'maximize' | 'minimize';
+}
+
+interface CanvasWindowControlIcon {
+    x: number;
+    y: number;
+    text: string;
+    fill: string;
+}
 
 function angleToGradientPoints(
     angle: number,
@@ -108,6 +130,83 @@ function chromeHeightForFrame(frameType: string): number {
     }
 
     return 0;
+}
+
+function buildWindowControlsConfig(
+    framePlatform: 'macos' | 'windows',
+    width: number,
+    height: number,
+    showButtons: boolean,
+): {
+    platform: 'macos' | 'windows';
+    circles: CanvasWindowControl[];
+    buttons: CanvasWindowControl[];
+    icons: CanvasWindowControlIcon[];
+} {
+    if (!showButtons) {
+        return {
+            platform: framePlatform,
+            circles: [],
+            buttons: [],
+            icons: [],
+        };
+    }
+
+    const layout = getDesktopWindowControls({
+        framePlatform,
+        width,
+        height,
+    });
+
+    if (layout.platform === 'macos') {
+        const fills = {
+            close: '#ff5f57',
+            minimize: '#febc2e',
+            maximize: '#28c840',
+        } as const;
+
+        return {
+            platform: 'macos',
+            circles: layout.buttons.map((button) => ({
+                x: button.x,
+                y: button.y,
+                radius: button.width / 2,
+                fill: fills[button.kind],
+                kind: button.kind,
+            })),
+            buttons: [],
+            icons: [],
+        };
+    }
+
+    const iconMap = {
+        minimize: '—',
+        maximize: '□',
+        close: '×',
+    } as const;
+
+    return {
+        platform: 'windows',
+        circles: [],
+        buttons: layout.buttons.map((button) => ({
+            x: button.x,
+            y: button.y,
+            width: button.width,
+            height: button.height,
+            cornerRadius: 0,
+            fill:
+                button.kind === 'close'
+                    ? 'rgba(232, 70, 88, 0.95)'
+                    : 'rgba(255,255,255,0.04)',
+            kind: button.kind,
+        })),
+        icons: layout.buttons.map((button) => ({
+            x: button.x + button.width / 2,
+            y: button.y + button.height / 2 + 4,
+            text: iconMap[button.kind],
+            fill: button.kind === 'close' ? '#ffffff' : 'rgba(255,255,255,0.7)',
+        })),
+    };
 }
 
 export function useCanvas(
@@ -387,8 +486,9 @@ export function useCanvas(
 
     const imageConfig = computed(() => {
         const img = store.activeImage;
+        const settings = store.activeSettings;
 
-        if (!img) {
+        if (!img || !settings) {
             return null;
         }
 
@@ -398,31 +498,90 @@ export function useCanvas(
             return null;
         }
 
-        const imgAspect = img.naturalWidth / img.naturalHeight;
-        const areaAspect = width / height;
-
-        let displayW = width;
-        let displayH = height;
-        let displayX = x;
-        let displayY = y;
-
-        if (imgAspect > areaAspect) {
-            displayH = displayW / imgAspect;
-            displayY += (height - displayH) / 2;
-        } else {
-            displayW = displayH * imgAspect;
-            displayX += (width - displayW) / 2;
-        }
+        const placement = calculateImagePlacement({
+            viewportX: x,
+            viewportY: y,
+            viewportWidth: width,
+            viewportHeight: height,
+            imageWidth: img.naturalWidth,
+            imageHeight: img.naturalHeight,
+            zoom: settings.imageZoom,
+            offsetX: settings.imageOffsetX,
+            offsetY: settings.imageOffsetY,
+        });
 
         return {
             image: img.element,
-            x: displayX,
-            y: displayY,
-            width: displayW,
-            height: displayH,
+            x: placement.x,
+            y: placement.y,
+            width: placement.width,
+            height: placement.height,
             listening: false,
         };
     });
+
+    const imageClipConfig = computed(() => {
+        const { x, y, width, height } = imageBounds.value;
+        const radius = Math.max(0, (store.activeSettings?.radius ?? 12) - 2);
+        const topRadius = frameOverlayBounds.value.topInset > 0 ? 0 : radius;
+
+        return {
+            x,
+            y,
+            width,
+            height,
+            cornerRadii: {
+                topLeft: topRadius,
+                topRight: topRadius,
+                bottomRight: radius,
+                bottomLeft: radius,
+            },
+        };
+    });
+
+    const imageClipGroupConfig = computed(() => ({
+        clipFunc: (ctx: CanvasRenderingContext2D) => {
+            const { x, y, width, height, cornerRadii } = imageClipConfig.value;
+            const topLeft = Math.min(
+                cornerRadii.topLeft,
+                width / 2,
+                height / 2,
+            );
+            const topRight = Math.min(
+                cornerRadii.topRight,
+                width / 2,
+                height / 2,
+            );
+            const bottomRight = Math.min(
+                cornerRadii.bottomRight,
+                width / 2,
+                height / 2,
+            );
+            const bottomLeft = Math.min(
+                cornerRadii.bottomLeft,
+                width / 2,
+                height / 2,
+            );
+
+            ctx.beginPath();
+            ctx.moveTo(x + topLeft, y);
+            ctx.lineTo(x + width - topRight, y);
+            ctx.arcTo(x + width, y, x + width, y + topRight, topRight);
+            ctx.lineTo(x + width, y + height - bottomRight);
+            ctx.arcTo(
+                x + width,
+                y + height,
+                x + width - bottomRight,
+                y + height,
+                bottomRight,
+            );
+            ctx.lineTo(x + bottomLeft, y + height);
+            ctx.arcTo(x, y + height, x, y + height - bottomLeft, bottomLeft);
+            ctx.lineTo(x, y + topLeft);
+            ctx.arcTo(x, y, x + topLeft, y, topLeft);
+            ctx.closePath();
+        },
+    }));
 
     const borderConfig = computed(() => {
         const s = store.activeSettings;
@@ -529,20 +688,22 @@ export function useCanvas(
         }
 
         const { width: w } = frameBounds.value;
-        const tabBg = '#1a1a1a';
-        const barBg = '#2d2d2d';
-        const urlBoxBg = '#1a1a1a';
-        const tabActiveBg = '#2d2d2d';
-        const textColor = 'rgba(255,255,255,0.4)';
+        const isWindows = s.framePlatform === 'windows';
+        const tabBg = isWindows ? '#20242d' : '#17181d';
+        const barBg = isWindows ? '#2b313c' : '#262932';
+        const urlBoxBg = isWindows ? '#161b24' : '#14171e';
+        const tabActiveBg = isWindows ? '#313846' : '#2d3038';
+        const textColor = isWindows
+            ? 'rgba(245,248,255,0.68)'
+            : 'rgba(255,255,255,0.46)';
         const urlBoxW = Math.min(260, w * 0.4);
         const url = s.frameUrl || 'example.com';
-        const dots = s.frameShowButtons
-            ? [
-                  { x: 14, y: 18, radius: 5, fill: '#ff5f57' },
-                  { x: 30, y: 18, radius: 5, fill: '#febc2e' },
-                  { x: 46, y: 18, radius: 5, fill: '#28c840' },
-              ]
-            : [];
+        const windowControls = buildWindowControlsConfig(
+            s.framePlatform,
+            w,
+            36,
+            s.frameShowButtons,
+        );
 
         return {
             tabBarConfig: {
@@ -554,16 +715,16 @@ export function useCanvas(
                 listening: false,
             },
             activeTabConfig: {
-                x: 76,
+                x: isWindows ? 18 : 76,
                 y: 6,
-                width: 140,
+                width: isWindows ? 164 : 140,
                 height: 30,
                 fill: tabActiveBg,
-                cornerRadius: [6, 6, 0, 0],
+                cornerRadius: [8, 8, 0, 0],
                 listening: false,
             },
             tabTextConfig: {
-                x: 92,
+                x: windowControls.platform === 'windows' ? 34 : 92,
                 y: 15,
                 text: s.frameTitle || 'Tab',
                 fontSize: 11,
@@ -591,11 +752,13 @@ export function useCanvas(
                 x: (w - urlBoxW) / 2 + 12,
                 y: 48,
                 text: url,
-                fontSize: 11,
-                fill: textColor,
+                fontSize: 10.5,
+                fill: isWindows
+                    ? 'rgba(213,221,235,0.72)'
+                    : 'rgba(255,255,255,0.46)',
                 listening: false,
             },
-            dots,
+            windowControls,
         };
     });
 
@@ -607,13 +770,12 @@ export function useCanvas(
         }
 
         const { width: w } = frameBounds.value;
-        const dots = s.frameShowButtons
-            ? [
-                  { x: 14, y: 14, radius: 5, fill: '#ff5f57' },
-                  { x: 30, y: 14, radius: 5, fill: '#febc2e' },
-                  { x: 46, y: 14, radius: 5, fill: '#28c840' },
-              ]
-            : [];
+        const windowControls = buildWindowControlsConfig(
+            s.framePlatform,
+            w,
+            CHROME_HEIGHT_TERMINAL,
+            s.frameShowButtons,
+        );
 
         return {
             barConfig: {
@@ -621,7 +783,7 @@ export function useCanvas(
                 y: 0,
                 width: w,
                 height: CHROME_HEIGHT_TERMINAL,
-                fill: '#1e1e1e',
+                fill: s.framePlatform === 'windows' ? '#111827' : '#12161d',
                 listening: false,
             },
             separatorConfig: {
@@ -631,8 +793,20 @@ export function useCanvas(
                     w,
                     CHROME_HEIGHT_TERMINAL - 0.5,
                 ],
-                stroke: '#333333',
+                stroke: s.framePlatform === 'windows' ? '#314158' : '#27303b',
                 strokeWidth: 1,
+                listening: false,
+            },
+            shellLabelConfig: {
+                x: windowControls.platform === 'windows' ? 20 : 74,
+                y: 8,
+                text:
+                    s.framePlatform === 'windows'
+                        ? 'PS C:\\workspace'
+                        : '~/workspace',
+                fontSize: 9,
+                fontFamily: 'DM Mono, monospace',
+                fill: 'rgba(255,255,255,0.34)',
                 listening: false,
             },
             titleConfig: {
@@ -643,12 +817,12 @@ export function useCanvas(
                 text: s.frameTitle || 'zsh',
                 fontSize: 11,
                 fontFamily: 'DM Mono, monospace',
-                fill: 'rgba(255,255,255,0.45)',
+                fill: 'rgba(255,255,255,0.62)',
                 align: 'center',
                 verticalAlign: 'middle',
                 listening: false,
             },
-            dots,
+            windowControls,
         };
     });
 
@@ -660,13 +834,12 @@ export function useCanvas(
         }
 
         const { width: w } = frameBounds.value;
-        const dots = s.frameShowButtons
-            ? [
-                  { x: 14, y: 12, radius: 5, fill: '#ff5f57' },
-                  { x: 30, y: 12, radius: 5, fill: '#febc2e' },
-                  { x: 46, y: 12, radius: 5, fill: '#28c840' },
-              ]
-            : [];
+        const windowControls = buildWindowControlsConfig(
+            s.framePlatform,
+            w,
+            CHROME_HEIGHT_MINIMAL,
+            s.frameShowButtons,
+        );
 
         return {
             barConfig: {
@@ -674,7 +847,7 @@ export function useCanvas(
                 y: 0,
                 width: w,
                 height: CHROME_HEIGHT_MINIMAL,
-                fill: '#2a2a2a',
+                fill: s.framePlatform === 'windows' ? '#1b2330' : '#20242b',
                 listening: false,
             },
             separatorConfig: {
@@ -684,11 +857,24 @@ export function useCanvas(
                     w,
                     CHROME_HEIGHT_MINIMAL - 0.5,
                 ],
-                stroke: '#363636',
+                stroke: s.framePlatform === 'windows' ? '#334155' : '#3a404b',
                 strokeWidth: 1,
                 listening: false,
             },
-            dots,
+            titleConfig: {
+                x: 0,
+                y: 0,
+                width: w,
+                height: CHROME_HEIGHT_MINIMAL,
+                text: s.frameTitle || 'Window',
+                fontSize: 10,
+                fontFamily: 'DM Mono, monospace',
+                fill: 'rgba(255,255,255,0.5)',
+                align: 'center',
+                verticalAlign: 'middle',
+                listening: false,
+            },
+            windowControls,
         };
     });
 
@@ -768,6 +954,8 @@ export function useCanvas(
         cardGroupConfig,
         cardBgConfig,
         imageConfig,
+        imageClipConfig,
+        imageClipGroupConfig,
         borderConfig,
         macosDotsConfig,
         browserChromeConfig,

@@ -244,4 +244,53 @@ describe('useExport', () => {
             '<rect x="139.2" y="92" width="121.60000000000001"',
         );
     });
+
+    it('exports windows browser chrome and transformed image placement in SVG', async () => {
+        const store = useEditorStore();
+        store.images = [
+            {
+                id: 'image-5',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'browser',
+                    framePlatform: 'windows',
+                    frameTitle: 'Windows Preview',
+                    frameUrl: 'polsh.app/editor',
+                    imageZoom: 1.8,
+                    imageOffsetX: 1,
+                    imageOffsetY: -1,
+                } as typeof DEFAULT_SETTINGS & {
+                    framePlatform: 'windows';
+                    imageZoom: number;
+                    imageOffsetX: number;
+                    imageOffsetY: number;
+                },
+            },
+        ];
+
+        let exportedBlob: Blob | null = null;
+        vi.mocked(URL.createObjectURL).mockImplementation(
+            (blob: Blob | MediaSource) => {
+                exportedBlob = blob as Blob;
+
+                return 'blob:svg-export';
+            },
+        );
+
+        const { exportSVG } = useExport();
+
+        exportSVG();
+
+        expect(exportedBlob).not.toBeNull();
+        const svg = await readBlobAsText(exportedBlob!);
+        expect(svg).toContain('data-platform="windows"');
+        expect(svg).toContain('data-window-control="close"');
+        expect(svg).toContain('Windows Preview');
+        expect(svg).toContain('preserveAspectRatio="none"');
+    });
 });

@@ -136,10 +136,12 @@ function onClickUpload(): void {
 
                     <v-group :config="canvas.frameGroupConfig.value">
                         <!-- User image -->
-                        <v-image
+                        <v-group
                             v-if="canvas.imageConfig.value"
-                            :config="canvas.imageConfig.value"
-                        />
+                            :config="canvas.imageClipGroupConfig.value"
+                        >
+                            <v-image :config="canvas.imageConfig.value" />
+                        </v-group>
 
                         <!-- macOS chrome (dark or light) -->
                         <template v-if="canvas.macosDotsConfig.value">
@@ -203,10 +205,30 @@ function onClickUpload(): void {
                                 "
                             />
                             <v-circle
-                                v-for="dot in canvas.browserChromeConfig.value
-                                    .dots"
-                                :key="dot.fill"
-                                :config="dot"
+                                v-for="control in canvas.browserChromeConfig
+                                    .value.windowControls.circles"
+                                :key="`browser-circle-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-rect
+                                v-for="control in canvas.browserChromeConfig
+                                    .value.windowControls.buttons"
+                                :key="`browser-button-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-text
+                                v-for="icon in canvas.browserChromeConfig.value
+                                    .windowControls.icons"
+                                :key="`browser-icon-${icon.text}-${icon.x}`"
+                                :config="{
+                                    ...icon,
+                                    x: icon.x - 14,
+                                    width: 28,
+                                    fontSize: 11,
+                                    fontFamily: 'DM Mono, monospace',
+                                    align: 'center',
+                                    listening: false,
+                                }"
                             />
                         </template>
 
@@ -226,14 +248,40 @@ function onClickUpload(): void {
                             <v-text
                                 :config="
                                     canvas.terminalChromeConfig.value
+                                        .shellLabelConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.terminalChromeConfig.value
                                         .titleConfig
                                 "
                             />
                             <v-circle
-                                v-for="dot in canvas.terminalChromeConfig.value
-                                    .dots"
-                                :key="dot.fill"
-                                :config="dot"
+                                v-for="control in canvas.terminalChromeConfig
+                                    .value.windowControls.circles"
+                                :key="`terminal-circle-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-rect
+                                v-for="control in canvas.terminalChromeConfig
+                                    .value.windowControls.buttons"
+                                :key="`terminal-button-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-text
+                                v-for="icon in canvas.terminalChromeConfig.value
+                                    .windowControls.icons"
+                                :key="`terminal-icon-${icon.text}-${icon.x}`"
+                                :config="{
+                                    ...icon,
+                                    x: icon.x - 14,
+                                    width: 28,
+                                    fontSize: 11,
+                                    fontFamily: 'DM Mono, monospace',
+                                    align: 'center',
+                                    listening: false,
+                                }"
                             />
                         </template>
 
@@ -251,11 +299,39 @@ function onClickUpload(): void {
                                         .separatorConfig
                                 "
                             />
+                            <v-text
+                                :config="
+                                    canvas.minimalWindowChromeConfig.value
+                                        .titleConfig
+                                "
+                            />
                             <v-circle
-                                v-for="dot in canvas.minimalWindowChromeConfig
-                                    .value.dots"
-                                :key="dot.fill"
-                                :config="dot"
+                                v-for="control in canvas
+                                    .minimalWindowChromeConfig.value
+                                    .windowControls.circles"
+                                :key="`minimal-circle-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-rect
+                                v-for="control in canvas
+                                    .minimalWindowChromeConfig.value
+                                    .windowControls.buttons"
+                                :key="`minimal-button-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-text
+                                v-for="icon in canvas.minimalWindowChromeConfig
+                                    .value.windowControls.icons"
+                                :key="`minimal-icon-${icon.text}-${icon.x}`"
+                                :config="{
+                                    ...icon,
+                                    x: icon.x - 14,
+                                    width: 28,
+                                    fontSize: 10,
+                                    fontFamily: 'DM Mono, monospace',
+                                    align: 'center',
+                                    listening: false,
+                                }"
                             />
                         </template>
 
