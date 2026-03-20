@@ -67,9 +67,9 @@ describe('editorPresentation', () => {
         expect(
             (controls.buttons[2]?.x ?? 0) + (controls.buttons[2]?.width ?? 0),
         ).toBe(960);
-        expect(controls.buttons[2]?.width).toBeGreaterThan(
-            controls.buttons[1]?.width ?? 0,
-        );
+        expect(controls.buttons.map((button) => button.width)).toEqual([
+            24, 24, 36,
+        ]);
     });
 
     it('sizes the frame from the image aspect so the screenshot fills the viewport width by default', () => {

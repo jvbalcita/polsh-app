@@ -165,9 +165,9 @@ export function getDesktopWindowControls(
     const inset = input.inset ?? 14;
 
     if (input.framePlatform === 'windows') {
-        const minimizeWidth = 30;
-        const maximizeWidth = 30;
-        const closeWidth = 42;
+        const minimizeWidth = 24;
+        const maximizeWidth = 24;
+        const closeWidth = 36;
         const buttonHeight = input.height;
         const firstButtonX =
             input.width - (minimizeWidth + maximizeWidth + closeWidth);

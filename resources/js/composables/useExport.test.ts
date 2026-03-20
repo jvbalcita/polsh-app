@@ -140,7 +140,6 @@ describe('useExport', () => {
                 },
             },
         ];
-
         let exportedBlob: Blob | null = null;
         vi.mocked(URL.createObjectURL).mockImplementation(
             (blob: Blob | MediaSource) => {
@@ -183,7 +182,6 @@ describe('useExport', () => {
                 },
             },
         ];
-
         let exportedBlob: Blob | null = null;
         vi.mocked(URL.createObjectURL).mockImplementation(
             (blob: Blob | MediaSource) => {
@@ -225,6 +223,7 @@ describe('useExport', () => {
                 },
             },
         ];
+        store.setFramePlatform('windows');
 
         let exportedBlob: Blob | null = null;
         vi.mocked(URL.createObjectURL).mockImplementation(
@@ -274,6 +273,7 @@ describe('useExport', () => {
                 },
             },
         ];
+        store.setFramePlatform('windows');
 
         let exportedBlob: Blob | null = null;
         vi.mocked(URL.createObjectURL).mockImplementation(
@@ -314,6 +314,7 @@ describe('useExport', () => {
                 },
             },
         ];
+        store.setFramePlatform('windows');
 
         let exportedBlob: Blob | null = null;
         vi.mocked(URL.createObjectURL).mockImplementation(
@@ -330,8 +331,47 @@ describe('useExport', () => {
 
         expect(exportedBlob).not.toBeNull();
         const svg = await readBlobAsText(exportedBlob!);
-        expect(svg).toContain('<rect x="102" y="54" width="100" height="30"');
-        expect(svg).toContain('<rect x="214" y="48" width="30" height="36"');
-        expect(svg).toContain('<rect x="274" y="48" width="42" height="36"');
+        expect(svg).toContain('<rect x="102" y="54" width="118" height="30"');
+        expect(svg).toContain('<rect x="232" y="48" width="24" height="36"');
+        expect(svg).toContain('<rect x="280" y="48" width="36" height="36"');
+    });
+
+    it('defaults windows desktop frame exports to square corners', async () => {
+        const store = useEditorStore();
+        store.images = [
+            {
+                id: 'image-7',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'browser',
+                    framePlatform: 'windows',
+                },
+            },
+        ];
+        store.setFramePlatform('windows');
+
+        let exportedBlob: Blob | null = null;
+        vi.mocked(URL.createObjectURL).mockImplementation(
+            (blob: Blob | MediaSource) => {
+                exportedBlob = blob as Blob;
+
+                return 'blob:svg-export';
+            },
+        );
+
+        const { exportSVG } = useExport();
+
+        exportSVG();
+
+        expect(exportedBlob).not.toBeNull();
+        const svg = await readBlobAsText(exportedBlob!);
+        expect(svg).toContain(
+            '<rect x="149.33333333333337" y="48" width="901.3333333333333" height="579" rx="0"',
+        );
     });
 });

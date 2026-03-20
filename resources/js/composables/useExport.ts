@@ -207,10 +207,10 @@ function buildWindowControlsSvg(
                     : 'rgba(255,255,255,0.04)';
             const symbol =
                 button.kind === 'minimize'
-                    ? `<line x1="${offsetX + button.x + 10}" y1="${offsetY + button.height / 2 + 5}" x2="${offsetX + button.x + button.width - 10}" y2="${offsetY + button.height / 2 + 5}" stroke="rgba(255,255,255,0.78)" stroke-width="1.5"/>`
+                    ? `<line x1="${offsetX + button.x + 7}" y1="${offsetY + button.height / 2 + 4}" x2="${offsetX + button.x + button.width - 7}" y2="${offsetY + button.height / 2 + 4}" stroke="rgba(255,255,255,0.78)" stroke-width="1.25"/>`
                     : button.kind === 'maximize'
-                      ? `<rect x="${offsetX + button.x + 10}" y="${offsetY + button.height / 2 - 5}" width="${button.width - 20}" height="10" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="1.5"/>`
-                      : `<line x1="${offsetX + button.x + 14}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + button.width - 14}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.5"/><line x1="${offsetX + button.x + button.width - 14}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + 14}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.5"/>`;
+                      ? `<rect x="${offsetX + button.x + 7}" y="${offsetY + button.height / 2 - 5}" width="${button.width - 14}" height="10" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="1.25"/>`
+                      : `<line x1="${offsetX + button.x + 11}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + button.width - 11}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.25"/><line x1="${offsetX + button.x + button.width - 11}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + 11}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.25"/>`;
 
             return `<g data-platform="windows" data-window-control="${button.kind}"><rect x="${offsetX + button.x}" y="${offsetY + button.y}" width="${button.width}" height="${button.height}" fill="${fill}"/>${symbol}</g>`;
         })
@@ -504,7 +504,16 @@ function buildSVG(
                             frameY,
                         )
                       : '';
-                  const controlsWidth = isWindows ? 102 : 0;
+                  const controlsWidth = isWindows
+                      ? getDesktopWindowControls({
+                            framePlatform: settings.framePlatform,
+                            width: frameWidth,
+                            height: 36,
+                        }).buttons.reduce(
+                            (sum, button) => sum + button.width,
+                            0,
+                        )
+                      : 0;
                   const tabX = isWindows ? 18 : 76;
                   const tabWidth = isWindows
                       ? Math.max(
