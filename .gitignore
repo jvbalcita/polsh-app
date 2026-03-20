@@ -1,29 +1,79 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Laravel files and folders
 /.phpunit.cache
 /bootstrap/ssr
-/node_modules
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
-/storage/pail
+/public/vendor
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
+/storage/pail
+/storage/*.key
 /vendor
-.DS_Store
-.env
-.env.backup
-.env.production
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
-npm-debug.log
-yarn-error.log
-/auth.json
+
+# Deployment files
+vapor.yml
+
+# Sensitive files
+*.key
+auth.json
+
+# Environment
+.env
+.env.backup
+.env.production
+*.local
+
+# Frontend files and folders
+/node_modules
+
+# Frontend Testing
+/cypress/videos/
+/cypress/screenshots/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
 /.fleet
+/.air
 /.idea
 /.nova
 /.vscode
 /.zed
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Caddy
+**/caddy
+frankenphp
+frankenphp-worker.php
+
+# MacOS files and folders
+.DS_Store
+
+# Data (Mailpit, DB volumes, etc.)
+/data
+/data/mailpit*
+mailpit
+
+# Worktrees and other hidden folders
 /.worktrees
+/.opencode/skills
+/docs
