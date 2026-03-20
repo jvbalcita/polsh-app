@@ -98,3 +98,19 @@ test('already verified user visiting verification link is redirected without fir
     Event::assertNotDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
 });
+
+test('unverified users cannot access billing portal', function () {
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->get(route('billing.portal'))
+        ->assertRedirect(route('verification.notice', absolute: false));
+});
+
+test('unverified users cannot access team settings', function () {
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertRedirect(route('verification.notice', absolute: false));
+});

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { editor } from '@/routes';
-import styles from '@/styles';
-import UserMenu from '@/components/UserMenu.vue';
 import { Layers, Palette, FileCode, Zap, Archive } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted } from 'vue';
+import UserMenu from '@/components/UserMenu.vue';
+import { changelog, editor } from '@/routes';
+import { api as apiDocs } from '@/routes/docs';
+import styles from '@/styles';
+import type { StyleConfig } from '@/types/style';
 
 // ── Demo image — inline SVG blob, no file asset needed ───────────────────────
 const DEMO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
@@ -92,8 +94,10 @@ function loadDemoImage(): Promise<HTMLImageElement> {
     return new Promise((resolve) => {
         if (demoImgCache) {
             resolve(demoImgCache);
+
             return;
         }
+
         const blob = new Blob([DEMO_SVG], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
         const img = new Image();
@@ -118,13 +122,37 @@ function rrPath(
     ctx.beginPath();
     ctx.moveTo(x + cr, y);
     ctx.lineTo(x + w - cr, y);
-    if (cr > 0) ctx.arcTo(x + w, y, x + w, y + cr, cr); else ctx.lineTo(x + w, y);
+
+    if (cr > 0) {
+        ctx.arcTo(x + w, y, x + w, y + cr, cr);
+    } else {
+        ctx.lineTo(x + w, y);
+    }
+
     ctx.lineTo(x + w, y + h - cr);
-    if (cr > 0) ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr); else ctx.lineTo(x + w, y + h);
+
+    if (cr > 0) {
+        ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
+    } else {
+        ctx.lineTo(x + w, y + h);
+    }
+
     ctx.lineTo(x + cr, y + h);
-    if (cr > 0) ctx.arcTo(x, y + h, x, y + h - cr, cr); else ctx.lineTo(x, y + h);
+
+    if (cr > 0) {
+        ctx.arcTo(x, y + h, x, y + h - cr, cr);
+    } else {
+        ctx.lineTo(x, y + h);
+    }
+
     ctx.lineTo(x, y + cr);
-    if (cr > 0) ctx.arcTo(x, y, x + cr, y, cr); else ctx.lineTo(x, y);
+
+    if (cr > 0) {
+        ctx.arcTo(x, y, x + cr, y, cr);
+    } else {
+        ctx.lineTo(x, y);
+    }
+
     ctx.closePath();
 }
 
@@ -140,7 +168,11 @@ function renderStyleFrame(
     canvas.height = cssH * dpr;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+
+    if (!ctx) {
+        return;
+    }
+
     ctx.scale(dpr, dpr);
 
     // Stage background
@@ -179,6 +211,7 @@ function renderStyleFrame(
 
     // Background
     const { background } = style;
+
     if (background.type === 'solid') {
         ctx.fillStyle = background.colors[0];
         ctx.fillRect(cardX, cardY, cardW, cardH);
@@ -209,8 +242,12 @@ function renderStyleFrame(
         const imgAreaY = cardY + pad;
         const imgAreaW = cardW - pad * 2;
         const imgAreaH = cardH - pad * 2;
+
         if (imgAreaW > 0 && imgAreaH > 0) {
-            const scale = Math.min(imgAreaW / img.naturalWidth, imgAreaH / img.naturalHeight);
+            const scale = Math.min(
+                imgAreaW / img.naturalWidth,
+                imgAreaH / img.naturalHeight,
+            );
             const scaledW = img.naturalWidth * scale;
             const scaledH = img.naturalHeight * scale;
             ctx.drawImage(
@@ -245,9 +282,17 @@ let heroCycleTimer: ReturnType<typeof setInterval> | null = null;
 
 async function renderHero(slug: string): Promise<void> {
     const canvas = heroCanvas.value;
-    if (!canvas) return;
+
+    if (!canvas) {
+        return;
+    }
+
     const style = styles.find((s) => s.slug === slug);
-    if (!style) return;
+
+    if (!style) {
+        return;
+    }
+
     const img = await loadDemoImage();
     renderStyleFrame(canvas, style, img);
 }
@@ -280,9 +325,16 @@ let baIsDragging = false;
 
 function baMoveAt(clientX: number): void {
     const container = baContainerRef.value;
-    if (!container) return;
+
+    if (!container) {
+        return;
+    }
+
     const rect = container.getBoundingClientRect();
-    baDivPct.value = Math.min(Math.max(((clientX - rect.left) / rect.width) * 100, 0), 100);
+    baDivPct.value = Math.min(
+        Math.max(((clientX - rect.left) / rect.width) * 100, 0),
+        100,
+    );
 }
 
 function onBaMouseDown(e: MouseEvent): void {
@@ -291,7 +343,9 @@ function onBaMouseDown(e: MouseEvent): void {
 }
 
 function onWindowMouseMove(e: MouseEvent): void {
-    if (baIsDragging) baMoveAt(e.clientX);
+    if (baIsDragging) {
+        baMoveAt(e.clientX);
+    }
 }
 
 function onWindowMouseUp(): void {
@@ -299,7 +353,10 @@ function onWindowMouseUp(): void {
 }
 
 function onBaTouchMove(e: TouchEvent): void {
-    if (e.cancelable) e.preventDefault();
+    if (e.cancelable) {
+        e.preventDefault();
+    }
+
     baMoveAt(e.touches[0].clientX);
 }
 
@@ -313,32 +370,85 @@ function onBaKeyDown(e: KeyboardEvent): void {
 
 function renderBefore(img: HTMLImageElement): void {
     const canvas = baBeforeCanvas.value;
-    if (!canvas) return;
+
+    if (!canvas) {
+        return;
+    }
+
     const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
     const cssW = canvas.offsetWidth || 760;
     const cssH = canvas.offsetHeight || 420;
     canvas.width = cssW * dpr;
     canvas.height = cssH * dpr;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+
+    if (!ctx) {
+        return;
+    }
+
     ctx.scale(dpr, dpr);
     ctx.fillStyle = '#1a1a22';
     ctx.fillRect(0, 0, cssW, cssH);
     const pad = cssW * 0.06;
-    const scale = Math.min((cssW - pad * 2) / img.naturalWidth, (cssH - pad * 2) / img.naturalHeight);
+    const scale = Math.min(
+        (cssW - pad * 2) / img.naturalWidth,
+        (cssH - pad * 2) / img.naturalHeight,
+    );
     const sw = img.naturalWidth * scale;
     const sh = img.naturalHeight * scale;
-    ctx.drawImage(img, pad + ((cssW - pad * 2) - sw) / 2, pad + ((cssH - pad * 2) - sh) / 2, sw, sh);
+    ctx.drawImage(
+        img,
+        pad + (cssW - pad * 2 - sw) / 2,
+        pad + (cssH - pad * 2 - sh) / 2,
+        sw,
+        sh,
+    );
 }
 
 // ── Competitive table data ────────────────────────────────────────────────────
 const compRows = [
-    { feature: 'Named style system',   polsh: true,  screely: false, pika: false, brandbird: true  },
-    { feature: 'Multi-image sessions', polsh: true,  screely: false, pika: false, brandbird: false },
-    { feature: 'SVG vector export',    polsh: true,  screely: false, pika: false, brandbird: false },
-    { feature: 'REST API access',      polsh: true,  screely: false, pika: false, brandbird: false },
-    { feature: 'Batch ZIP export',     polsh: true,  screely: false, pika: false, brandbird: false },
-    { feature: 'Free open beta',       polsh: true,  screely: false, pika: true,  brandbird: false },
+    {
+        feature: 'Named style system',
+        polsh: true,
+        screely: false,
+        pika: false,
+        brandbird: true,
+    },
+    {
+        feature: 'Multi-image sessions',
+        polsh: true,
+        screely: false,
+        pika: false,
+        brandbird: false,
+    },
+    {
+        feature: 'SVG vector export',
+        polsh: true,
+        screely: false,
+        pika: false,
+        brandbird: false,
+    },
+    {
+        feature: 'REST API access',
+        polsh: true,
+        screely: false,
+        pika: false,
+        brandbird: false,
+    },
+    {
+        feature: 'Batch ZIP export',
+        polsh: true,
+        screely: false,
+        pika: false,
+        brandbird: false,
+    },
+    {
+        feature: 'Free open beta',
+        polsh: true,
+        screely: false,
+        pika: true,
+        brandbird: false,
+    },
 ];
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -352,7 +462,10 @@ onMounted(async () => {
     // Style gallery
     styles.forEach((style, i) => {
         const canvas = galleryRefs.value[i];
-        if (canvas) renderStyleFrame(canvas, style, img);
+
+        if (canvas) {
+            renderStyleFrame(canvas, style, img);
+        }
     });
 
     // Before canvas (raw, greyed by CSS filter)
@@ -368,14 +481,17 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    if (heroCycleTimer) clearInterval(heroCycleTimer);
+    if (heroCycleTimer) {
+        clearInterval(heroCycleTimer);
+    }
+
     window.removeEventListener('mousemove', onWindowMouseMove);
     window.removeEventListener('mouseup', onWindowMouseUp);
 });
 </script>
 
 <template>
-    <Head title="Polsh — Polish your screenshots" />
+    <Head title="Polish your screenshots" />
 
     <div class="lp-root">
         <!-- ── Nav ── -->
@@ -401,21 +517,19 @@ onUnmounted(() => {
                 </h1>
 
                 <p class="hero-body">
-                    Drop in a screenshot. Pick a style. Export a stunning PNG, WebP, or SVG
-                    — no Figma plugins, no subscriptions.
+                    Drop in a screenshot. Pick a style. Export a stunning PNG,
+                    WebP, or SVG — no Figma plugins, no subscriptions.
                 </p>
 
                 <div class="hero-ctas">
-                    <Link :href="editor()" class="btn-primary">Open the editor →</Link>
-                    <a href="/auth/github" class="btn-ghost">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-                        </svg>
-                        Save presets with GitHub
-                    </a>
+                    <Link :href="editor()" class="btn-primary"
+                        >Open the editor →</Link
+                    >
                 </div>
 
-                <p class="hero-footnote">Free forever · No watermark · Works in your browser</p>
+                <p class="hero-footnote">
+                    Free forever · No watermark · Works in your browser
+                </p>
             </div>
 
             <div class="hero-demo-wrap">
@@ -440,7 +554,13 @@ onUnmounted(() => {
                     :key="style.slug"
                     class="style-gallery-card"
                 >
-                    <canvas :ref="(el) => setGalleryRef(el as HTMLCanvasElement | null, i)" class="gallery-canvas" />
+                    <canvas
+                        :ref="
+                            (el) =>
+                                setGalleryRef(el as HTMLCanvasElement | null, i)
+                        "
+                        class="gallery-canvas"
+                    />
                     <div class="style-gallery-card-name">{{ style.name }}</div>
                 </div>
             </div>
@@ -454,31 +574,48 @@ onUnmounted(() => {
                 <div class="feature-card feature-card--large">
                     <Layers class="feature-icon" aria-hidden="true" />
                     <h3>Brand Sessions</h3>
-                    <p>Save padding, radius, shadow, and color combos as named presets. Apply in one click across every screenshot in a session.</p>
+                    <p>
+                        Save padding, radius, shadow, and color combos as named
+                        presets. Apply in one click across every screenshot in a
+                        session.
+                    </p>
                 </div>
                 <!-- Named Styles -->
                 <div class="feature-card">
                     <Palette class="feature-icon" aria-hidden="true" />
                     <h3>Named Styles</h3>
-                    <p>18 hand-crafted styles from minimal white to neon-halo dark. One click, instant results.</p>
+                    <p>
+                        18 hand-crafted styles from minimal white to neon-halo
+                        dark. One click, instant results.
+                    </p>
                 </div>
                 <!-- SVG Export -->
                 <div class="feature-card">
                     <FileCode class="feature-icon" aria-hidden="true" />
                     <h3>SVG Export</h3>
-                    <p>Export lossless vector frames — perfect for Notion, Figma docs, and README headers.</p>
+                    <p>
+                        Export lossless vector frames — perfect for Notion,
+                        Figma docs, and README headers.
+                    </p>
                 </div>
                 <!-- REST API -->
                 <div class="feature-card">
                     <Zap class="feature-icon" aria-hidden="true" />
                     <h3>REST API</h3>
-                    <p>Automate via <code>POST /api/v1/glaze</code>. Style screenshots straight from your CI pipeline or build scripts.</p>
+                    <p>
+                        Automate via <code>POST /api/v1/glaze</code>. Style
+                        screenshots straight from your CI pipeline or build
+                        scripts.
+                    </p>
                 </div>
                 <!-- Batch Export -->
                 <div class="feature-card">
                     <Archive class="feature-icon" aria-hidden="true" />
                     <h3>Batch Export</h3>
-                    <p>Style up to 10 screenshots at once and download as a ZIP. One consistent look for your whole launch.</p>
+                    <p>
+                        Style up to 10 screenshots at once and download as a
+                        ZIP. One consistent look for your whole launch.
+                    </p>
                 </div>
             </div>
         </section>
@@ -498,7 +635,11 @@ onUnmounted(() => {
                 @mousedown="onBaMouseDown"
             >
                 <!-- Before (raw) -->
-                <canvas ref="baBeforeCanvas" class="ba-canvas ba-canvas--before" aria-hidden="true" />
+                <canvas
+                    ref="baBeforeCanvas"
+                    class="ba-canvas ba-canvas--before"
+                    aria-hidden="true"
+                />
                 <div class="ba-label ba-label--before">Before</div>
 
                 <!-- After (styled, clipped from left) -->
@@ -531,8 +672,20 @@ onUnmounted(() => {
                     @touchend="baIsDragging = false"
                 >
                     <div class="ba-handle">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                            <path d="M5 3L1 7L5 11M9 3L13 7L9 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 14 14"
+                            fill="none"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M5 3L1 7L5 11M9 3L13 7L9 11"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
                         </svg>
                     </div>
                 </div>
@@ -541,7 +694,9 @@ onUnmounted(() => {
 
         <!-- ── Competitive table ── -->
         <section class="table-section">
-            <h2 class="section-heading" style="margin-bottom: 32px">Why Polsh?</h2>
+            <h2 class="section-heading" style="margin-bottom: 32px">
+                Why Polsh?
+            </h2>
             <div class="table-scroll">
                 <table class="competitive-table">
                     <thead>
@@ -557,19 +712,29 @@ onUnmounted(() => {
                         <tr v-for="row in compRows" :key="row.feature">
                             <td class="comp-feat">{{ row.feature }}</td>
                             <td class="comp-cell comp-cell--polsh">
-                                <span v-if="row.polsh" class="comp-check">✓</span>
+                                <span v-if="row.polsh" class="comp-check"
+                                    >✓</span
+                                >
                                 <span v-else class="comp-dash">—</span>
                             </td>
                             <td class="comp-cell">
-                                <span v-if="row.screely" class="comp-check-dim">✓</span>
+                                <span v-if="row.screely" class="comp-check-dim"
+                                    >✓</span
+                                >
                                 <span v-else class="comp-dash">—</span>
                             </td>
                             <td class="comp-cell">
-                                <span v-if="row.pika" class="comp-check-dim">✓</span>
+                                <span v-if="row.pika" class="comp-check-dim"
+                                    >✓</span
+                                >
                                 <span v-else class="comp-dash">—</span>
                             </td>
                             <td class="comp-cell">
-                                <span v-if="row.brandbird" class="comp-check-dim">✓</span>
+                                <span
+                                    v-if="row.brandbird"
+                                    class="comp-check-dim"
+                                    >✓</span
+                                >
                                 <span v-else class="comp-dash">—</span>
                             </td>
                         </tr>
@@ -581,10 +746,15 @@ onUnmounted(() => {
         <!-- ── CTA ── -->
         <section class="cta-section">
             <h2 class="cta-heading">
-                Ready to ship <span style="color: #e0ff4f">beautiful</span> screenshots?
+                Ready to ship
+                <span style="color: #e0ff4f">beautiful</span> screenshots?
             </h2>
-            <p class="cta-sub">No account required. Drop a screenshot and go.</p>
-            <Link :href="editor()" class="btn-primary cta-btn">Start for free →</Link>
+            <p class="cta-sub">
+                No account required. Drop a screenshot and go.
+            </p>
+            <Link :href="editor()" class="btn-primary cta-btn"
+                >Start for free →</Link
+            >
         </section>
 
         <!-- ── Footer ── -->
@@ -592,22 +762,54 @@ onUnmounted(() => {
             <div class="footer-inner">
                 <div class="footer-brand">
                     <span class="lp-wordmark">polsh</span>
-                    <p class="footer-tagline">© 2026 Polsh · Screenshot styling for developers</p>
+                    <p class="footer-tagline">
+                        © 2026 Polsh · Screenshot styling for developers
+                    </p>
                     <p class="footer-ph">Made in the Philippines 🇵🇭</p>
                 </div>
                 <div class="footer-links">
-                    <a href="/changelog" class="footer-link">Changelog</a>
-                    <a href="/docs/api" class="footer-link">API Docs</a>
+                    <Link :href="changelog()" class="footer-link"
+                        >Changelog</Link
+                    >
+                    <Link :href="apiDocs()" class="footer-link">API Docs</Link>
                 </div>
                 <div class="footer-social">
-                    <a href="https://github.com/polsh-app" class="footer-social-link" target="_blank" rel="noopener" aria-label="GitHub">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                    <a
+                        href="https://github.com/polsh-app"
+                        class="footer-social-link"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="GitHub"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
+                            />
                         </svg>
                     </a>
-                    <a href="https://twitter.com/polshapp" class="footer-social-link" target="_blank" rel="noopener" aria-label="Twitter / X">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    <a
+                        href="https://twitter.com/polshapp"
+                        class="footer-social-link"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Twitter / X"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                            />
                         </svg>
                     </a>
                 </div>
@@ -666,7 +868,9 @@ onUnmounted(() => {
     font-size: 13px;
     font-weight: 500;
     text-decoration: none;
-    transition: background 150ms ease, border-color 150ms ease;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
 }
 
 .btn-editor:hover {
@@ -714,7 +918,9 @@ onUnmounted(() => {
     font-size: 14px;
     font-weight: 500;
     text-decoration: none;
-    transition: border-color 150ms ease, background 150ms ease;
+    transition:
+        border-color 150ms ease,
+        background 150ms ease;
 }
 
 .btn-ghost:hover {
@@ -770,8 +976,15 @@ onUnmounted(() => {
 }
 
 @keyframes badge-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.5; transform: scale(0.85); }
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.85);
+    }
 }
 
 .hero-h1 {
@@ -797,7 +1010,10 @@ onUnmounted(() => {
 }
 
 @media (max-width: 900px) {
-    .hero-body { margin-left: auto; margin-right: auto; }
+    .hero-body {
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
 
 .hero-ctas {
@@ -808,7 +1024,9 @@ onUnmounted(() => {
 }
 
 @media (max-width: 900px) {
-    .hero-ctas { justify-content: center; }
+    .hero-ctas {
+        justify-content: center;
+    }
 }
 
 .hero-footnote {
@@ -845,7 +1063,10 @@ onUnmounted(() => {
 }
 
 @media (max-width: 500px) {
-    .hero-canvas { width: 300px; height: 195px; }
+    .hero-canvas {
+        width: 300px;
+        height: 195px;
+    }
 }
 
 /* ── Style gallery ───────────────────────────────────────────────────────────── */
@@ -887,7 +1108,9 @@ onUnmounted(() => {
     position: relative;
     scroll-snap-align: start;
     cursor: pointer;
-    transition: border-color 150ms ease, transform 200ms ease;
+    transition:
+        border-color 150ms ease,
+        transform 200ms ease;
 }
 
 .style-gallery-card:hover {
@@ -939,8 +1162,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
-    .features-grid { grid-template-columns: 1fr; }
-    .feature-card--large { grid-row: span 1; }
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    .feature-card--large {
+        grid-row: span 1;
+    }
 }
 
 .feature-card {
@@ -948,7 +1175,9 @@ onUnmounted(() => {
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 8px;
     padding: 24px;
-    transition: border-color 200ms ease, background 200ms ease;
+    transition:
+        border-color 200ms ease,
+        background 200ms ease;
 }
 
 .feature-card:hover {
@@ -1133,9 +1362,15 @@ onUnmounted(() => {
     white-space: nowrap;
 }
 
-.comp-th-feat { text-align: left; }
-.comp-th { text-align: center; }
-.comp-th--polsh { color: #e0ff4f; }
+.comp-th-feat {
+    text-align: left;
+}
+.comp-th {
+    text-align: center;
+}
+.comp-th--polsh {
+    color: #e0ff4f;
+}
 
 .comp-feat {
     padding: 11px 16px;
@@ -1157,9 +1392,15 @@ onUnmounted(() => {
     background: rgba(224, 255, 79, 0.04);
 }
 
-.comp-check { color: #e0ff4f; }
-.comp-check-dim { color: rgba(255, 255, 255, 0.4); }
-.comp-dash { color: rgba(255, 255, 255, 0.12); }
+.comp-check {
+    color: #e0ff4f;
+}
+.comp-check-dim {
+    color: rgba(255, 255, 255, 0.4);
+}
+.comp-dash {
+    color: rgba(255, 255, 255, 0.12);
+}
 
 /* ── CTA ────────────────────────────────────────────────────────────────────── */
 .cta-section {
@@ -1208,8 +1449,15 @@ onUnmounted(() => {
         text-align: center;
     }
 
-    .footer-social { justify-content: center; }
-    .footer-links { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .footer-social {
+        justify-content: center;
+    }
+    .footer-links {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
 }
 
 .footer-brand .lp-wordmark {
@@ -1245,7 +1493,9 @@ onUnmounted(() => {
     transition: color 150ms ease;
 }
 
-.footer-link:hover { color: #8a8a9a; }
+.footer-link:hover {
+    color: #8a8a9a;
+}
 
 .footer-social {
     display: flex;
@@ -1260,7 +1510,9 @@ onUnmounted(() => {
     line-height: 0;
 }
 
-.footer-social-link:hover { color: #8a8a9a; }
+.footer-social-link:hover {
+    color: #8a8a9a;
+}
 
 .footer-social-link:focus-visible {
     outline: 2px solid #e0ff4f;

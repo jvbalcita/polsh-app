@@ -15,9 +15,10 @@ import {
 } from '@/components/ui/sidebar';
 import UserInfo from '@/components/UserInfo.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
+import type { User } from '@/types';
 
 const page = usePage();
-const user = computed(() => page.props.auth.user);
+const user = computed(() => page.props.auth.user as User);
 const { isMobile, state } = useSidebar();
 </script>
 

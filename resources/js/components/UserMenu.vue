@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import UserMenuContent from '@/components/UserMenuContent.vue';
+import { login } from '@/routes';
 
 const page = usePage();
 const user = computed(() => (page.props.auth as any)?.user ?? null);
@@ -21,19 +21,13 @@ const initials = computed(() => {
         .join('')
         .toUpperCase();
 });
-
-const isPro = computed(() => plan.value === 'pro' || plan.value === 'team');
 </script>
 
 <template>
     <!-- Authenticated: avatar + dropdown -->
     <DropdownMenu v-if="user">
         <DropdownMenuTrigger as-child>
-            <button
-                type="button"
-                class="user-avatar-btn"
-                :title="user.name"
-            >
+            <button type="button" class="user-avatar-btn" :title="user.name">
                 <img
                     v-if="user.avatar"
                     :src="user.avatar"
@@ -45,42 +39,12 @@ const isPro = computed(() => plan.value === 'pro' || plan.value === 'team');
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" class="user-dropdown">
-            <!-- Header: name + email + plan badge -->
-            <div class="dropdown-header">
-                <div class="dropdown-identity">
-                    <div class="dropdown-name">{{ user.name }}</div>
-                    <div class="dropdown-email">{{ user.email }}</div>
-                </div>
-                <span class="plan-badge" :class="isPro ? 'plan-badge--pro' : 'plan-badge--free'">
-                    {{ isPro ? 'Pro' : 'Free' }}
-                </span>
-            </div>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem @click="router.visit('/editor')">
-                My Presets
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="router.visit('/history')">
-                Export History
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="router.visit('/billing')">
-                Billing &amp; Plan
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="router.visit('/settings/profile')">
-                Connected Accounts
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem class="dropdown-logout" @click="router.post('/logout')">
-                Log out
-            </DropdownMenuItem>
+            <UserMenuContent :user="user" :plan="plan" show-workspace-links />
         </DropdownMenuContent>
     </DropdownMenu>
 
     <!-- Unauthenticated: ghost "Sign in" button -->
-    <a v-else href="/auth/github" class="sign-in-btn">Sign in</a>
+    <Link v-else :href="login()" class="sign-in-btn">Sign in</Link>
 </template>
 
 <style scoped>
@@ -120,68 +84,12 @@ const isPro = computed(() => plan.value === 'pro' || plan.value === 'team');
     line-height: 1;
 }
 
-/* Dropdown panel */
 :deep(.user-dropdown) {
     width: 228px;
     background: #222228;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     padding: 4px;
-}
-
-.dropdown-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px 8px;
-    gap: 8px;
-}
-
-.dropdown-identity {
-    min-width: 0;
-}
-
-.dropdown-name {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    color: #f0f0f2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.dropdown-email {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    color: #4a4a58;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Plan badge */
-.plan-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 999px;
-    flex-shrink: 0;
-}
-.plan-badge--free {
-    color: #4a4a58;
-    background: #1a1a1f;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-}
-.plan-badge--pro {
-    color: #0a0a0c;
-    background: #e0ff4f;
-}
-
-/* Logout item */
-:deep(.dropdown-logout) {
-    color: #ff4f4f !important;
 }
 
 /* Sign in button */
@@ -196,12 +104,14 @@ const isPro = computed(() => plan.value === 'pro' || plan.value === 'team');
     background: transparent;
     cursor: pointer;
     text-decoration: none;
-    transition: border-color 150ms ease, background 150ms ease;
+    transition:
+        border-color 150ms ease,
+        background 150ms ease;
     display: inline-flex;
     align-items: center;
 }
 .sign-in-btn:hover {
-    border-color: rgba(255, 255, 255, 0.20);
+    border-color: rgba(255, 255, 255, 0.2);
     background: #1a1a1f;
 }
 .sign-in-btn:focus-visible {

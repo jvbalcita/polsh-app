@@ -14,7 +14,7 @@
         "spatie/laravel-medialibrary",
         "spatie/laravel-permission"
     ],
-    "sail": false,
+    "sail": true,
     "skills": [
         "socialite-development",
         "wayfinder-development",

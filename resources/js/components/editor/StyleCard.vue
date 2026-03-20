@@ -12,9 +12,11 @@ const emit = defineEmits<{
 
 const backgroundStyle = (() => {
     const bg = props.style.background;
+
     if (bg.type === 'solid') {
         return { background: bg.colors[0] };
     }
+
     return {
         background: `linear-gradient(${bg.angle}deg, ${bg.colors[0]}, ${bg.colors[1]})`,
     };
@@ -27,6 +29,7 @@ const chromeColor = (() => {
     const g = parseInt(hex.slice(2, 4), 16) || 0;
     const b = parseInt(hex.slice(4, 6), 16) || 0;
     const isDark = r * 0.299 + g * 0.587 + b * 0.114 < 128;
+
     return isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
 })();
 </script>

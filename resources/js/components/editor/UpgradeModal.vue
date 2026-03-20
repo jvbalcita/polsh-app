@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { useForm } from '@inertiajs/vue3'
 import { watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { useForm } from '@inertiajs/vue3'
 import billing from '@/routes/billing'
 
 const props = defineProps<{

@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+worktree_root="$(git rev-parse --show-toplevel)"
+common_git_dir="$(git rev-parse --git-common-dir)"
+repo_root="$(cd "$(dirname "$common_git_dir")" && pwd)"
+
+if [ "$worktree_root" = "$repo_root" ]; then
+    printf 'Run this from a linked git worktree, not the main repository.\n' >&2
+    exit 1
+fi
+
+source_env="$repo_root/.env"
+target_env="$worktree_root/.env"
+force="${1:-}"
+
+if [ ! -f "$source_env" ]; then
+    printf 'Source .env not found at %s\n' "$source_env" >&2
+    exit 1
+fi
+
+if [ -e "$target_env" ] && [ "$force" != "--force" ]; then
+    printf 'Target .env already exists at %s (use --force to overwrite).\n' "$target_env" >&2
+    exit 1
+fi
+
+cp "$source_env" "$target_env"
+
+python3 - "$target_env" "$worktree_root" <<'PY'
+from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+import re
+import sys
+
+env_path = Path(sys.argv[1])
+worktree_root = Path(sys.argv[2])
+worktree_name = worktree_root.name
+offset = sum(ord(char) for char in worktree_name) % 200 + 10
+
+port_keys = {
+    "APP_PORT": None,
+    "VITE_PORT": None,
+    "FORWARD_DB_PORT": None,
+    "FORWARD_REDIS_PORT": None,
+    "FORWARD_MAILPIT_PORT": None,
+    "FORWARD_MAILPIT_DASHBOARD_PORT": None,
+}
+
+compose_name = re.sub(r"[^a-z0-9]+", "_", worktree_name.lower()).strip("_")
+compose_name = f"polsh_{compose_name or 'worktree'}"
+
+lines = env_path.read_text().splitlines()
+values: dict[str, str] = {}
+
+for line in lines:
+    if not line or line.lstrip().startswith("#") or "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    values[key] = value
+
+for key in port_keys:
+    current = values.get(key)
+    if current and current.isdigit():
+        port_keys[key] = str(int(current) + offset)
+
+mail_port = port_keys["FORWARD_MAILPIT_PORT"] or values.get("MAIL_PORT")
+app_url = values.get("APP_URL")
+
+if app_url and port_keys["APP_PORT"]:
+    parsed = urlsplit(app_url)
+    host = parsed.hostname or "localhost"
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    netloc = f"{host}:{port_keys['APP_PORT']}"
+    app_url = urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+
+replacements = {
+    **{key: value for key, value in port_keys.items() if value},
+    "MAIL_PORT": mail_port,
+    "APP_URL": app_url,
+    "COMPOSE_PROJECT_NAME": compose_name,
+}
+
+updated_lines = []
+seen = set()
+
+for line in lines:
+    if not line or line.lstrip().startswith("#") or "=" not in line:
+        updated_lines.append(line)
+        continue
+
+    key, _ = line.split("=", 1)
+    if key in replacements and replacements[key] is not None:
+        updated_lines.append(f"{key}={replacements[key]}")
+        seen.add(key)
+    else:
+        updated_lines.append(line)
+
+for key, value in replacements.items():
+    if value is not None and key not in seen:
+        updated_lines.append(f"{key}={value}")
+
+env_path.write_text("\n".join(updated_lines) + "\n")
+PY
+
+printf 'Prepared %s using %s\n' "$target_env" "$source_env"

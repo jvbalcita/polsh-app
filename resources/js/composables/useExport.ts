@@ -1,18 +1,36 @@
-import JSZip from 'jszip';
-import { markRaw, ref } from 'vue';
-import type Konva from 'konva';
 import { usePage } from '@inertiajs/vue3';
+import JSZip from 'jszip';
+import type Konva from 'konva';
+import { markRaw, ref } from 'vue';
+import {
+    calculateFrameLayout,
+    calculateImagePlacement,
+    getDesktopWindowControls,
+} from '@/composables/editorPresentation';
+import { CANVAS_SIZES } from '@/composables/useCanvas';
 import { useEditorStore } from '@/stores/editor';
-import type { EditorSettings } from '@/types/editor';
+import type { ImageSettings } from '@/types/editor';
 import type { StyleConfig } from '@/types/style';
+
+interface ExportBounds {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 
 // ---------------------------------------------------------------------------
 // Module-level Konva Stage singleton — written by CanvasStage on mount
 // ---------------------------------------------------------------------------
 const stageInstance = ref<Konva.Stage | null>(null);
+const exportBounds = ref<ExportBounds | null>(null);
 
-export function registerStage(stage: Konva.Stage): void {
+export function registerStage(stage: Konva.Stage, bounds?: ExportBounds): void {
     stageInstance.value = markRaw(stage);
+
+    if (bounds) {
+        exportBounds.value = bounds;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -30,8 +48,14 @@ function triggerDownload(url: string, filename: string): void {
 }
 
 function mimeFromFormat(format: string): string {
-    if (format === 'jpeg') return 'image/jpeg';
-    if (format === 'webp') return 'image/webp';
+    if (format === 'jpeg') {
+        return 'image/jpeg';
+    }
+
+    if (format === 'webp') {
+        return 'image/webp';
+    }
+
     return 'image/png';
 }
 
@@ -40,7 +64,46 @@ function extFromFormat(format: string): string {
 }
 
 function waitFrame(): Promise<void> {
-    return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    return new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+}
+
+function rasterExportConfig(
+    format: 'png' | 'webp' | 'jpeg',
+    scale: number,
+): {
+    mimeType: string;
+    pixelRatio: number;
+    quality?: number;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+} {
+    return {
+        ...(exportBounds.value ?? {}),
+        mimeType: mimeFromFormat(format),
+        pixelRatio: scale,
+        quality: format === 'jpeg' ? 0.92 : undefined,
+    };
+}
+
+function withWorkspaceBackgroundHidden<T>(
+    stage: { getLayers: () => Array<{ getChildren: () => unknown[] }> },
+    callback: () => T,
+): T {
+    const workspaceBackground = stage.getLayers()[0]?.getChildren()[0] as
+        | { visible?: (value: boolean) => void }
+        | undefined;
+
+    workspaceBackground?.visible?.(false);
+
+    try {
+        return callback();
+    } finally {
+        workspaceBackground?.visible?.(true);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -51,24 +114,29 @@ function saveSession(imageCount: number): void {
     const stage = stageInstance.value;
     const page = usePage();
 
-    // Only save for authenticated users
-    if (!stage || !page.props.auth?.user) return;
+    if (!stage || !page.props.auth?.user) {
+        return;
+    }
 
     const store = useEditorStore();
-    const thumbnail = stage.toDataURL({ pixelRatio: 0.25, mimeType: 'image/png' });
-    const xsrf = decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '');
+    const thumbnail = withWorkspaceBackgroundHidden(stage, () =>
+        stage.toDataURL(rasterExportConfig('png', 0.25)),
+    );
+    const xsrf = decodeURIComponent(
+        document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '',
+    );
 
     fetch('/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf },
         body: JSON.stringify({
-            style_slug: store.activeStyle?.slug ?? '',
-            settings: store.settings,
+            style_slug: store.activeSettings?.styleSlug ?? '',
+            settings: store.activeSettings,
             image_count: imageCount,
             thumbnail_url: thumbnail,
         }),
     }).catch(() => {
-        // Fire-and-forget — silently ignore network errors
+        // Fire-and-forget
     });
 }
 
@@ -85,9 +153,108 @@ const ASPECT_RATIOS: Record<string, number> = {
 };
 
 const CHROME_HEIGHTS: Record<string, number> = {
-    macos: 36,
+    'macos-dark': 28,
+    'macos-light': 28,
     browser: 72,
+    terminal: 28,
+    'window-minimal': 24,
+    'code-editor': 36,
 };
+
+function frameInsetsForSettings(settings: ImageSettings): {
+    top: number;
+    left: number;
+} {
+    return {
+        top: CHROME_HEIGHTS[settings.frameType] ?? 0,
+        left: settings.frameType === 'code-editor' ? 40 : 0,
+    };
+}
+
+function buildWindowControlsSvg(
+    framePlatform: 'macos' | 'windows',
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
+): string {
+    const layout = getDesktopWindowControls({
+        framePlatform,
+        width,
+        height,
+    });
+
+    if (layout.platform === 'macos') {
+        const fills = {
+            close: '#ff5f57',
+            minimize: '#febc2e',
+            maximize: '#28c840',
+        } as const;
+
+        return layout.buttons
+            .map(
+                (button) =>
+                    `<circle cx="${offsetX + button.x}" cy="${offsetY + button.y}" r="${button.width / 2}" fill="${fills[button.kind]}"/>`,
+            )
+            .join('');
+    }
+
+    return layout.buttons
+        .map((button) => {
+            const fill =
+                button.kind === 'close'
+                    ? 'rgba(232, 70, 88, 0.95)'
+                    : 'rgba(255,255,255,0.04)';
+            const symbol =
+                button.kind === 'minimize'
+                    ? `<line x1="${offsetX + button.x + 10}" y1="${offsetY + button.height / 2 + 5}" x2="${offsetX + button.x + button.width - 10}" y2="${offsetY + button.height / 2 + 5}" stroke="rgba(255,255,255,0.78)" stroke-width="1.5"/>`
+                    : button.kind === 'maximize'
+                      ? `<rect x="${offsetX + button.x + 10}" y="${offsetY + button.height / 2 - 5}" width="${button.width - 20}" height="10" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="1.5"/>`
+                      : `<line x1="${offsetX + button.x + 14}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + button.width - 14}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.5"/><line x1="${offsetX + button.x + button.width - 14}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + 14}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.5"/>`;
+
+            return `<g data-platform="windows" data-window-control="${button.kind}"><rect x="${offsetX + button.x}" y="${offsetY + button.y}" width="${button.width}" height="${button.height}" fill="${fill}"/>${symbol}</g>`;
+        })
+        .join('');
+}
+
+function roundedRectPath(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    corners: {
+        topLeft: number;
+        topRight: number;
+        bottomRight: number;
+        bottomLeft: number;
+    },
+): string {
+    const topLeft = Math.min(corners.topLeft, width / 2, height / 2);
+    const topRight = Math.min(corners.topRight, width / 2, height / 2);
+    const bottomRight = Math.min(corners.bottomRight, width / 2, height / 2);
+    const bottomLeft = Math.min(corners.bottomLeft, width / 2, height / 2);
+
+    return [
+        `M ${x + topLeft} ${y}`,
+        `H ${x + width - topRight}`,
+        topRight > 0
+            ? `A ${topRight} ${topRight} 0 0 1 ${x + width} ${y + topRight}`
+            : `L ${x + width} ${y}`,
+        `V ${y + height - bottomRight}`,
+        bottomRight > 0
+            ? `A ${bottomRight} ${bottomRight} 0 0 1 ${x + width - bottomRight} ${y + height}`
+            : `L ${x + width} ${y + height}`,
+        `H ${x + bottomLeft}`,
+        bottomLeft > 0
+            ? `A ${bottomLeft} ${bottomLeft} 0 0 1 ${x} ${y + height - bottomLeft}`
+            : `L ${x} ${y + height}`,
+        `V ${y + topLeft}`,
+        topLeft > 0
+            ? `A ${topLeft} ${topLeft} 0 0 1 ${x + topLeft} ${y}`
+            : `L ${x} ${y}`,
+        'Z',
+    ].join(' ');
+}
 
 function angleToSVGGradient(
     angle: number,
@@ -97,13 +264,14 @@ function angleToSVGGradient(
     const rad = ((angle - 90) * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
-    const mag = Math.abs(cos * w / 2) + Math.abs(sin * h / 2);
+    const mag = Math.abs((cos * w) / 2) + Math.abs((sin * h) / 2);
     const cx = w / 2;
     const cy = h / 2;
     const x1 = cx - cos * mag;
     const y1 = cy - sin * mag;
     const x2 = cx + cos * mag;
     const y2 = cy + sin * mag;
+
     return {
         x1: Math.round((x1 / w) * 100),
         y1: Math.round((y1 / h) * 100),
@@ -112,129 +280,321 @@ function angleToSVGGradient(
     };
 }
 
-function hexToRgba(hex: string, opacity: number): string {
-    const h = hex.replace('#', '');
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-    return `rgba(${r},${g},${b},${opacity})`;
+function resolveSvgDimensions(settings: ImageSettings): {
+    width: number;
+    height: number;
+} {
+    if (settings.canvasSize.startsWith('custom-')) {
+        const [width, height] = settings.canvasSize
+            .slice(7)
+            .split('x')
+            .map(Number);
+
+        if (width && height) {
+            return { width, height };
+        }
+    }
+
+    const size = CANVAS_SIZES[settings.canvasSize];
+
+    if (size) {
+        return { width: size.w, height: size.h };
+    }
+
+    const ratio = ASPECT_RATIOS[settings.aspectRatio] ?? 16 / 9;
+    const width = 1920;
+
+    return { width, height: Math.round(width / ratio) };
 }
 
-function borderStrokeColor(style: StyleConfig): string {
+function escapeXml(value: string): string {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
+}
+
+function borderStrokeColorFromStyle(
+    style: StyleConfig,
+    borderColor: string,
+): string {
     switch (style.border.type) {
         case 'glass':
-            return `rgba(255,255,255,${style.border.opacity})`;
+        case 'subtle':
+            return borderColor;
         case 'neon':
             return '#a855f7';
         case 'glow':
             return '#06b6d4';
-        case 'subtle':
-            return `rgba(255,255,255,${style.border.opacity})`;
         default:
             return 'none';
     }
 }
 
-function buildSVG(style: StyleConfig, settings: EditorSettings, screenshotSrc: string): string {
-    const ratio = ASPECT_RATIOS[settings.aspectRatio] ?? 16 / 9;
-    const W = 1920;
-    const H = Math.round(W / ratio);
-    const chrome = style.chrome ?? null;
-    const chromeH = chrome ? (CHROME_HEIGHTS[chrome] ?? 0) : 0;
+function buildSVG(
+    style: StyleConfig,
+    settings: ImageSettings,
+    imageWidth: number,
+    imageHeight: number,
+    screenshotSrc: string,
+): string {
+    const { width: cardWidth, height: cardHeight } =
+        resolveSvgDimensions(settings);
+    const W = cardWidth;
+    const H = cardHeight;
     const pad = settings.padding;
     const r = settings.radius;
-    const bw = settings.borderWidth;
-    const strokeColor = style.border.type !== 'none' ? borderStrokeColor(style) : 'none';
-
-    // Content area for the embedded image
-    const imgX = pad;
-    const imgY = pad + chromeH;
-    const imgW = W - pad * 2;
-    const imgH = H - pad * 2 - chromeH;
-
-    // Fit screenshot while preserving its aspect ratio
-    // (We don't know the screenshot ratio here so we just fill the area — SVG preserveAspectRatio handles it)
+    const bw = settings.border;
+    const strokeColor =
+        style.border.type !== 'none'
+            ? borderStrokeColorFromStyle(style, settings.borderColor)
+            : 'none';
+    const hasFrame = settings.frameType !== 'none';
+    const artifactRadius = hasFrame ? style.radius : settings.radius;
+    const insets = frameInsetsForSettings(settings);
+    const frameLayout = hasFrame
+        ? calculateFrameLayout({
+              areaX: pad,
+              areaY: pad,
+              areaWidth: Math.max(0, cardWidth - pad * 2),
+              areaHeight: Math.max(0, cardHeight - pad * 2),
+              imageWidth,
+              imageHeight,
+              topInset: insets.top,
+              leftInset: insets.left,
+          })
+        : null;
+    const frameX = hasFrame ? frameLayout!.frame.x : 0;
+    const frameY = hasFrame ? frameLayout!.frame.y : 0;
+    const frameWidth = hasFrame ? frameLayout!.frame.width : cardWidth;
+    const frameHeight = hasFrame ? frameLayout!.frame.height : cardHeight;
+    const visualX = hasFrame ? frameX : 0;
+    const visualY = hasFrame ? frameY : 0;
+    const visualWidth = hasFrame ? frameWidth : cardWidth;
+    const visualHeight = hasFrame ? frameHeight : cardHeight;
+    const viewportX = hasFrame ? frameLayout!.viewport.x : pad;
+    const viewportY = hasFrame ? frameLayout!.viewport.y : pad;
+    const viewportWidth = hasFrame
+        ? frameLayout!.viewport.width
+        : cardWidth - pad * 2;
+    const viewportHeight = hasFrame
+        ? frameLayout!.viewport.height
+        : cardHeight - pad * 2;
+    const viewportRadius = Math.max(0, r - 2);
+    const viewportClipPath = roundedRectPath(
+        viewportX,
+        viewportY,
+        viewportWidth,
+        viewportHeight,
+        {
+            topLeft: insets.top > 0 ? 0 : viewportRadius,
+            topRight: insets.top > 0 ? 0 : viewportRadius,
+            bottomRight: viewportRadius,
+            bottomLeft: viewportRadius,
+        },
+    );
+    const imagePlacement = calculateImagePlacement({
+        viewportX,
+        viewportY,
+        viewportWidth,
+        viewportHeight,
+        imageWidth,
+        imageHeight,
+        zoom: settings.imageZoom,
+        offsetX: settings.imageOffsetX,
+        offsetY: settings.imageOffsetY,
+    });
+    const preserveAspectRatio = imagePlacement.isClipped
+        ? 'none'
+        : 'xMidYMid meet';
 
     // Background fill
-    const bg = style.background;
     let bgFill = '';
     let gradientDef = '';
-    if (bg.type === 'solid') {
-        bgFill = bg.colors[0];
+
+    if (settings.backgroundType === 'solid') {
+        bgFill = settings.solidColor;
+    } else if (settings.backgroundType === 'transparent') {
+        bgFill = 'transparent';
     } else {
-        const pts = angleToSVGGradient(bg.angle, W, H);
-        gradientDef = `
+        // gradient
+        const pts = angleToSVGGradient(
+            settings.gradientAngle,
+            cardWidth,
+            cardHeight,
+        );
+        gradientDef = settings.gradientIsRadial
+            ? `
+  <radialGradient id="bg-grad" gradientUnits="userSpaceOnUse"
+    cx="${cardWidth / 2}" cy="${cardHeight / 2}" r="${Math.max(cardWidth, cardHeight) / 2}">
+    <stop offset="0%" stop-color="${settings.gradientStart}"/>
+    <stop offset="100%" stop-color="${settings.gradientEnd}"/>
+  </radialGradient>`
+            : `
   <linearGradient id="bg-grad" gradientUnits="userSpaceOnUse"
     x1="${pts.x1}%" y1="${pts.y1}%" x2="${pts.x2}%" y2="${pts.y2}%">
-    <stop offset="0%" stop-color="${bg.colors[0]}"/>
-    <stop offset="100%" stop-color="${bg.colors[1]}"/>
+    <stop offset="0%" stop-color="${settings.gradientStart}"/>
+    <stop offset="100%" stop-color="${settings.gradientEnd}"/>
   </linearGradient>`;
         bgFill = 'url(#bg-grad)';
     }
 
-    // Shadow filter
-    const shadow = style.shadow;
-    const sBlur = settings.shadowBlur;
-    const sOpacity = settings.shadowOpacity;
-    const sOffsetY = settings.shadowOffsetY;
-    const shadowDef = sOpacity > 0 ? `
+    const sOpacity = settings.shadow / 100;
+    const shadowDef =
+        sOpacity > 0
+            ? `
   <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-    <feDropShadow dx="0" dy="${sOffsetY}" stdDeviation="${sBlur / 2}"
-      flood-color="${shadow.color}" flood-opacity="${sOpacity}"/>
-  </filter>` : '';
+    <feDropShadow dx="0" dy="4" stdDeviation="${settings.shadowBlur / 2}"
+      flood-color="${settings.shadowColor}" flood-opacity="${sOpacity}"/>
+  </filter>`
+            : '';
+
+    const borderGlowDef =
+        strokeColor !== 'none' &&
+        bw > 0 &&
+        (style.border.type === 'neon' || style.border.type === 'glow')
+            ? `
+  <filter id="border-glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feDropShadow dx="0" dy="0" stdDeviation="${style.border.blur / 2}"
+      flood-color="${strokeColor}" flood-opacity="${style.border.opacity}"/>
+  </filter>`
+            : '';
+
+    const noiseDef =
+        settings.noiseGrain > 0
+            ? `
+  <filter id="noise-filter" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+    <feComponentTransfer>
+      <feFuncA type="table" tableValues="0 ${Math.min(1, settings.noiseGrain * 2)}"/>
+    </feComponentTransfer>
+  </filter>`
+            : '';
 
     const shadowAttr = sOpacity > 0 ? ' filter="url(#shadow)"' : '';
+    const chromeH = CHROME_HEIGHTS[settings.frameType] ?? 0;
 
-    // macOS chrome dots
-    const macosDots =
-        chrome === 'macos'
-            ? `
-  <rect x="0" y="0" width="${W}" height="${chromeH}" fill="#2d2d2d"/>
-  <circle cx="14" cy="18" r="6" fill="#ff5f57"/>
-  <circle cx="34" cy="18" r="6" fill="#febc2e"/>
-  <circle cx="54" cy="18" r="6" fill="#28c840"/>`
-            : '';
+    // macOS chrome
+    const ismacos =
+        settings.frameType === 'macos-dark' ||
+        settings.frameType === 'macos-light';
+    const macosDots = ismacos
+        ? `
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="${chromeH}" fill="${settings.frameType === 'macos-dark' ? '#2d2d2d' : '#e8e8e8'}"/>
+  <line x1="${frameX}" y1="${frameY + 27.5}" x2="${frameX + frameWidth}" y2="${frameY + 27.5}" stroke="${settings.frameType === 'macos-dark' ? '#3a3a3a' : '#d0d0d0'}" stroke-width="1"/>
+  ${settings.frameTitle ? `<text x="${frameX + frameWidth / 2}" y="${frameY + 17}" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="${settings.frameType === 'macos-dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}">${escapeXml(settings.frameTitle)}</text>` : ''}
+  ${settings.frameShowButtons ? `<circle cx="${frameX + 14}" cy="${frameY + 14}" r="5" fill="#ff5f57"/><circle cx="${frameX + 30}" cy="${frameY + 14}" r="5" fill="#febc2e"/><circle cx="${frameX + 46}" cy="${frameY + 14}" r="5" fill="#28c840"/>` : ''}`
+        : '';
 
     // Browser chrome
     const browserChrome =
-        chrome === 'browser'
+        settings.frameType === 'browser'
             ? (() => {
-                const urlBoxW = Math.min(400, W * 0.3);
-                return `
-  <rect x="0" y="0" width="${W}" height="36" fill="#1a1a1a"/>
-  <rect x="76" y="6" width="200" height="30" rx="6" fill="#2d2d2d"/>
-  <rect x="0" y="36" width="${W}" height="36" fill="#2d2d2d"/>
-  <rect x="${(W - urlBoxW) / 2}" y="44" width="${urlBoxW}" height="20" rx="10" fill="#1a1a1a"/>
-  <circle cx="14" cy="18" r="5" fill="#ff5f57"/>
-  <circle cx="30" cy="18" r="5" fill="#febc2e"/>
-  <circle cx="46" cy="18" r="5" fill="#28c840"/>`;
-            })()
+                  const isWindows = settings.framePlatform === 'windows';
+                  const urlBoxW = Math.min(260, frameWidth * 0.4);
+                  const browserControls = settings.frameShowButtons
+                      ? buildWindowControlsSvg(
+                            settings.framePlatform,
+                            frameWidth,
+                            36,
+                            frameX,
+                            frameY,
+                        )
+                      : '';
+                  const controlsWidth = isWindows ? 102 : 0;
+                  const tabX = isWindows ? 18 : 76;
+                  const tabWidth = isWindows
+                      ? Math.max(
+                            74,
+                            Math.min(
+                                164,
+                                frameWidth - controlsWidth - tabX - 12,
+                            ),
+                        )
+                      : 140;
+
+                  return `
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="36" fill="${isWindows ? '#20242d' : '#17181d'}"/>
+  <rect x="${frameX + tabX}" y="${frameY + 6}" width="${tabWidth}" height="30" rx="8" fill="${isWindows ? '#313846' : '#2d3038'}"/>
+  <text x="${frameX + (isWindows ? tabX + 16 : 92)}" y="${frameY + 24}" font-size="11" fill="${isWindows ? 'rgba(245,248,255,0.68)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameTitle || 'Tab')}</text>
+  <rect x="${frameX}" y="${frameY + 36}" width="${frameWidth}" height="36" fill="${isWindows ? '#2b313c' : '#262932'}"/>
+  <rect x="${frameX + (frameWidth - urlBoxW) / 2}" y="${frameY + 44}" width="${urlBoxW}" height="20" rx="10" fill="${isWindows ? '#161b24' : '#14171e'}"/>
+  <text x="${frameX + (frameWidth - urlBoxW) / 2 + 12}" y="${frameY + 58}" font-size="10.5" fill="${isWindows ? 'rgba(213,221,235,0.72)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameUrl || 'example.com')}</text>
+  ${browserControls}`;
+              })()
+            : '';
+
+    // Terminal chrome
+    const terminalChrome =
+        settings.frameType === 'terminal'
+            ? `
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="${chromeH}" fill="${settings.framePlatform === 'windows' ? '#111827' : '#12161d'}"/>
+  <line x1="${frameX}" y1="${frameY + 27.5}" x2="${frameX + frameWidth}" y2="${frameY + 27.5}" stroke="${settings.framePlatform === 'windows' ? '#314158' : '#27303b'}" stroke-width="1"/>
+  <text x="${frameX + (settings.framePlatform === 'windows' ? 20 : 74)}" y="${frameY + 18}" font-size="9" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.34)">${escapeXml(settings.framePlatform === 'windows' ? 'PS C:\\workspace' : '~/workspace')}</text>
+  <text x="${frameX + frameWidth / 2}" y="${frameY + 17}" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.62)">${escapeXml(settings.frameTitle || 'zsh')}</text>
+  ${settings.frameShowButtons ? buildWindowControlsSvg(settings.framePlatform, frameWidth, chromeH, frameX, frameY) : ''}`
+            : '';
+
+    const minimalWindowChrome =
+        settings.frameType === 'window-minimal'
+            ? `
+  <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="24" fill="${settings.framePlatform === 'windows' ? '#1b2330' : '#20242b'}"/>
+  <line x1="${frameX}" y1="${frameY + 23.5}" x2="${frameX + frameWidth}" y2="${frameY + 23.5}" stroke="${settings.framePlatform === 'windows' ? '#334155' : '#3a404b'}" stroke-width="1"/>
+  <text x="${frameX + frameWidth / 2}" y="${frameY + 15}" text-anchor="middle" font-size="10" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.5)">${escapeXml(settings.frameTitle || 'Window')}</text>
+  ${settings.frameShowButtons ? buildWindowControlsSvg(settings.framePlatform, frameWidth, 24, frameX, frameY) : ''}`
+            : '';
+
+    const codeEditorChrome =
+        settings.frameType === 'code-editor'
+            ? `
+  <rect x="${frameX}" y="${frameY}" width="40" height="${frameHeight}" fill="#1e1e1e"/>
+  <line x1="${frameX + 39.5}" y1="${frameY}" x2="${frameX + 39.5}" y2="${frameY + frameHeight}" stroke="#333333" stroke-width="1"/>
+  <rect x="${frameX + 40}" y="${frameY}" width="${frameWidth - 40}" height="36" fill="#252526"/>
+  <line x1="${frameX + 40}" y1="${frameY + 35.5}" x2="${frameX + frameWidth}" y2="${frameY + 35.5}" stroke="#3c3c3c" stroke-width="1"/>
+  <rect x="${frameX + 40}" y="${frameY}" width="140" height="36" fill="#1e1e1e"/>
+  <line x1="${frameX + 40}" y1="${frameY}" x2="${frameX + 180}" y2="${frameY}" stroke="#007acc" stroke-width="2"/>
+  <text x="${frameX + 52}" y="${frameY + 23}" font-size="11" font-family="DM Mono, monospace" fill="rgba(255,255,255,0.75)">${escapeXml(settings.frameTitle || 'index.ts')}</text>
+            `
             : '';
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
   width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <defs>${gradientDef}${shadowDef}
+  <defs>${gradientDef}${shadowDef}${borderGlowDef}${noiseDef}
   </defs>
 
   <!-- Background -->
-  <rect width="${W}" height="${H}" rx="${r}" fill="${bgFill}"${shadowAttr}/>
+  <rect width="${cardWidth}" height="${cardHeight}" rx="${artifactRadius}" fill="${bgFill}"/>
+
+  <!-- Shadow -->
+  <rect x="${visualX}" y="${visualY}" width="${visualWidth}" height="${visualHeight}" rx="${r}" fill="transparent"${shadowAttr}/>
 
   <!-- Chrome -->
   <g clip-path="url(#card-clip)">
     <clipPath id="card-clip">
-      <rect width="${W}" height="${H}" rx="${r}"/>
+      <rect x="${visualX}" y="${visualY}" width="${visualWidth}" height="${visualHeight}" rx="${r}"/>
     </clipPath>
-    ${macosDots}${browserChrome}
 
     <!-- Screenshot -->
-    <image x="${imgX}" y="${imgY}" width="${imgW}" height="${imgH}"
-      preserveAspectRatio="xMidYMid meet"
+    <clipPath id="image-clip">
+      <path d="${viewportClipPath}"/>
+    </clipPath>
+
+    <image x="${imagePlacement.x}" y="${imagePlacement.y}" width="${imagePlacement.width}" height="${imagePlacement.height}"
+      clip-path="url(#image-clip)"
+      preserveAspectRatio="${preserveAspectRatio}"
       xlink:href="${screenshotSrc}"/>
+
+    ${macosDots}${browserChrome}${terminalChrome}${minimalWindowChrome}${codeEditorChrome}
+
+    ${settings.noiseGrain > 0 ? `<rect x="${visualX}" y="${visualY}" width="${visualWidth}" height="${visualHeight}" rx="${r}" filter="url(#noise-filter)" opacity="${Math.min(1, settings.noiseGrain * 2)}" style="mix-blend-mode: overlay"/>` : ''}
   </g>
 
   <!-- Border -->
-  ${strokeColor !== 'none' && bw > 0 ? `<rect x="${bw / 2}" y="${bw / 2}" width="${W - bw}" height="${H - bw}" rx="${r}" fill="none" stroke="${strokeColor}" stroke-width="${bw}"/>` : ''}
+  ${strokeColor !== 'none' && bw > 0 ? `<rect x="${visualX + bw / 2}" y="${visualY + bw / 2}" width="${visualWidth - bw}" height="${visualHeight - bw}" rx="${r}" fill="none" stroke="${strokeColor}" stroke-width="${bw}"${borderGlowDef ? ' filter="url(#border-glow)"' : ''}/>` : ''}
 </svg>`;
 }
 
@@ -257,17 +617,19 @@ export function useExport() {
         scale: 1 | 2 | 4,
     ): Promise<void> {
         const stage = stageInstance.value;
-        if (!stage || store.images.length === 0) return;
+
+        if (!stage || store.images.length === 0) {
+            return;
+        }
+
         trackEvent('export_single');
 
-        const slug = store.activeStyle?.slug ?? 'polsh';
+        const slug = store.activeSettings?.styleSlug ?? 'polsh';
         const ext = extFromFormat(format);
 
-        const dataUrl = stage.toDataURL({
-            mimeType: mimeFromFormat(format),
-            pixelRatio: scale,
-            quality: format === 'jpeg' ? 0.92 : undefined,
-        });
+        const dataUrl = withWorkspaceBackgroundHidden(stage, () =>
+            stage.toDataURL(rasterExportConfig(format, scale)),
+        );
 
         triggerDownload(dataUrl, `polsh-${slug}-01.${ext}`);
         saveSession(1);
@@ -275,7 +637,11 @@ export function useExport() {
 
     async function exportAll(format: string, scale: number): Promise<void> {
         const stage = stageInstance.value;
-        if (!stage || store.images.length === 0) return;
+
+        if (!stage || store.images.length === 0) {
+            return;
+        }
+
         trackEvent('export_zip');
 
         isExporting.value = true;
@@ -287,14 +653,16 @@ export function useExport() {
         try {
             for (let i = 0; i < store.images.length; i++) {
                 store.setActiveIndex(i);
-                // Two rAF passes: Vue reactive update → Konva draw cycle
                 await waitFrame();
 
-                const dataUrl = stage.toDataURL({
-                    mimeType: mimeFromFormat(format),
-                    pixelRatio: scale,
-                    quality: format === 'jpeg' ? 0.92 : undefined,
-                });
+                const dataUrl = withWorkspaceBackgroundHidden(stage, () =>
+                    stage.toDataURL(
+                        rasterExportConfig(
+                            format as 'png' | 'webp' | 'jpeg',
+                            scale,
+                        ),
+                    ),
+                );
 
                 const base64 = dataUrl.split(',')[1];
                 const filename = `polsh-${String(i + 1).padStart(2, '0')}.${ext}`;
@@ -313,13 +681,24 @@ export function useExport() {
     }
 
     function exportSVG(): void {
-        const store2 = useEditorStore();
-        const style = store2.activeStyle;
-        const image = store2.activeImage;
-        if (!style || !image) return;
+        const style = store.activeStyle;
+        const image = store.activeImage;
+        const settings = store.activeSettings;
 
-        const svgString = buildSVG(style, store2.settings, image.src);
-        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        if (!style || !image || !settings) {
+            return;
+        }
+
+        const svgString = buildSVG(
+            style,
+            settings,
+            image.naturalWidth,
+            image.naturalHeight,
+            image.src,
+        );
+        const blob = new Blob([svgString], {
+            type: 'image/svg+xml;charset=utf-8',
+        });
         const url = URL.createObjectURL(blob);
         triggerDownload(url, `polsh-${style.slug}.svg`);
         URL.revokeObjectURL(url);

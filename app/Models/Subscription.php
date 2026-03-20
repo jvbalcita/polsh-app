@@ -26,9 +26,9 @@ class Subscription extends Model
     /**
      * Scope a query to only include active subscriptions.
      */
-    public function scopeActive(Builder $query): void
+    public function scopeActive(Builder $query): Builder
     {
-        $query->where('status', 'active')
+        return $query->where('status', 'active')
             ->where('current_period_end', '>', now());
     }
 

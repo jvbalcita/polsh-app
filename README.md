@@ -17,6 +17,16 @@ vendor/bin/sail up -d
 npm run dev
 ```
 
+### Git Worktrees + Sail
+
+When you create a linked worktree, run this from inside the worktree before `vendor/bin/sail up -d`:
+
+```bash
+./bin/setup-worktree-env
+```
+
+That copies the main repo `.env`, assigns worktree-specific forwarded ports, and sets a unique `COMPOSE_PROJECT_NAME` so Sail containers do not collide with the main workspace.
+
 ---
 
 ## Production Deployment Checklist
@@ -88,9 +98,9 @@ npm run dev
 
 ## Git Tags
 
-| Tag | Description |
-|-----|-------------|
+| Tag      | Description                                           |
+| -------- | ----------------------------------------------------- |
 | `v1.0.0` | MVP — editor, 12 styles, GitHub OAuth, export history |
-| `v1.1.0` | Billing & Teams — PayMongo, team workspaces |
-| `v1.2.0` | API & CLI — REST API, API keys, async export |
-| `v1.2.1` | Gap fixes & pre-marketplace polish |
+| `v1.1.0` | Billing & Teams — PayMongo, team workspaces           |
+| `v1.2.0` | API & CLI — REST API, API keys, async export          |
+| `v1.2.1` | Gap fixes & pre-marketplace polish                    |

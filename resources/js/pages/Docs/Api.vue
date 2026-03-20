@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ProductPageHeader from '@/components/ProductPageHeader.vue';
+import { editor } from '@/routes';
+import { index as apiKeys } from '@/routes/api-keys';
 
 const activeTab = ref<'curl' | 'php' | 'node' | 'python'>('curl');
 
@@ -94,16 +97,13 @@ const codeExamples: Record<string, string> = {
     <Head title="API Docs — Polsh" />
 
     <div class="min-h-screen" style="background: #080808">
-        <!-- Topbar -->
-        <header class="flex h-11 items-center justify-between border-b border-white/8 px-6" style="background: #111111">
-            <div class="flex items-center gap-3">
-                <Link href="/editor" class="text-sm font-semibold tracking-tight" style="color: #e0ff4f">polsh</Link>
-                <span class="text-xs text-white/20">/ docs / api</span>
-            </div>
-            <Link href="/dashboard/api-keys" class="text-[11px] text-white/35 transition-colors hover:text-white/60">
-                Manage keys →
-            </Link>
-        </header>
+        <ProductPageHeader
+            context="/ docs / api"
+            :home-href="editor()"
+            :trailing-href="apiKeys()"
+            trailing-label="Manage keys →"
+            trailing-variant="link"
+        />
 
         <div class="mx-auto max-w-3xl px-6 py-12">
             <!-- Title -->
@@ -115,14 +115,14 @@ const codeExamples: Record<string, string> = {
             <!-- Authentication -->
             <section class="mb-10">
                 <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">Authentication</h2>
-                <div class="rounded-xl border border-white/8 p-5" style="background: #111111">
+                <div class="polsh-panel rounded-xl border border-white/8 p-5">
                     <p class="mb-3 text-[13px] text-white/60">
                         Pass your API key in the <code class="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[11px] text-[#e0ff4f]/80">Authorization</code> header:
                     </p>
                     <pre class="overflow-x-auto rounded border border-white/8 p-3 font-mono text-[11px] text-white/50" style="background: rgba(0,0,0,0.5)">Authorization: Bearer pk_your_api_key</pre>
                     <p class="mt-3 text-[11px] text-white/30">
                         Generate keys at
-                        <Link href="/dashboard/api-keys" class="text-[#e0ff4f]/60 hover:text-[#e0ff4f] transition-colors">/dashboard/api-keys</Link>.
+                        <Link :href="apiKeys()" class="text-[#e0ff4f]/60 hover:text-[#e0ff4f] transition-colors">/dashboard/api-keys</Link>.
                         Keys are shown only once on creation.
                     </p>
                 </div>
@@ -131,7 +131,7 @@ const codeExamples: Record<string, string> = {
             <!-- Rate limits -->
             <section class="mb-10">
                 <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">Rate limits</h2>
-                <div class="rounded-xl border border-white/8 overflow-hidden" style="background: #111111">
+                <div class="polsh-panel rounded-xl border border-white/8 overflow-hidden">
                     <div class="grid grid-cols-3 border-b border-white/6 px-5 py-2 text-[10px] font-semibold uppercase tracking-widest text-white/25">
                         <span>Plan</span><span>Limit</span><span>Reset</span>
                     </div>
@@ -161,7 +161,7 @@ const codeExamples: Record<string, string> = {
                 <p class="mb-4 text-[13px] text-white/45">Apply a style to an image. Returns the processed image as binary for 1×/2×, or a job ID for 4×.</p>
 
                 <!-- Request params -->
-                <div class="mb-5 rounded-xl border border-white/8 overflow-hidden" style="background: #111111">
+                <div class="polsh-panel mb-5 rounded-xl border border-white/8 overflow-hidden">
                     <div class="border-b border-white/6 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-white/25">
                         Request body (JSON)
                     </div>
@@ -217,7 +217,7 @@ const codeExamples: Record<string, string> = {
                 </div>
 
                 <!-- Response -->
-                <div class="mb-5 rounded-xl border border-white/8 overflow-hidden" style="background: #111111">
+                <div class="polsh-panel mb-5 rounded-xl border border-white/8 overflow-hidden">
                     <div class="border-b border-white/6 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-white/25">
                         Response
                     </div>
@@ -244,7 +244,7 @@ const codeExamples: Record<string, string> = {
                 </div>
 
                 <!-- Code examples -->
-                <div class="rounded-xl border border-white/8 overflow-hidden" style="background: #111111">
+                <div class="polsh-panel rounded-xl border border-white/8 overflow-hidden">
                     <!-- Tab bar -->
                     <div class="flex border-b border-white/6">
                         <button
@@ -272,7 +272,7 @@ const codeExamples: Record<string, string> = {
                 </div>
                 <p class="mb-4 text-[13px] text-white/45">Check the status of a 4× async job. Poll until <code class="font-mono text-[11px] text-white/60">status</code> is <code class="font-mono text-[11px] text-white/60">done</code> or <code class="font-mono text-[11px] text-white/60">failed</code>.</p>
 
-                <div class="mb-4 rounded-xl border border-white/8 overflow-hidden" style="background: #111111">
+                <div class="polsh-panel mb-4 rounded-xl border border-white/8 overflow-hidden">
                     <div class="border-b border-white/6 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-white/25">Response</div>
                     <div class="divide-y divide-white/5">
                         <div class="px-5 py-3">
@@ -312,7 +312,7 @@ const codeExamples: Record<string, string> = {
             <!-- Webhooks -->
             <section class="mb-10">
                 <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">Webhooks</h2>
-                <div class="rounded-xl border border-white/8 p-5 space-y-4" style="background: #111111">
+                <div class="polsh-panel rounded-xl border border-white/8 p-5 space-y-4">
                     <p class="text-[13px] text-white/60">
                         For 4× resolution jobs (async), set a <code class="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[11px] text-[#e0ff4f]/80">webhook_url</code>
                         on your API key. Polsh will POST to that URL when the job completes.
@@ -330,7 +330,7 @@ const codeExamples: Record<string, string> = {
                     </div>
                     <p class="text-[11px] text-white/30">
                         Configure your webhook URL when creating an API key at
-                        <Link href="/dashboard/api-keys" class="text-[#e0ff4f]/60 hover:text-[#e0ff4f] transition-colors">/dashboard/api-keys</Link>.
+                        <Link :href="apiKeys()" class="text-[#e0ff4f]/60 hover:text-[#e0ff4f] transition-colors">/dashboard/api-keys</Link>.
                     </p>
                 </div>
             </section>

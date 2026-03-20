@@ -1,38 +1,76 @@
-import { defineStore } from 'pinia';
 import { usePage } from '@inertiajs/vue3';
+import { defineStore } from 'pinia';
 import { computed, markRaw, ref } from 'vue';
-import type { EditorImage, EditorSettings } from '@/types/editor';
-import type { StyleConfig } from '@/types/style';
 import allStyles from '@/styles';
+import { DEFAULT_SETTINGS    } from '@/types/editor';
+import type {ExportSettings, ImageSettings, SessionImage} from '@/types/editor';
+import type { StyleConfig } from '@/types/style';
 
 export interface SavedPreset {
     id: number;
     name: string;
     style_slug: string;
-    customizations: Partial<EditorSettings>;
+    customizations: Partial<ImageSettings>;
     team_id?: number | null;
+}
+
+function getBorderColorFromStyle(style: StyleConfig): string {
+    switch (style.border.type) {
+        case 'glass':
+        case 'subtle':
+            return `rgba(255,255,255,${style.border.opacity})`;
+        case 'neon':
+            return '#a855f7';
+        case 'glow':
+            return '#06b6d4';
+        default:
+            return 'rgba(255,255,255,0.1)';
+    }
+}
+
+function settingsFromStyle(style: StyleConfig): Partial<ImageSettings> {
+    const frameType = style.chrome === 'macos' ? 'macos-dark' : style.chrome === 'browser' ? 'browser' : 'none';
+
+    return {
+        styleSlug: style.slug,
+        backgroundType: style.background.type,
+        gradientStart: style.background.colors[0],
+        gradientEnd: style.background.colors[1],
+        gradientAngle: style.background.angle,
+        gradientIsRadial: false,
+        solidColor: style.background.colors[0],
+        frameType,
+        padding: style.padding,
+        radius: style.radius,
+        shadow: Math.round(style.shadow.opacity * 100),
+        shadowBlur: style.shadow.blur,
+        shadowColor: style.shadow.color,
+        border: style.border.width,
+        borderColor: getBorderColorFromStyle(style),
+        noiseGrain: style.noise,
+    };
 }
 
 export const useEditorStore = defineStore('editor', () => {
     const page = usePage();
-    const images = ref<EditorImage[]>([]);
+    const images = ref<SessionImage[]>([]);
     const activeIndex = ref<number>(0);
-    const activeStyle = ref<StyleConfig>(allStyles[0]);
 
-    const settings = ref<EditorSettings>({
-        padding: allStyles[0].padding,
-        radius: allStyles[0].radius,
-        shadowOpacity: allStyles[0].shadow.opacity,
-        shadowBlur: allStyles[0].shadow.blur,
-        shadowOffsetY: allStyles[0].shadow.offsetY,
-        borderWidth: allStyles[0].border.width,
-        noiseGrain: allStyles[0].noise,
-        aspectRatio: '16:9',
+    /** Global export settings — shared across all images */
+    const exportSettings = ref<ExportSettings>({
         exportFormat: 'png',
         exportResolution: 2,
     });
 
-    const activeImage = computed<EditorImage | null>(() => images.value[activeIndex.value] ?? null);
+    const activeImage = computed<SessionImage | null>(() => images.value[activeIndex.value] ?? null);
+
+    const activeSettings = computed<ImageSettings | null>(() => images.value[activeIndex.value]?.settings ?? null);
+
+    const activeStyle = computed<StyleConfig | null>(() => {
+        const slug = activeSettings.value?.styleSlug;
+
+        return slug ? (allStyles.find((s) => s.slug === slug) ?? null) : null;
+    });
 
     // Presets (loaded on demand when user is authenticated)
     const presets = ref<SavedPreset[]>([]);
@@ -40,11 +78,15 @@ export const useEditorStore = defineStore('editor', () => {
     const presetsLoaded = ref(false);
 
     async function fetchPresets(): Promise<void> {
-        if (presetsLoaded.value) return;
+        if (presetsLoaded.value) {
+return;
+}
+
         const res = await fetch('/presets', { headers: { Accept: 'application/json' } });
+
         if (res.ok) {
             const data = await res.json();
-            // Support both old array format and new { user, team } shape
+
             if (Array.isArray(data)) {
                 presets.value = data;
             } else {
@@ -52,19 +94,13 @@ export const useEditorStore = defineStore('editor', () => {
                 teamPresets.value = data.team ?? [];
             }
         }
+
         presetsLoaded.value = true;
     }
 
     async function savePreset(name: string, teamId?: number | null): Promise<SavedPreset | null> {
-        const customizations: Partial<EditorSettings> = {
-            padding: settings.value.padding,
-            radius: settings.value.radius,
-            shadowOpacity: settings.value.shadowOpacity,
-            shadowBlur: settings.value.shadowBlur,
-            shadowOffsetY: settings.value.shadowOffsetY,
-            borderWidth: settings.value.borderWidth,
-            noiseGrain: settings.value.noiseGrain,
-        };
+        const img = images.value[activeIndex.value];
+        const customizations: Partial<ImageSettings> = img ? { ...img.settings } : {};
         const res = await fetch('/presets', {
             method: 'POST',
             headers: {
@@ -74,12 +110,16 @@ export const useEditorStore = defineStore('editor', () => {
             },
             body: JSON.stringify({
                 name,
-                style_slug: activeStyle.value.slug,
+                style_slug: activeSettings.value?.styleSlug ?? '',
                 customizations,
                 team_id: teamId ?? null,
             }),
         });
-        if (!res.ok) return null;
+
+        if (!res.ok) {
+return null;
+}
+
         const preset: SavedPreset = await res.json();
 
         if (teamId) {
@@ -92,11 +132,13 @@ export const useEditorStore = defineStore('editor', () => {
     }
 
     function loadPreset(preset: SavedPreset): void {
-        const style = allStyles.find((s) => s.slug === preset.style_slug);
-        if (style) {
-            activeStyle.value = style;
-        }
-        Object.assign(settings.value, preset.customizations);
+        const img = images.value[activeIndex.value];
+
+        if (!img) {
+return;
+}
+
+        img.settings = { ...img.settings, ...preset.customizations };
     }
 
     async function deletePreset(id: number): Promise<void> {
@@ -117,19 +159,44 @@ export const useEditorStore = defineStore('editor', () => {
     }
 
     function applyStyle(style: StyleConfig): void {
-        activeStyle.value = style;
+        const img = images.value[activeIndex.value];
+
+        if (!img) {
+return;
+}
+
+        img.settings = { ...img.settings, ...settingsFromStyle(style) };
         trackEvent('style_applied');
-        settings.value.padding = style.padding;
-        settings.value.radius = style.radius;
-        settings.value.shadowOpacity = style.shadow.opacity;
-        settings.value.shadowBlur = style.shadow.blur;
-        settings.value.shadowOffsetY = style.shadow.offsetY;
-        settings.value.borderWidth = style.border.width;
-        settings.value.noiseGrain = style.noise;
+    }
+
+    function updateSetting<K extends keyof ImageSettings>(key: K, value: ImageSettings[K]): void {
+        const img = images.value[activeIndex.value];
+
+        if (!img || img.locked) {
+return;
+}
+
+        img.settings = { ...img.settings, [key]: value };
+    }
+
+    function applyToAll(): void {
+        const source = images.value[activeIndex.value];
+
+        if (!source) {
+return;
+}
+
+        images.value.forEach((img) => {
+            if (!img.locked && img.id !== source.id) {
+                img.settings = { ...source.settings };
+            }
+        });
+        trackEvent('apply_to_all');
     }
 
     function addImage(file: File): Promise<void> {
         const imageLimit = (page.props.imageLimit as number) ?? 3;
+
         if (images.value.length >= imageLimit) {
             return Promise.reject(new Error('IMAGE_LIMIT_REACHED'));
         }
@@ -140,12 +207,15 @@ export const useEditorStore = defineStore('editor', () => {
                 const src = e.target?.result as string;
                 const img = markRaw(new Image());
                 img.onload = () => {
+                    const currentSettings = images.value[activeIndex.value]?.settings ?? DEFAULT_SETTINGS;
                     images.value.push({
                         id: (crypto.randomUUID ?? (() => `${Date.now()}-${Math.random().toString(36).slice(2)}`))(),
                         src,
                         element: img,
                         naturalWidth: img.naturalWidth,
                         naturalHeight: img.naturalHeight,
+                        locked: false,
+                        settings: { ...currentSettings },
                     });
                     activeIndex.value = images.value.length - 1;
                     resolve();
@@ -160,8 +230,13 @@ export const useEditorStore = defineStore('editor', () => {
 
     function removeImage(id: string): void {
         const index = images.value.findIndex((img) => img.id === id);
-        if (index === -1) return;
+
+        if (index === -1) {
+return;
+}
+
         images.value.splice(index, 1);
+
         if (activeIndex.value >= images.value.length) {
             activeIndex.value = Math.max(0, images.value.length - 1);
         }
@@ -174,14 +249,17 @@ export const useEditorStore = defineStore('editor', () => {
     return {
         images,
         activeIndex,
-        activeStyle,
-        settings,
         activeImage,
+        activeSettings,
+        activeStyle,
         allStyles,
+        exportSettings,
         presets,
         teamPresets,
         presetsLoaded,
         applyStyle,
+        updateSetting,
+        applyToAll,
         addImage,
         removeImage,
         setActiveIndex,

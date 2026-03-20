@@ -8,13 +8,6 @@ metadata:
 
 # Wayfinder Development
 
-## When to Apply
-
-Activate whenever referencing backend routes in frontend components:
-- Importing from `@/actions/` or `@/routes/`
-- Calling Laravel routes from TypeScript/JavaScript
-- Creating links or navigation to backend endpoints
-
 ## Documentation
 
 Use `search-docs` for detailed Wayfinder patterns and documentation.
@@ -25,11 +18,11 @@ Use `search-docs` for detailed Wayfinder patterns and documentation.
 
 Run after route changes if Vite plugin isn't installed:
 ```bash
-php artisan wayfinder:generate --no-interaction
+vendor/bin/sail artisan wayfinder:generate --no-interaction
 ```
 For form helpers, use `--with-form` flag:
 ```bash
-php artisan wayfinder:generate --with-form --no-interaction
+vendor/bin/sail artisan wayfinder:generate --with-form --no-interaction
 ```
 
 ### Import Patterns
@@ -76,7 +69,7 @@ Use Wayfinder with the `<Form>` component:
 
 ## Verification
 
-1. Run `php artisan wayfinder:generate` to regenerate routes if Vite plugin isn't installed
+1. Run `vendor/bin/sail artisan wayfinder:generate` to regenerate routes if Vite plugin isn't installed
 2. Check TypeScript imports resolve correctly
 3. Verify route URLs match expected paths
 

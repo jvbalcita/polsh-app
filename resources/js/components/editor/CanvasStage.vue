@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
 import { useElementSize } from '@vueuse/core';
-import type { VueKonvaRef } from 'vue-konva';
 import type Konva from 'konva';
-import { useEditorStore } from '@/stores/editor';
+import { ref, watch, computed } from 'vue';
+import type { VueKonvaRef } from 'vue-konva';
 import { useCanvas, createNoiseCanvas } from '@/composables/useCanvas';
 import { registerStage } from '@/composables/useExport';
+import { useEditorStore } from '@/stores/editor';
 
 const store = useEditorStore();
 
 // Container measurement
 const containerRef = ref<HTMLDivElement | null>(null);
-const { width: containerWidth, height: containerHeight } = useElementSize(containerRef);
+const { width: containerWidth, height: containerHeight } =
+    useElementSize(containerRef);
 
 const canvas = useCanvas(containerWidth, containerHeight);
 
@@ -19,16 +20,25 @@ const canvas = useCanvas(containerWidth, containerHeight);
 const noiseCanvas = ref<HTMLCanvasElement | null>(null);
 
 watch(
-    () => store.settings.noiseGrain,
+    () => store.activeSettings?.noiseGrain,
     (grain) => {
-        noiseCanvas.value = grain > 0 ? createNoiseCanvas(grain) : null;
+        noiseCanvas.value =
+            grain && grain > 0 ? createNoiseCanvas(grain) : null;
     },
     { immediate: true },
 );
 
 const noiseConfig = computed(() => {
-    if (!noiseCanvas.value || store.settings.noiseGrain <= 0) return null;
-    const { w, h } = canvas.cardDimensions.value;
+    if (
+        !noiseCanvas.value ||
+        !store.activeSettings ||
+        store.activeSettings.noiseGrain <= 0
+    ) {
+        return null;
+    }
+
+    const { width: w, height: h } = canvas.frameBounds.value;
+
     return {
         x: 0,
         y: 0,
@@ -37,20 +47,25 @@ const noiseConfig = computed(() => {
         fillPatternImage: noiseCanvas.value,
         fillPatternRepeat: 'repeat',
         globalCompositeOperation: 'overlay',
-        opacity: Math.min(1, store.settings.noiseGrain * 2),
+        opacity: Math.min(1, store.activeSettings.noiseGrain * 2),
         listening: false,
     };
 });
 
 // Konva stage ref — used by useExport to call toDataURL.
-// Must watch instead of onMounted because v-stage has v-if="containerWidth > 0",
-// so the stage isn't in the DOM yet when onMounted fires (ResizeObserver hasn't measured).
 const stageRef = ref<VueKonvaRef<Konva.Stage> | null>(null);
 
-watch(stageRef, (ref) => {
-    const stage = ref?.getNode();
-    if (stage) registerStage(stage);
-}, { flush: 'post' });
+watch(
+    [stageRef, canvas.exportBounds],
+    ([ref, exportBounds]) => {
+        const stage = ref?.getNode();
+
+        if (stage) {
+            registerStage(stage, exportBounds);
+        }
+    },
+    { flush: 'post' },
+);
 
 // Drag-and-drop / click-to-upload
 const isDragOver = ref(false);
@@ -79,7 +94,9 @@ function onClickUpload(): void {
     input.accept = 'image/*';
     input.multiple = true;
     input.onchange = () => {
-        Array.from(input.files ?? []).forEach((f) => store.addImage(f).catch(() => {}));
+        Array.from(input.files ?? []).forEach((f) =>
+            store.addImage(f).catch(() => {}),
+        );
     };
     input.click();
 }
@@ -94,7 +111,11 @@ function onClickUpload(): void {
         @dragleave="onDragLeave"
     >
         <!-- Konva stage (always mounted; hidden behind upload prompt when no images) -->
-        <v-stage v-if="containerWidth > 0" ref="stageRef" :config="canvas.stageConfig.value">
+        <v-stage
+            v-if="containerWidth > 0"
+            ref="stageRef"
+            :config="canvas.stageConfig.value"
+        >
             <v-layer>
                 <!-- Canvas background -->
                 <v-rect :config="canvas.canvasBgConfig.value" />
@@ -113,40 +134,252 @@ function onClickUpload(): void {
                     <!-- Card background (gradient or solid) -->
                     <v-rect :config="canvas.cardBgConfig.value" />
 
-                    <!-- macOS chrome -->
-                    <template v-if="canvas.macosDotsConfig.value">
-                        <v-rect :config="canvas.macosDotsConfig.value.barConfig" />
-                        <v-line :config="canvas.macosDotsConfig.value.separatorConfig" />
-                        <v-circle
-                            v-for="dot in canvas.macosDotsConfig.value.dots"
-                            :key="dot.fill"
-                            :config="dot"
-                        />
-                    </template>
+                    <v-group :config="canvas.frameGroupConfig.value">
+                        <!-- User image -->
+                        <v-group
+                            v-if="canvas.imageConfig.value"
+                            :config="canvas.imageClipGroupConfig.value"
+                        >
+                            <v-image :config="canvas.imageConfig.value" />
+                        </v-group>
 
-                    <!-- Browser chrome -->
-                    <template v-if="canvas.browserChromeConfig.value">
-                        <v-rect :config="canvas.browserChromeConfig.value.tabBarConfig" />
-                        <v-rect :config="canvas.browserChromeConfig.value.activeTabConfig" />
-                        <v-text :config="canvas.browserChromeConfig.value.tabTextConfig" />
-                        <v-rect :config="canvas.browserChromeConfig.value.addressBarConfig" />
-                        <v-rect :config="canvas.browserChromeConfig.value.urlBoxConfig" />
-                        <v-text :config="canvas.browserChromeConfig.value.urlTextConfig" />
-                        <v-circle
-                            v-for="dot in canvas.browserChromeConfig.value.dots"
-                            :key="dot.fill"
-                            :config="dot"
-                        />
-                    </template>
+                        <!-- macOS chrome (dark or light) -->
+                        <template v-if="canvas.macosDotsConfig.value">
+                            <v-rect
+                                :config="canvas.macosDotsConfig.value.barConfig"
+                            />
+                            <v-line
+                                :config="
+                                    canvas.macosDotsConfig.value.separatorConfig
+                                "
+                            />
+                            <v-text
+                                v-if="canvas.macosDotsConfig.value.titleConfig"
+                                :config="
+                                    canvas.macosDotsConfig.value.titleConfig
+                                "
+                            />
+                            <v-circle
+                                v-for="dot in canvas.macosDotsConfig.value.dots"
+                                :key="dot.fill"
+                                :config="dot"
+                            />
+                        </template>
 
-                    <!-- User image -->
-                    <v-image
-                        v-if="canvas.imageConfig.value"
-                        :config="canvas.imageConfig.value"
-                    />
+                        <!-- Browser chrome -->
+                        <template v-if="canvas.browserChromeConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.browserChromeConfig.value
+                                        .tabBarConfig
+                                "
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.browserChromeConfig.value
+                                        .activeTabConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.browserChromeConfig.value
+                                        .tabTextConfig
+                                "
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.browserChromeConfig.value
+                                        .addressBarConfig
+                                "
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.browserChromeConfig.value
+                                        .urlBoxConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.browserChromeConfig.value
+                                        .urlTextConfig
+                                "
+                            />
+                            <v-circle
+                                v-for="control in canvas.browserChromeConfig
+                                    .value.windowControls.circles"
+                                :key="`browser-circle-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-rect
+                                v-for="control in canvas.browserChromeConfig
+                                    .value.windowControls.buttons"
+                                :key="`browser-button-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-line
+                                v-for="(icon, index) in canvas
+                                    .browserChromeConfig.value.windowControls
+                                    .iconLines"
+                                :key="`browser-icon-line-${icon.kind}-${index}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                            <v-rect
+                                v-for="icon in canvas.browserChromeConfig.value
+                                    .windowControls.iconRects"
+                                :key="`browser-icon-rect-${icon.kind}-${icon.x}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                        </template>
 
-                    <!-- Noise overlay -->
-                    <v-rect v-if="noiseConfig" :config="noiseConfig" />
+                        <!-- Terminal chrome -->
+                        <template v-if="canvas.terminalChromeConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.terminalChromeConfig.value.barConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.terminalChromeConfig.value
+                                        .separatorConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.terminalChromeConfig.value
+                                        .shellLabelConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.terminalChromeConfig.value
+                                        .titleConfig
+                                "
+                            />
+                            <v-circle
+                                v-for="control in canvas.terminalChromeConfig
+                                    .value.windowControls.circles"
+                                :key="`terminal-circle-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-rect
+                                v-for="control in canvas.terminalChromeConfig
+                                    .value.windowControls.buttons"
+                                :key="`terminal-button-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-line
+                                v-for="(icon, index) in canvas
+                                    .terminalChromeConfig.value.windowControls
+                                    .iconLines"
+                                :key="`terminal-icon-line-${icon.kind}-${index}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                            <v-rect
+                                v-for="icon in canvas.terminalChromeConfig.value
+                                    .windowControls.iconRects"
+                                :key="`terminal-icon-rect-${icon.kind}-${icon.x}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                        </template>
+
+                        <!-- Minimal window chrome -->
+                        <template v-if="canvas.minimalWindowChromeConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.minimalWindowChromeConfig.value
+                                        .barConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.minimalWindowChromeConfig.value
+                                        .separatorConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.minimalWindowChromeConfig.value
+                                        .titleConfig
+                                "
+                            />
+                            <v-circle
+                                v-for="control in canvas
+                                    .minimalWindowChromeConfig.value
+                                    .windowControls.circles"
+                                :key="`minimal-circle-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-rect
+                                v-for="control in canvas
+                                    .minimalWindowChromeConfig.value
+                                    .windowControls.buttons"
+                                :key="`minimal-button-${control.kind}`"
+                                :config="control"
+                            />
+                            <v-line
+                                v-for="(icon, index) in canvas
+                                    .minimalWindowChromeConfig.value
+                                    .windowControls.iconLines"
+                                :key="`minimal-icon-line-${icon.kind}-${index}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                            <v-rect
+                                v-for="icon in canvas.minimalWindowChromeConfig
+                                    .value.windowControls.iconRects"
+                                :key="`minimal-icon-rect-${icon.kind}-${icon.x}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                        </template>
+
+                        <!-- Code editor chrome -->
+                        <template v-if="canvas.codeEditorChromeConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .activityBarConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .activityBarBorderConfig
+                                "
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .tabBarConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .tabBarBorderConfig
+                                "
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .activeTabConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .activeTabBorderTopConfig
+                                "
+                            />
+                            <v-text
+                                :config="
+                                    canvas.codeEditorChromeConfig.value
+                                        .tabTextConfig
+                                "
+                            />
+                        </template>
+                        <!-- Noise overlay -->
+                        <v-rect v-if="noiseConfig" :config="noiseConfig" />
+                    </v-group>
                 </v-group>
 
                 <!-- Border (outside clip group so it renders cleanly on top) -->
@@ -176,13 +409,26 @@ function onClickUpload(): void {
                     :class="{ 'drag-over': isDragOver }"
                     @click="onClickUpload"
                 >
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="empty-icon" aria-hidden="true">
+                    <svg
+                        width="36"
+                        height="36"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="empty-icon"
+                        aria-hidden="true"
+                    >
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                     <p class="empty-title">Drop screenshots here</p>
-                    <p class="empty-hint">or click to upload · PNG, JPG, WebP</p>
+                    <p class="empty-hint">
+                        or click to upload · PNG, JPG, WebP
+                    </p>
                 </button>
             </div>
         </Transition>
@@ -193,7 +439,9 @@ function onClickUpload(): void {
                 v-if="isDragOver && store.images.length > 0"
                 class="pointer-events-none absolute inset-0 flex items-center justify-center"
             >
-                <div class="absolute inset-4 rounded-2xl border-2 border-dashed border-[#e0ff4f]/50 bg-[#e0ff4f]/4" />
+                <div
+                    class="absolute inset-4 rounded-2xl border-2 border-dashed border-[#e0ff4f]/50 bg-[#e0ff4f]/4"
+                />
                 <p class="relative text-sm font-medium text-[#e0ff4f]">
                     Drop to add image
                 </p>
@@ -205,7 +453,11 @@ function onClickUpload(): void {
 <style scoped>
 .canvas-stage-container {
     background-color: #0a0a0c;
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.05) 1px,
+        transparent 1px
+    );
     background-size: 20px 20px;
 }
 
@@ -220,7 +472,9 @@ function onClickUpload(): void {
     background: transparent;
     cursor: pointer;
     text-align: center;
-    transition: border-color 200ms ease, background 200ms ease;
+    transition:
+        border-color 200ms ease,
+        background 200ms ease;
 }
 
 .canvas-empty:hover,

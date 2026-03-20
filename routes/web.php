@@ -3,12 +3,11 @@
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\GithubAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\EditorController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\PresetController;
 use App\Http\Controllers\SessionController;
-use App\Models\ExportSession;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::inertia('/', 'Welcome', [
@@ -16,21 +15,7 @@ Route::inertia('/', 'Welcome', [
 ])->name('home');
 
 // Editor — accepts optional ?session= query param to restore a previous export
-Route::get('editor', function (Request $request) {
-    $sessionData = null;
-
-    if ($request->filled('session') && $request->user()) {
-        $session = ExportSession::where('id', $request->integer('session'))
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if ($session) {
-            $sessionData = $session->only(['style_slug', 'settings']);
-        }
-    }
-
-    return Inertia::render('Editor', ['sessionData' => $sessionData]);
-})->name('editor');
+Route::get('editor', EditorController::class)->name('editor');
 
 // GitHub OAuth
 Route::get('auth/github', [GithubAuthController::class, 'redirectToGithub'])->name('auth.github');
@@ -56,17 +41,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Export history page
-Route::get('history', function (Request $request) {
-    $user = $request->user();
-    $limit = $user->isPro() ? 50 : 10;
-
-    $sessions = ExportSession::where('user_id', $user->id)
-        ->latest()
-        ->limit($limit)
-        ->get(['id', 'style_slug', 'settings', 'image_count', 'thumbnail_url', 'created_at']);
-
-    return Inertia::render('History', ['sessions' => $sessions]);
-})->middleware('auth')->name('history');
+Route::get('history', HistoryController::class)->middleware('auth')->name('history');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');

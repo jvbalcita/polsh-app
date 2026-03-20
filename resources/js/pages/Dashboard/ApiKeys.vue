@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ProductPageHeader from '@/components/ProductPageHeader.vue';
+import ProductUpgradeCard from '@/components/ProductUpgradeCard.vue';
+import { editor } from '@/routes';
+import { store as storeApiKey, revoke as revokeApiKey } from '@/routes/api-keys';
+import { portal as billingPortal } from '@/routes/billing';
+import { api as docsApi } from '@/routes/docs';
 
 interface ApiKey {
     id: number;
@@ -17,6 +23,8 @@ interface ApiKey {
 const props = defineProps<{
     apiKeys: ApiKey[];
 }>();
+
+const apiKeys = ref<ApiKey[]>(props.apiKeys.map((apiKey) => ({ ...apiKey })));
 
 const page = usePage();
 const isPro = page.props.isPro as boolean;
@@ -43,20 +51,26 @@ const xsrfToken = (): string =>
     decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '');
 
 async function createKey(): Promise<void> {
-    if (!newKeyName.value.trim()) return;
+    if (!newKeyName.value.trim()) {
+return;
+}
+
     isCreating.value = true;
     createError.value = '';
 
     try {
-        const res = await fetch('/dashboard/api-keys', {
+        const submittedWebhookUrl = newWebhookUrl.value.trim() || null;
+
+        const res = await fetch(storeApiKey.url(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
-            body: JSON.stringify({ name: newKeyName.value.trim(), webhook_url: newWebhookUrl.value.trim() || null }),
+            body: JSON.stringify({ name: newKeyName.value.trim(), webhook_url: submittedWebhookUrl }),
         });
 
         if (!res.ok) {
             const data = await res.json();
             createError.value = data.message ?? 'Failed to create key.';
+
             return;
         }
 
@@ -70,7 +84,7 @@ async function createKey(): Promise<void> {
         newWebhookUrl.value = '';
 
         // Add to list with a placeholder (no real key shown)
-        props.apiKeys.unshift({
+        apiKeys.value.unshift({
             id: data.id,
             name: data.name,
             key_prefix: data.key_prefix,
@@ -78,7 +92,7 @@ async function createKey(): Promise<void> {
             requests_today: 0,
             requests_reset_at: new Date().toISOString(),
             revoked_at: null,
-            webhook_url: null,
+            webhook_url: data.webhook_url ?? submittedWebhookUrl,
             created_at: new Date().toISOString(),
         });
     } finally {
@@ -93,18 +107,25 @@ async function copyKey(): Promise<void> {
 }
 
 async function revokeKey(apiKey: ApiKey): Promise<void> {
-    if (!confirm(`Revoke key "${apiKey.name}"? This cannot be undone.`)) return;
+    if (!confirm(`Revoke key "${apiKey.name}"? This cannot be undone.`)) {
+return;
+}
+
     revokingId.value = apiKey.id;
 
     try {
-        await fetch(`/dashboard/api-keys/${apiKey.id}/revoke`, {
+        await fetch(revokeApiKey.url(apiKey.id), {
             method: 'POST',
             headers: { 'X-XSRF-TOKEN': xsrfToken() },
         });
 
-        const idx = props.apiKeys.findIndex((k) => k.id === apiKey.id);
+        const idx = apiKeys.value.findIndex((key) => key.id === apiKey.id);
+
         if (idx !== -1) {
-            props.apiKeys[idx].revoked_at = new Date().toISOString();
+            apiKeys.value[idx] = {
+                ...apiKeys.value[idx],
+                revoked_at: new Date().toISOString(),
+            };
         }
     } finally {
         revokingId.value = null;
@@ -116,7 +137,10 @@ function usagePercent(key: ApiKey): number {
 }
 
 function formatDate(dateStr: string | null): string {
-    if (!dateStr) return 'Never';
+    if (!dateStr) {
+return 'Never';
+}
+
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 </script>
@@ -124,41 +148,23 @@ function formatDate(dateStr: string | null): string {
 <template>
     <Head title="API Keys" />
 
-    <div class="min-h-screen" style="background: #080808">
-        <!-- Topbar -->
-        <header class="flex h-11 items-center justify-between border-b border-white/8 px-6" style="background: #111111">
-            <div class="flex items-center gap-3">
-                <Link href="/editor" class="text-sm font-semibold tracking-tight" style="color: #e0ff4f">polsh</Link>
-                <span class="text-xs text-white/20">/ api keys</span>
-            </div>
-            <Link
-                href="/editor"
-                class="flex items-center gap-1.5 text-[11px] text-white/35 transition-colors hover:text-white/60"
-            >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <polyline points="15 18 9 12 15 6" />
-                </svg>
-                Back to editor
-            </Link>
-        </header>
+    <div class="polsh-page-shell min-h-screen">
+        <ProductPageHeader
+            context="/ api keys"
+            :home-href="editor()"
+            :trailing-href="editor()"
+            trailing-label="Back to editor"
+        />
 
         <div class="mx-auto max-w-2xl px-6 py-10">
-            <!-- Pro gate -->
-            <div
+            <ProductUpgradeCard
                 v-if="!isPro"
-                class="rounded-xl border border-[#e0ff4f]/15 px-6 py-8 text-center"
-                style="background: rgba(224,255,79,0.04)"
+                title="API access is a Pro feature"
+                description="Upgrade to Pro to generate API keys and use the REST API."
+                :cta-href="billingPortal()"
+                cta-label="Upgrade to Pro →"
             >
-                <h2 class="text-base font-semibold text-white/70">API access is a Pro feature</h2>
-                <p class="mt-2 text-sm text-white/35">Upgrade to Pro to generate API keys and use the REST API.</p>
-                <Link
-                    href="/billing"
-                    class="mt-5 inline-block rounded-md px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
-                    style="background: #e0ff4f; color: #080808"
-                >
-                    Upgrade to Pro →
-                </Link>
-            </div>
+            </ProductUpgradeCard>
 
             <template v-else>
                 <!-- Header -->
@@ -167,7 +173,7 @@ function formatDate(dateStr: string | null): string {
                         <h1 class="text-xl font-semibold text-white/85">API Keys</h1>
                         <p class="mt-1 text-sm text-white/35">
                             Use these keys to authenticate requests to the Polsh API.
-                            <Link href="/docs/api" class="text-[#e0ff4f]/70 hover:text-[#e0ff4f] transition-colors">View docs →</Link>
+                            <Link :href="docsApi()" class="text-[#e0ff4f]/70 hover:text-[#e0ff4f] transition-colors">View docs →</Link>
                         </p>
                     </div>
                     <button
@@ -232,8 +238,7 @@ function formatDate(dateStr: string | null): string {
                 <!-- Create form inline -->
                 <div
                     v-if="showCreateForm"
-                    class="mb-5 rounded-xl border border-white/10 p-5"
-                    style="background: #111111"
+                    class="polsh-panel mb-5 rounded-xl border border-white/10 p-5"
                 >
                     <p class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">New key</p>
                     <div class="mb-2 flex gap-2">
@@ -284,8 +289,7 @@ function formatDate(dateStr: string | null): string {
                 <!-- Keys list -->
                 <div
                     v-if="apiKeys.length > 0"
-                    class="rounded-xl border border-white/8 overflow-hidden"
-                    style="background: #111111"
+                    class="polsh-panel rounded-xl border border-white/8 overflow-hidden"
                 >
                     <div
                         v-for="key in apiKeys"
@@ -342,7 +346,7 @@ function formatDate(dateStr: string | null): string {
                 </div>
 
                 <!-- Empty state -->
-                <div v-else-if="!showCreateForm" class="rounded-xl border border-white/6 px-6 py-10 text-center" style="background: #111111">
+                <div v-else-if="!showCreateForm" class="polsh-panel rounded-xl border border-white/6 px-6 py-10 text-center">
                     <p class="text-sm text-white/30">No API keys yet.</p>
                     <button
                         type="button"

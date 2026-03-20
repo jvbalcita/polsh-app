@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import ProductPageHeader from '@/components/ProductPageHeader.vue';
+import ProductUpgradeCard from '@/components/ProductUpgradeCard.vue';
+import { editor } from '@/routes';
+import { portal as billingPortal } from '@/routes/billing';
+import { invite as inviteTeam, leave as leaveTeamRoute, store as storeTeam } from '@/routes/teams';
 
 interface Member {
     id: number;
@@ -38,7 +43,7 @@ const currentUserId = (page.props.auth?.user as { id: number } | null)?.id;
 const createForm = useForm({ name: '' });
 
 function submitCreate(): void {
-    createForm.post('/teams', {
+    createForm.post(storeTeam.url(), {
         onSuccess: () => createForm.reset(),
     });
 }
@@ -48,8 +53,11 @@ const inviteForm = useForm({ email: '' });
 const inviteSuccess = ref(false);
 
 function submitInvite(): void {
-    if (!props.team) return;
-    inviteForm.post(`/teams/${props.team.id}/invite`, {
+    if (!props.team) {
+return;
+}
+
+    inviteForm.post(inviteTeam.url(props.team.id), {
         onSuccess: () => {
             inviteForm.reset();
             inviteSuccess.value = true;
@@ -62,9 +70,15 @@ function submitInvite(): void {
 const leaveForm = useForm({});
 
 function leaveTeam(): void {
-    if (!props.team) return;
-    if (!confirm('Are you sure you want to leave this team?')) return;
-    leaveForm.post(`/teams/${props.team.id}/leave`);
+    if (!props.team) {
+return;
+}
+
+    if (!confirm('Are you sure you want to leave this team?')) {
+return;
+}
+
+    leaveForm.post(leaveTeamRoute.url(props.team.id));
 }
 
 function isOwner(member: Member): boolean {
@@ -79,57 +93,30 @@ function isOwner(member: Member): boolean {
         class="min-h-screen"
         style="background: #080808"
     >
-        <!-- Topbar -->
-        <header
-            class="flex h-11 items-center justify-between border-b border-white/8 px-6"
-            style="background: #111111"
-        >
-            <div class="flex items-center gap-3">
-                <Link
-                    href="/editor"
-                    class="text-sm font-semibold tracking-tight"
-                    style="color: #e0ff4f"
-                >
-                    polsh
-                </Link>
-                <span class="text-xs text-white/20">/ team</span>
-            </div>
-            <Link
-                href="/editor"
-                class="flex items-center gap-1.5 text-[11px] text-white/35 transition-colors hover:text-white/60"
-            >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <polyline points="15 18 9 12 15 6"/>
-                </svg>
-                Back to editor
-            </Link>
-        </header>
+        <ProductPageHeader
+            context="/ team"
+            :home-href="editor()"
+            :trailing-href="editor()"
+            trailing-label="Back to editor"
+        />
 
         <div class="mx-auto max-w-2xl px-6 py-10">
-            <!-- Pro gate: no team features without Pro -->
-            <div
+            <ProductUpgradeCard
                 v-if="!isPro"
-                class="rounded-xl border border-[#e0ff4f]/15 px-6 py-8 text-center"
-                style="background: rgba(224,255,79,0.04)"
+                title="Teams is a Pro feature"
+                description="Upgrade to Pro to create a team and share presets with your teammates."
+                :cta-href="billingPortal()"
+                cta-label="Upgrade to Pro →"
             >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" class="mx-auto mb-4 text-[#e0ff4f]/50">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <h2 class="text-base font-semibold text-white/70">Teams is a Pro feature</h2>
-                <p class="mt-2 text-sm text-white/35">
-                    Upgrade to Pro to create a team and share presets with your teammates.
-                </p>
-                <Link
-                    href="/billing"
-                    class="mt-5 inline-block rounded-md px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-80"
-                    style="background: #e0ff4f; color: #080808"
-                >
-                    Upgrade to Pro →
-                </Link>
-            </div>
+                <template #icon>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" class="mx-auto mb-4 text-[#e0ff4f]/50">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </template>
+            </ProductUpgradeCard>
 
             <!-- No team: create form -->
             <template v-else-if="!team">
@@ -141,8 +128,7 @@ function isOwner(member: Member): boolean {
                 </div>
 
                 <form
-                    class="rounded-xl border border-white/8 p-6"
-                    style="background: #111111"
+                    class="polsh-panel rounded-xl border border-white/8 p-6"
                     @submit.prevent="submitCreate"
                 >
                     <label class="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/30">
@@ -181,7 +167,7 @@ function isOwner(member: Member): boolean {
                 </div>
 
                 <!-- Members section -->
-                <section class="mb-6 rounded-xl border border-white/8 overflow-hidden" style="background: #111111">
+                <section class="polsh-panel mb-6 rounded-xl border border-white/8 overflow-hidden">
                     <div class="border-b border-white/8 px-5 py-3">
                         <h2 class="text-[11px] font-semibold uppercase tracking-widest text-white/35">Members</h2>
                     </div>
@@ -223,8 +209,7 @@ function isOwner(member: Member): boolean {
                 <!-- Invite section (owner only) -->
                 <section
                     v-if="currentUserId === team.owner_id"
-                    class="mb-6 rounded-xl border border-white/8 p-5"
-                    style="background: #111111"
+                    class="polsh-panel mb-6 rounded-xl border border-white/8 p-5"
                 >
                     <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">Invite by email</h2>
 
@@ -261,8 +246,7 @@ function isOwner(member: Member): boolean {
                 <!-- Shared presets -->
                 <section
                     v-if="teamPresets.length > 0"
-                    class="mb-6 rounded-xl border border-white/8 overflow-hidden"
-                    style="background: #111111"
+                    class="polsh-panel mb-6 rounded-xl border border-white/8 overflow-hidden"
                 >
                     <div class="border-b border-white/8 px-5 py-3">
                         <h2 class="text-[11px] font-semibold uppercase tracking-widest text-white/35">Shared presets</h2>

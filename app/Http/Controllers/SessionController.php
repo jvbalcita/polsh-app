@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Sessions\StoreSessionRequest;
 use App\Models\ExportSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -23,14 +25,9 @@ class SessionController extends Controller
         return response()->json($sessions);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreSessionRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'style_slug' => ['required', 'string', 'max:60'],
-            'settings' => ['required', 'array'],
-            'image_count' => ['required', 'integer', 'min:1'],
-            'thumbnail_url' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         // Extract and store base64 thumbnail to disk
         $dataUrl = $validated['thumbnail_url'];
@@ -54,16 +51,16 @@ class SessionController extends Controller
         return response()->json($session->only(['id', 'style_slug', 'image_count', 'thumbnail_url', 'created_at']), 201);
     }
 
-    public function show(ExportSession $session, Request $request): JsonResponse
+    public function show(ExportSession $session): JsonResponse
     {
-        abort_if($session->user_id !== $request->user()->id, 403);
+        Gate::authorize('view', $session);
 
         return response()->json($session->only(['id', 'style_slug', 'settings', 'image_count', 'thumbnail_url', 'created_at']));
     }
 
-    public function destroy(ExportSession $session, Request $request): JsonResponse
+    public function destroy(ExportSession $session): JsonResponse
     {
-        abort_if($session->user_id !== $request->user()->id, 403);
+        Gate::authorize('delete', $session);
 
         // Remove stored thumbnail if it's on our disk
         if ($session->thumbnail_url) {

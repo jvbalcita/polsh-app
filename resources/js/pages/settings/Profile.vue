@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, User } from '@/types';
 
 type Props = {
     mustVerifyEmail: boolean;
@@ -29,7 +29,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
 ];
 
 const page = usePage();
-const user = computed(() => page.props.auth.user);
+const user = computed(() => page.props.auth.user as User);
 </script>
 
 <template>
