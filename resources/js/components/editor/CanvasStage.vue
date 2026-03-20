@@ -216,19 +216,18 @@ function onClickUpload(): void {
                                 :key="`browser-button-${control.kind}`"
                                 :config="control"
                             />
-                            <v-text
+                            <v-line
+                                v-for="(icon, index) in canvas
+                                    .browserChromeConfig.value.windowControls
+                                    .iconLines"
+                                :key="`browser-icon-line-${icon.kind}-${index}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                            <v-rect
                                 v-for="icon in canvas.browserChromeConfig.value
-                                    .windowControls.icons"
-                                :key="`browser-icon-${icon.text}-${icon.x}`"
-                                :config="{
-                                    ...icon,
-                                    x: icon.x - 14,
-                                    width: 28,
-                                    fontSize: 11,
-                                    fontFamily: 'DM Mono, monospace',
-                                    align: 'center',
-                                    listening: false,
-                                }"
+                                    .windowControls.iconRects"
+                                :key="`browser-icon-rect-${icon.kind}-${icon.x}`"
+                                :config="{ ...icon, listening: false }"
                             />
                         </template>
 
@@ -269,19 +268,18 @@ function onClickUpload(): void {
                                 :key="`terminal-button-${control.kind}`"
                                 :config="control"
                             />
-                            <v-text
+                            <v-line
+                                v-for="(icon, index) in canvas
+                                    .terminalChromeConfig.value.windowControls
+                                    .iconLines"
+                                :key="`terminal-icon-line-${icon.kind}-${index}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                            <v-rect
                                 v-for="icon in canvas.terminalChromeConfig.value
-                                    .windowControls.icons"
-                                :key="`terminal-icon-${icon.text}-${icon.x}`"
-                                :config="{
-                                    ...icon,
-                                    x: icon.x - 14,
-                                    width: 28,
-                                    fontSize: 11,
-                                    fontFamily: 'DM Mono, monospace',
-                                    align: 'center',
-                                    listening: false,
-                                }"
+                                    .windowControls.iconRects"
+                                :key="`terminal-icon-rect-${icon.kind}-${icon.x}`"
+                                :config="{ ...icon, listening: false }"
                             />
                         </template>
 
@@ -319,19 +317,18 @@ function onClickUpload(): void {
                                 :key="`minimal-button-${control.kind}`"
                                 :config="control"
                             />
-                            <v-text
+                            <v-line
+                                v-for="(icon, index) in canvas
+                                    .minimalWindowChromeConfig.value
+                                    .windowControls.iconLines"
+                                :key="`minimal-icon-line-${icon.kind}-${index}`"
+                                :config="{ ...icon, listening: false }"
+                            />
+                            <v-rect
                                 v-for="icon in canvas.minimalWindowChromeConfig
-                                    .value.windowControls.icons"
-                                :key="`minimal-icon-${icon.text}-${icon.x}`"
-                                :config="{
-                                    ...icon,
-                                    x: icon.x - 14,
-                                    width: 28,
-                                    fontSize: 10,
-                                    fontFamily: 'DM Mono, monospace',
-                                    align: 'center',
-                                    listening: false,
-                                }"
+                                    .value.windowControls.iconRects"
+                                :key="`minimal-icon-rect-${icon.kind}-${icon.x}`"
+                                :config="{ ...icon, listening: false }"
                             />
                         </template>
 

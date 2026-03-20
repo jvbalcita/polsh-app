@@ -203,8 +203,9 @@ describe('useExport', () => {
         expect(svg).toContain('<radialGradient id="bg-grad"');
         expect(svg).toContain('Launch &amp; Notes');
         expect(svg).toContain('polsh.app?a=1&amp;b=2');
-        expect(svg).toContain('<rect x="124" y="54" width="140"');
-        expect(svg).toContain('<rect x="410" y="92" width="260"');
+        expect(svg).toContain('<rect x="48" y="647.25" width="984"');
+        expect(svg).toContain('<rect x="124" y="653.25" width="140"');
+        expect(svg).toContain('<rect x="410" y="691.25" width="260"');
     });
 
     it('sizes browser SVG chrome from the card width on small canvases', async () => {
@@ -240,8 +241,9 @@ describe('useExport', () => {
 
         expect(exportedBlob).not.toBeNull();
         const svg = await readBlobAsText(exportedBlob!);
+        expect(svg).toContain('<rect x="84" y="48" width="232"');
         expect(svg).toContain(
-            '<rect x="139.2" y="92" width="121.60000000000001"',
+            '<rect x="153.6" y="92" width="92.80000000000001"',
         );
     });
 
@@ -292,5 +294,44 @@ describe('useExport', () => {
         expect(svg).toContain('data-window-control="close"');
         expect(svg).toContain('Windows Preview');
         expect(svg).toContain('preserveAspectRatio="none"');
+    });
+
+    it('keeps windows browser tabs clear of the control cluster on small canvases', async () => {
+        const store = useEditorStore();
+        store.images = [
+            {
+                id: 'image-6',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1200,
+                naturalHeight: 1200,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'browser',
+                    framePlatform: 'windows',
+                    canvasSize: 'custom-400x400',
+                },
+            },
+        ];
+
+        let exportedBlob: Blob | null = null;
+        vi.mocked(URL.createObjectURL).mockImplementation(
+            (blob: Blob | MediaSource) => {
+                exportedBlob = blob as Blob;
+
+                return 'blob:svg-export';
+            },
+        );
+
+        const { exportSVG } = useExport();
+
+        exportSVG();
+
+        expect(exportedBlob).not.toBeNull();
+        const svg = await readBlobAsText(exportedBlob!);
+        expect(svg).toContain('<rect x="102" y="54" width="100" height="30"');
+        expect(svg).toContain('<rect x="214" y="48" width="30" height="36"');
+        expect(svg).toContain('<rect x="274" y="48" width="42" height="36"');
     });
 });

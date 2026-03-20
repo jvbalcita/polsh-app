@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import type Konva from 'konva';
 import { markRaw, ref } from 'vue';
 import {
+    calculateFrameLayout,
     calculateImagePlacement,
     getDesktopWindowControls,
 } from '@/composables/editorPresentation';
@@ -198,22 +199,20 @@ function buildWindowControlsSvg(
             .join('');
     }
 
-    const labels = {
-        minimize: '—',
-        maximize: '□',
-        close: '×',
-    } as const;
-
     return layout.buttons
         .map((button) => {
             const fill =
                 button.kind === 'close'
                     ? 'rgba(232, 70, 88, 0.95)'
                     : 'rgba(255,255,255,0.04)';
-            const textFill =
-                button.kind === 'close' ? '#ffffff' : 'rgba(255,255,255,0.7)';
+            const symbol =
+                button.kind === 'minimize'
+                    ? `<line x1="${offsetX + button.x + 10}" y1="${offsetY + button.height / 2 + 5}" x2="${offsetX + button.x + button.width - 10}" y2="${offsetY + button.height / 2 + 5}" stroke="rgba(255,255,255,0.78)" stroke-width="1.5"/>`
+                    : button.kind === 'maximize'
+                      ? `<rect x="${offsetX + button.x + 10}" y="${offsetY + button.height / 2 - 5}" width="${button.width - 20}" height="10" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="1.5"/>`
+                      : `<line x1="${offsetX + button.x + 14}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + button.width - 14}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.5"/><line x1="${offsetX + button.x + button.width - 14}" y1="${offsetY + button.height / 2 - 5}" x2="${offsetX + button.x + 14}" y2="${offsetY + button.height / 2 + 5}" stroke="#ffffff" stroke-width="1.5"/>`;
 
-            return `<g data-platform="windows" data-window-control="${button.kind}"><rect x="${offsetX + button.x}" y="${offsetY + button.y}" width="${button.width}" height="${button.height}" fill="${fill}"/><text x="${offsetX + button.x + button.width / 2}" y="${offsetY + button.y + button.height / 2 + 4}" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="${textFill}">${labels[button.kind]}</text></g>`;
+            return `<g data-platform="windows" data-window-control="${button.kind}"><rect x="${offsetX + button.x}" y="${offsetY + button.y}" width="${button.width}" height="${button.height}" fill="${fill}"/>${symbol}</g>`;
         })
         .join('');
 }
@@ -354,24 +353,34 @@ function buildSVG(
             : 'none';
     const hasFrame = settings.frameType !== 'none';
     const artifactRadius = hasFrame ? style.radius : settings.radius;
-    const frameX = hasFrame ? pad : 0;
-    const frameY = hasFrame ? pad : 0;
-    const frameWidth = hasFrame ? Math.max(0, cardWidth - pad * 2) : cardWidth;
-    const frameHeight = hasFrame
-        ? Math.max(0, cardHeight - pad * 2)
-        : cardHeight;
+    const insets = frameInsetsForSettings(settings);
+    const frameLayout = hasFrame
+        ? calculateFrameLayout({
+              areaX: pad,
+              areaY: pad,
+              areaWidth: Math.max(0, cardWidth - pad * 2),
+              areaHeight: Math.max(0, cardHeight - pad * 2),
+              imageWidth,
+              imageHeight,
+              topInset: insets.top,
+              leftInset: insets.left,
+          })
+        : null;
+    const frameX = hasFrame ? frameLayout!.frame.x : 0;
+    const frameY = hasFrame ? frameLayout!.frame.y : 0;
+    const frameWidth = hasFrame ? frameLayout!.frame.width : cardWidth;
+    const frameHeight = hasFrame ? frameLayout!.frame.height : cardHeight;
     const visualX = hasFrame ? frameX : 0;
     const visualY = hasFrame ? frameY : 0;
     const visualWidth = hasFrame ? frameWidth : cardWidth;
     const visualHeight = hasFrame ? frameHeight : cardHeight;
-    const insets = frameInsetsForSettings(settings);
-    const viewportX = hasFrame ? frameX + insets.left : pad;
-    const viewportY = hasFrame ? frameY + insets.top : pad;
+    const viewportX = hasFrame ? frameLayout!.viewport.x : pad;
+    const viewportY = hasFrame ? frameLayout!.viewport.y : pad;
     const viewportWidth = hasFrame
-        ? frameWidth - insets.left
+        ? frameLayout!.viewport.width
         : cardWidth - pad * 2;
     const viewportHeight = hasFrame
-        ? frameHeight - insets.top
+        ? frameLayout!.viewport.height
         : cardHeight - pad * 2;
     const viewportRadius = Math.max(0, r - 2);
     const viewportClipPath = roundedRectPath(
@@ -495,11 +504,22 @@ function buildSVG(
                             frameY,
                         )
                       : '';
+                  const controlsWidth = isWindows ? 102 : 0;
+                  const tabX = isWindows ? 18 : 76;
+                  const tabWidth = isWindows
+                      ? Math.max(
+                            74,
+                            Math.min(
+                                164,
+                                frameWidth - controlsWidth - tabX - 12,
+                            ),
+                        )
+                      : 140;
 
                   return `
   <rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="36" fill="${isWindows ? '#20242d' : '#17181d'}"/>
-  <rect x="${frameX + (isWindows ? 18 : 76)}" y="${frameY + 6}" width="${isWindows ? 164 : 140}" height="30" rx="8" fill="${isWindows ? '#313846' : '#2d3038'}"/>
-  <text x="${frameX + (isWindows ? 34 : 92)}" y="${frameY + 24}" font-size="11" fill="${isWindows ? 'rgba(245,248,255,0.68)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameTitle || 'Tab')}</text>
+  <rect x="${frameX + tabX}" y="${frameY + 6}" width="${tabWidth}" height="30" rx="8" fill="${isWindows ? '#313846' : '#2d3038'}"/>
+  <text x="${frameX + (isWindows ? tabX + 16 : 92)}" y="${frameY + 24}" font-size="11" fill="${isWindows ? 'rgba(245,248,255,0.68)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameTitle || 'Tab')}</text>
   <rect x="${frameX}" y="${frameY + 36}" width="${frameWidth}" height="36" fill="${isWindows ? '#2b313c' : '#262932'}"/>
   <rect x="${frameX + (frameWidth - urlBoxW) / 2}" y="${frameY + 44}" width="${urlBoxW}" height="20" rx="10" fill="${isWindows ? '#161b24' : '#14171e'}"/>
   <text x="${frameX + (frameWidth - urlBoxW) / 2 + 12}" y="${frameY + 58}" font-size="10.5" fill="${isWindows ? 'rgba(213,221,235,0.72)' : 'rgba(255,255,255,0.46)'}">${escapeXml(settings.frameUrl || 'example.com')}</text>

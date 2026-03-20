@@ -20,6 +20,32 @@ export interface ImagePlacement {
     isClipped: boolean;
 }
 
+export interface FrameLayoutInput {
+    areaX: number;
+    areaY: number;
+    areaWidth: number;
+    areaHeight: number;
+    imageWidth: number;
+    imageHeight: number;
+    topInset: number;
+    leftInset: number;
+}
+
+export interface FrameLayout {
+    frame: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+    viewport: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+}
+
 export interface WindowControlButton {
     kind: 'close' | 'maximize' | 'minimize';
     x: number;
@@ -93,15 +119,58 @@ export function calculateImagePlacement(
     };
 }
 
+export function calculateFrameLayout(input: FrameLayoutInput): FrameLayout {
+    const safeImageAspect =
+        input.imageWidth > 0 && input.imageHeight > 0
+            ? input.imageWidth / input.imageHeight
+            : 16 / 9;
+    const maxViewportWidth = Math.max(0, input.areaWidth - input.leftInset);
+    const maxViewportHeight = Math.max(0, input.areaHeight - input.topInset);
+
+    let viewportWidth = Math.max(
+        0,
+        Math.min(maxViewportWidth, maxViewportHeight * safeImageAspect),
+    );
+    let viewportHeight = Math.max(0, viewportWidth / safeImageAspect);
+
+    if (viewportHeight + input.topInset > input.areaHeight) {
+        viewportHeight = maxViewportHeight;
+        viewportWidth = viewportHeight * safeImageAspect;
+    }
+
+    const frameWidth = viewportWidth + input.leftInset;
+    const frameHeight = viewportHeight + input.topInset;
+    const frameX = input.areaX + (input.areaWidth - frameWidth) / 2;
+    const frameY = input.areaY + (input.areaHeight - frameHeight) / 2;
+
+    return {
+        frame: {
+            x: frameX,
+            y: frameY,
+            width: frameWidth,
+            height: frameHeight,
+        },
+        viewport: {
+            x: frameX + input.leftInset,
+            y: frameY + input.topInset,
+            width: viewportWidth,
+            height: viewportHeight,
+        },
+    };
+}
+
 export function getDesktopWindowControls(
     input: WindowControlsInput,
 ): WindowControlsLayout {
     const inset = input.inset ?? 14;
 
     if (input.framePlatform === 'windows') {
-        const buttonWidth = 28;
+        const minimizeWidth = 30;
+        const maximizeWidth = 30;
+        const closeWidth = 42;
         const buttonHeight = input.height;
-        const firstButtonX = input.width - inset - buttonWidth * 3;
+        const firstButtonX =
+            input.width - (minimizeWidth + maximizeWidth + closeWidth);
 
         return {
             platform: 'windows',
@@ -111,21 +180,21 @@ export function getDesktopWindowControls(
                     kind: 'minimize',
                     x: firstButtonX,
                     y: 0,
-                    width: buttonWidth,
+                    width: minimizeWidth,
                     height: buttonHeight,
                 },
                 {
                     kind: 'maximize',
-                    x: firstButtonX + buttonWidth,
+                    x: firstButtonX + minimizeWidth,
                     y: 0,
-                    width: buttonWidth,
+                    width: maximizeWidth,
                     height: buttonHeight,
                 },
                 {
                     kind: 'close',
-                    x: firstButtonX + buttonWidth * 2,
+                    x: firstButtonX + minimizeWidth + maximizeWidth,
                     y: 0,
-                    width: buttonWidth,
+                    width: closeWidth,
                     height: buttonHeight,
                 },
             ],

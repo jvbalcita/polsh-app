@@ -40,16 +40,15 @@ describe('useCanvas', () => {
 
         const canvas = useCanvas(ref(1400), ref(900)) as Record<string, any>;
 
-        expect(canvas.frameBounds.value).toMatchObject({
-            x: 48,
-            y: 48,
-        });
+        expect(canvas.frameBounds.value.x).toBeGreaterThan(48);
+        expect(canvas.frameBounds.value.y).toBe(48);
         expect(canvas.imageBounds.value).toMatchObject({
             x: 0,
             y: 72,
             width: canvas.frameBounds.value.width,
             height: canvas.frameBounds.value.height - 72,
         });
+        expect(canvas.frameBounds.value.width).toBeLessThan(1200 - 96);
         expect(canvas.shadowRectConfig.value).toMatchObject({
             x: canvas.frameAbsoluteBounds.value.x,
             y: canvas.frameAbsoluteBounds.value.y,
@@ -62,7 +61,11 @@ describe('useCanvas', () => {
         });
         expect(canvas.exportBounds.value).toEqual(canvas.cardBounds.value);
         expect(canvas.imageConfig.value.crop).toBeUndefined();
-        expect(canvas.imageConfig.value.y).toBeGreaterThanOrEqual(72);
+        expect(canvas.imageConfig.value.y).toBe(72);
+        expect(canvas.imageConfig.value.width).toBeCloseTo(
+            canvas.imageBounds.value.width,
+            6,
+        );
     });
 
     it('supports zooming and panning the framed image without losing the viewport bounds', () => {

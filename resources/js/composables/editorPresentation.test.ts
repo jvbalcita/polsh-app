@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     BACKGROUND_PRESETS,
+    calculateFrameLayout,
     calculateImagePlacement,
     getDesktopWindowControls,
 } from '@/composables/editorPresentation';
@@ -63,6 +64,32 @@ describe('editorPresentation', () => {
         expect(controls.buttons[0]?.x).toBeLessThan(
             controls.buttons[1]?.x ?? 0,
         );
+        expect(
+            (controls.buttons[2]?.x ?? 0) + (controls.buttons[2]?.width ?? 0),
+        ).toBe(960);
+        expect(controls.buttons[2]?.width).toBeGreaterThan(
+            controls.buttons[1]?.width ?? 0,
+        );
+    });
+
+    it('sizes the frame from the image aspect so the screenshot fills the viewport width by default', () => {
+        const layout = calculateFrameLayout({
+            areaX: 48,
+            areaY: 48,
+            areaWidth: 1104,
+            areaHeight: 579,
+            imageWidth: 1600,
+            imageHeight: 900,
+            topInset: 72,
+            leftInset: 0,
+        });
+
+        expect(layout.frame.width).toBeCloseTo(901.3333333333, 6);
+        expect(layout.frame.height).toBe(579);
+        expect(layout.frame.x).toBeCloseTo(149.3333333333, 6);
+        expect(layout.frame.y).toBe(48);
+        expect(layout.viewport.width).toBeCloseTo(901.3333333333, 6);
+        expect(layout.viewport.height).toBe(507);
     });
 
     it('offers curated presets for every editable background mode', () => {

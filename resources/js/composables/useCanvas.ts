@@ -1,6 +1,7 @@
 import { computed } from 'vue';
 import type { Ref } from 'vue';
 import {
+    calculateFrameLayout,
     calculateImagePlacement,
     getDesktopWindowControls,
 } from '@/composables/editorPresentation';
@@ -48,10 +49,14 @@ interface CanvasWindowControl {
 }
 
 interface CanvasWindowControlIcon {
-    x: number;
-    y: number;
-    text: string;
-    fill: string;
+    points?: number[];
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    stroke: string;
+    strokeWidth?: number;
+    kind: 'close' | 'maximize' | 'minimize';
 }
 
 function angleToGradientPoints(
@@ -141,14 +146,16 @@ function buildWindowControlsConfig(
     platform: 'macos' | 'windows';
     circles: CanvasWindowControl[];
     buttons: CanvasWindowControl[];
-    icons: CanvasWindowControlIcon[];
+    iconLines: CanvasWindowControlIcon[];
+    iconRects: CanvasWindowControlIcon[];
 } {
     if (!showButtons) {
         return {
             platform: framePlatform,
             circles: [],
             buttons: [],
-            icons: [],
+            iconLines: [],
+            iconRects: [],
         };
     }
 
@@ -175,15 +182,14 @@ function buildWindowControlsConfig(
                 kind: button.kind,
             })),
             buttons: [],
-            icons: [],
+            iconLines: [],
+            iconRects: [],
         };
     }
 
-    const iconMap = {
-        minimize: '—',
-        maximize: '□',
-        close: '×',
-    } as const;
+    const minimizeButton = layout.buttons[0]!;
+    const maximizeButton = layout.buttons[1]!;
+    const closeButton = layout.buttons[2]!;
 
     return {
         platform: 'windows',
@@ -200,12 +206,52 @@ function buildWindowControlsConfig(
                     : 'rgba(255,255,255,0.04)',
             kind: button.kind,
         })),
-        icons: layout.buttons.map((button) => ({
-            x: button.x + button.width / 2,
-            y: button.y + button.height / 2 + 4,
-            text: iconMap[button.kind],
-            fill: button.kind === 'close' ? '#ffffff' : 'rgba(255,255,255,0.7)',
-        })),
+        iconLines: [
+            {
+                kind: 'minimize',
+                points: [
+                    minimizeButton.x + 10,
+                    minimizeButton.height / 2 + 5,
+                    minimizeButton.x + minimizeButton.width - 10,
+                    minimizeButton.height / 2 + 5,
+                ],
+                stroke: 'rgba(255,255,255,0.78)',
+                strokeWidth: 1.5,
+            },
+            {
+                kind: 'close',
+                points: [
+                    closeButton.x + 14,
+                    closeButton.height / 2 - 5,
+                    closeButton.x + closeButton.width - 14,
+                    closeButton.height / 2 + 5,
+                ],
+                stroke: '#ffffff',
+                strokeWidth: 1.5,
+            },
+            {
+                kind: 'close',
+                points: [
+                    closeButton.x + closeButton.width - 14,
+                    closeButton.height / 2 - 5,
+                    closeButton.x + 14,
+                    closeButton.height / 2 + 5,
+                ],
+                stroke: '#ffffff',
+                strokeWidth: 1.5,
+            },
+        ],
+        iconRects: [
+            {
+                kind: 'maximize',
+                x: maximizeButton.x + 10,
+                y: maximizeButton.height / 2 - 5,
+                width: maximizeButton.width - 20,
+                height: 10,
+                stroke: 'rgba(255,255,255,0.78)',
+                strokeWidth: 1.5,
+            },
+        ],
     };
 }
 
@@ -284,6 +330,7 @@ export function useCanvas(
         const s = store.activeSettings;
         const pad = s?.padding ?? 48;
         const { w, h } = cardDimensions.value;
+        const activeImage = store.activeImage;
 
         if (!hasFrameOverlay.value) {
             return {
@@ -291,6 +338,26 @@ export function useCanvas(
                 y: 0,
                 width: w,
                 height: h,
+            };
+        }
+
+        if (activeImage) {
+            const layout = calculateFrameLayout({
+                areaX: pad,
+                areaY: pad,
+                areaWidth: Math.max(0, w - pad * 2),
+                areaHeight: Math.max(0, h - pad * 2),
+                imageWidth: activeImage.naturalWidth,
+                imageHeight: activeImage.naturalHeight,
+                topInset: chromeHeight.value,
+                leftInset: activityBarWidth.value,
+            });
+
+            return {
+                x: layout.frame.x,
+                y: layout.frame.y,
+                width: layout.frame.width,
+                height: layout.frame.height,
             };
         }
 
@@ -704,6 +771,16 @@ export function useCanvas(
             36,
             s.frameShowButtons,
         );
+        const windowControlsWidth = isWindows
+            ? windowControls.buttons.reduce(
+                  (sum, button) => sum + (button.width ?? 0),
+                  0,
+              )
+            : 0;
+        const tabX = isWindows ? 18 : 76;
+        const tabWidth = isWindows
+            ? Math.max(74, Math.min(164, w - windowControlsWidth - tabX - 12))
+            : 140;
 
         return {
             tabBarConfig: {
@@ -715,16 +792,16 @@ export function useCanvas(
                 listening: false,
             },
             activeTabConfig: {
-                x: isWindows ? 18 : 76,
+                x: tabX,
                 y: 6,
-                width: isWindows ? 164 : 140,
+                width: tabWidth,
                 height: 30,
                 fill: tabActiveBg,
                 cornerRadius: [8, 8, 0, 0],
                 listening: false,
             },
             tabTextConfig: {
-                x: windowControls.platform === 'windows' ? 34 : 92,
+                x: windowControls.platform === 'windows' ? tabX + 16 : 92,
                 y: 15,
                 text: s.frameTitle || 'Tab',
                 fontSize: 11,
