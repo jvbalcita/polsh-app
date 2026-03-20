@@ -1,5 +1,5 @@
-import { computed  } from 'vue';
-import type {Ref} from 'vue';
+import { computed } from 'vue';
+import type { Ref } from 'vue';
 import { useEditorStore } from '@/stores/editor';
 import type { StyleConfig } from '@/types/style';
 
@@ -11,7 +11,10 @@ const ASPECT_RATIOS: Record<string, number> = {
     '21:9': 21 / 9,
 };
 
-export const CANVAS_SIZES: Record<string, { label: string; w: number; h: number }> = {
+export const CANVAS_SIZES: Record<
+    string,
+    { label: string; w: number; h: number }
+> = {
     'twitter-landscape': { label: 'Twitter', w: 1200, h: 675 },
     'twitter-square': { label: 'Square', w: 1080, h: 1080 },
     linkedin: { label: 'LinkedIn', w: 1200, h: 627 },
@@ -85,34 +88,55 @@ function getBorderStrokeColor(style: StyleConfig, borderColor: string): string {
 
 function chromeHeightForFrame(frameType: string): number {
     if (frameType === 'macos-dark' || frameType === 'macos-light') {
-return CHROME_HEIGHT_MACOS;
-}
+        return CHROME_HEIGHT_MACOS;
+    }
 
     if (frameType === 'browser') {
-return CHROME_HEIGHT_BROWSER;
-}
+        return CHROME_HEIGHT_BROWSER;
+    }
 
     if (frameType === 'terminal') {
-return CHROME_HEIGHT_TERMINAL;
-}
+        return CHROME_HEIGHT_TERMINAL;
+    }
 
     if (frameType === 'window-minimal') {
-return CHROME_HEIGHT_MINIMAL;
-}
+        return CHROME_HEIGHT_MINIMAL;
+    }
 
     if (frameType === 'code-editor') {
-return CHROME_HEIGHT_CODE_EDITOR_TAB;
-}
+        return CHROME_HEIGHT_CODE_EDITOR_TAB;
+    }
 
     return 0;
 }
 
-export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<number>) {
+export function useCanvas(
+    containerWidth: Ref<number>,
+    containerHeight: Ref<number>,
+) {
     const store = useEditorStore();
 
-    const chromeHeight = computed<number>(() => chromeHeightForFrame(store.activeSettings?.frameType ?? 'none'));
+    const chromeHeight = computed<number>(() =>
+        chromeHeightForFrame(store.activeSettings?.frameType ?? 'none'),
+    );
 
-    const activityBarWidth = computed<number>(() => (store.activeSettings?.frameType === 'code-editor' ? 40 : 0));
+    const activityBarWidth = computed<number>(() =>
+        store.activeSettings?.frameType === 'code-editor' ? 40 : 0,
+    );
+
+    const hasFrameOverlay = computed<boolean>(
+        () => (store.activeSettings?.frameType ?? 'none') !== 'none',
+    );
+
+    const artifactRadius = computed<number>(() => {
+        if (hasFrameOverlay.value) {
+            return (
+                store.activeStyle?.radius ?? store.activeSettings?.radius ?? 12
+            );
+        }
+
+        return store.activeSettings?.radius ?? 12;
+    });
 
     const cardDimensions = computed<{ w: number; h: number }>(() => {
         const sizeKey = store.activeSettings?.canvasSize ?? '';
@@ -120,10 +144,13 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
         if (sizeKey.startsWith('custom-')) {
             const [cw, ch] = sizeKey.slice(7).split('x').map(Number);
-            ratio = (cw && ch) ? cw / ch : 16 / 9;
+            ratio = cw && ch ? cw / ch : 16 / 9;
         } else {
             const size = CANVAS_SIZES[sizeKey];
-            ratio = size ? size.w / size.h : (ASPECT_RATIOS[store.activeSettings?.aspectRatio ?? '16:9'] ?? 16 / 9);
+            ratio = size
+                ? size.w / size.h
+                : (ASPECT_RATIOS[store.activeSettings?.aspectRatio ?? '16:9'] ??
+                  16 / 9);
         }
 
         const maxW = containerWidth.value - CANVAS_MARGIN * 2;
@@ -139,23 +166,94 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         return { w: Math.floor(w), h: Math.floor(h) };
     });
 
-    const cardX = computed<number>(() => (containerWidth.value - cardDimensions.value.w) / 2);
+    const cardX = computed<number>(
+        () => (containerWidth.value - cardDimensions.value.w) / 2,
+    );
 
-    const cardY = computed<number>(() => (containerHeight.value - cardDimensions.value.h) / 2);
+    const cardY = computed<number>(
+        () => (containerHeight.value - cardDimensions.value.h) / 2,
+    );
 
-    const contentArea = computed(() => {
+    const cardBounds = computed(() => ({
+        x: cardX.value,
+        y: cardY.value,
+        width: cardDimensions.value.w,
+        height: cardDimensions.value.h,
+    }));
+
+    const frameBounds = computed(() => {
         const s = store.activeSettings;
         const pad = s?.padding ?? 48;
         const { w, h } = cardDimensions.value;
-        const ch = chromeHeight.value;
-        const aw = activityBarWidth.value;
+
+        if (!hasFrameOverlay.value) {
+            return {
+                x: 0,
+                y: 0,
+                width: w,
+                height: h,
+            };
+        }
 
         return {
-            x: pad + aw,
-            y: pad + ch,
-            width: Math.max(0, w - pad * 2 - aw),
-            height: Math.max(0, h - pad * 2 - ch),
+            x: pad,
+            y: pad,
+            width: Math.max(0, w - pad * 2),
+            height: Math.max(0, h - pad * 2),
         };
+    });
+
+    const frameAbsoluteBounds = computed(() => ({
+        x: cardBounds.value.x + frameBounds.value.x,
+        y: cardBounds.value.y + frameBounds.value.y,
+        width: frameBounds.value.width,
+        height: frameBounds.value.height,
+    }));
+
+    const frameOverlayBounds = computed(() => ({
+        x: frameBounds.value.x,
+        y: frameBounds.value.y,
+        width: frameBounds.value.width,
+        height: frameBounds.value.height,
+        topInset: chromeHeight.value,
+        leftInset: activityBarWidth.value,
+        hasFrame: hasFrameOverlay.value,
+    }));
+
+    const imageBounds = computed(() => {
+        const s = store.activeSettings;
+        const pad = s?.padding ?? 48;
+        const { w, h } = cardDimensions.value;
+
+        if (hasFrameOverlay.value) {
+            return {
+                x: frameOverlayBounds.value.leftInset,
+                y: frameOverlayBounds.value.topInset,
+                width: Math.max(
+                    0,
+                    frameBounds.value.width -
+                        frameOverlayBounds.value.leftInset,
+                ),
+                height: Math.max(
+                    0,
+                    frameBounds.value.height -
+                        frameOverlayBounds.value.topInset,
+                ),
+                fit: 'contain' as const,
+            };
+        }
+
+        return {
+            x: pad,
+            y: pad,
+            width: Math.max(0, w - pad * 2),
+            height: Math.max(0, h - pad * 2),
+            fit: 'contain' as const,
+        };
+    });
+
+    const exportBounds = computed(() => {
+        return { ...cardBounds.value };
     });
 
     const stageConfig = computed(() => ({
@@ -174,13 +272,15 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
 
     const shadowRectConfig = computed(() => {
         const s = store.activeSettings;
-        const { w, h } = cardDimensions.value;
+        const bounds = hasFrameOverlay.value
+            ? frameAbsoluteBounds.value
+            : cardBounds.value;
 
         return {
-            x: cardX.value,
-            y: cardY.value,
-            width: w,
-            height: h,
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
             cornerRadius: s?.radius ?? 12,
             fill: 'transparent',
             shadowColor: s?.shadowColor ?? '#000000',
@@ -195,9 +295,30 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         x: cardX.value,
         y: cardY.value,
         clipFunc: (ctx: CanvasRenderingContext2D) => {
-            const r = store.activeSettings?.radius ?? 12;
+            const r = artifactRadius.value;
             const w = cardDimensions.value.w;
             const h = cardDimensions.value.h;
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.lineTo(w - r, 0);
+            ctx.arcTo(w, 0, w, r, r);
+            ctx.lineTo(w, h - r);
+            ctx.arcTo(w, h, w - r, h, r);
+            ctx.lineTo(r, h);
+            ctx.arcTo(0, h, 0, h - r, r);
+            ctx.lineTo(0, r);
+            ctx.arcTo(0, 0, r, 0, r);
+            ctx.closePath();
+        },
+    }));
+
+    const frameGroupConfig = computed(() => ({
+        x: frameBounds.value.x,
+        y: frameBounds.value.y,
+        clipFunc: (ctx: CanvasRenderingContext2D) => {
+            const r = store.activeSettings?.radius ?? 12;
+            const w = frameBounds.value.width;
+            const h = frameBounds.value.height;
             ctx.beginPath();
             ctx.moveTo(r, 0);
             ctx.lineTo(w - r, 0);
@@ -218,8 +339,8 @@ export function useCanvas(containerWidth: Ref<number>, containerHeight: Ref<numb
         const base = { x: 0, y: 0, width: w, height: h, listening: false };
 
         if (!s) {
-return { ...base, fill: '#0a0a0c' };
-}
+            return { ...base, fill: '#0a0a0c' };
+        }
 
         if (s.backgroundType === 'solid') {
             return { ...base, fill: s.solidColor };
@@ -240,7 +361,12 @@ return { ...base, fill: '#0a0a0c' };
                 fillRadialGradientStartRadius: 0,
                 fillRadialGradientEndPoint: { x: cx, y: cy },
                 fillRadialGradientEndRadius: Math.max(w, h) / 2,
-                fillRadialGradientColorStops: [0, s.gradientStart, 1, s.gradientEnd],
+                fillRadialGradientColorStops: [
+                    0,
+                    s.gradientStart,
+                    1,
+                    s.gradientEnd,
+                ],
             };
         }
 
@@ -250,7 +376,12 @@ return { ...base, fill: '#0a0a0c' };
             ...base,
             fillLinearGradientStartPoint: pts.start,
             fillLinearGradientEndPoint: pts.end,
-            fillLinearGradientColorStops: [0, s.gradientStart, 1, s.gradientEnd],
+            fillLinearGradientColorStops: [
+                0,
+                s.gradientStart,
+                1,
+                s.gradientEnd,
+            ],
         };
     });
 
@@ -258,14 +389,14 @@ return { ...base, fill: '#0a0a0c' };
         const img = store.activeImage;
 
         if (!img) {
-return null;
-}
+            return null;
+        }
 
-        const { x, y, width, height } = contentArea.value;
+        const { x, y, width, height } = imageBounds.value;
 
         if (width <= 0 || height <= 0) {
-return null;
-}
+            return null;
+        }
 
         const imgAspect = img.naturalWidth / img.naturalHeight;
         const areaAspect = width / height;
@@ -301,16 +432,19 @@ return null;
             return null;
         }
 
-        const { w, h } = cardDimensions.value;
+        const bounds = hasFrameOverlay.value
+            ? frameAbsoluteBounds.value
+            : cardBounds.value;
         const bw = s.border;
         const strokeColor = getBorderStrokeColor(style, s.borderColor);
-        const isShadowBorder = style.border.type === 'neon' || style.border.type === 'glow';
+        const isShadowBorder =
+            style.border.type === 'neon' || style.border.type === 'glow';
 
         return {
-            x: cardX.value + bw / 2,
-            y: cardY.value + bw / 2,
-            width: w - bw,
-            height: h - bw,
+            x: bounds.x + bw / 2,
+            y: bounds.y + bw / 2,
+            width: bounds.width - bw,
+            height: bounds.height - bw,
             cornerRadius: s.radius,
             fill: 'transparent',
             stroke: strokeColor,
@@ -326,16 +460,16 @@ return null;
         const s = store.activeSettings;
 
         if (!s) {
-return null;
-}
+            return null;
+        }
 
         const ft = s.frameType;
 
         if (ft !== 'macos-dark' && ft !== 'macos-light') {
-return null;
-}
+            return null;
+        }
 
-        const { w } = cardDimensions.value;
+        const { width: w } = frameBounds.value;
         const isDark = ft === 'macos-dark';
         const barFill = isDark ? '#2d2d2d' : '#e8e8e8';
         const sepColor = isDark ? '#3a3a3a' : '#d0d0d0';
@@ -349,9 +483,21 @@ return null;
             : [];
 
         return {
-            barConfig: { x: 0, y: 0, width: w, height: CHROME_HEIGHT_MACOS, fill: barFill, listening: false },
+            barConfig: {
+                x: 0,
+                y: 0,
+                width: w,
+                height: CHROME_HEIGHT_MACOS,
+                fill: barFill,
+                listening: false,
+            },
             separatorConfig: {
-                points: [0, CHROME_HEIGHT_MACOS - 0.5, w, CHROME_HEIGHT_MACOS - 0.5],
+                points: [
+                    0,
+                    CHROME_HEIGHT_MACOS - 0.5,
+                    w,
+                    CHROME_HEIGHT_MACOS - 0.5,
+                ],
                 stroke: sepColor,
                 strokeWidth: 1,
                 listening: false,
@@ -379,10 +525,10 @@ return null;
         const s = store.activeSettings;
 
         if (!s || s.frameType !== 'browser') {
-return null;
-}
+            return null;
+        }
 
-        const { w } = cardDimensions.value;
+        const { width: w } = frameBounds.value;
         const tabBg = '#1a1a1a';
         const barBg = '#2d2d2d';
         const urlBoxBg = '#1a1a1a';
@@ -399,12 +545,56 @@ return null;
             : [];
 
         return {
-            tabBarConfig: { x: 0, y: 0, width: w, height: 36, fill: tabBg, listening: false },
-            activeTabConfig: { x: 76, y: 6, width: 140, height: 30, fill: tabActiveBg, cornerRadius: [6, 6, 0, 0], listening: false },
-            tabTextConfig: { x: 92, y: 15, text: s.frameTitle || 'Tab', fontSize: 11, fill: textColor, listening: false },
-            addressBarConfig: { x: 0, y: 36, width: w, height: 36, fill: barBg, listening: false },
-            urlBoxConfig: { x: (w - urlBoxW) / 2, y: 44, width: urlBoxW, height: 20, fill: urlBoxBg, cornerRadius: 10, listening: false },
-            urlTextConfig: { x: (w - urlBoxW) / 2 + 12, y: 48, text: url, fontSize: 11, fill: textColor, listening: false },
+            tabBarConfig: {
+                x: 0,
+                y: 0,
+                width: w,
+                height: 36,
+                fill: tabBg,
+                listening: false,
+            },
+            activeTabConfig: {
+                x: 76,
+                y: 6,
+                width: 140,
+                height: 30,
+                fill: tabActiveBg,
+                cornerRadius: [6, 6, 0, 0],
+                listening: false,
+            },
+            tabTextConfig: {
+                x: 92,
+                y: 15,
+                text: s.frameTitle || 'Tab',
+                fontSize: 11,
+                fill: textColor,
+                listening: false,
+            },
+            addressBarConfig: {
+                x: 0,
+                y: 36,
+                width: w,
+                height: 36,
+                fill: barBg,
+                listening: false,
+            },
+            urlBoxConfig: {
+                x: (w - urlBoxW) / 2,
+                y: 44,
+                width: urlBoxW,
+                height: 20,
+                fill: urlBoxBg,
+                cornerRadius: 10,
+                listening: false,
+            },
+            urlTextConfig: {
+                x: (w - urlBoxW) / 2 + 12,
+                y: 48,
+                text: url,
+                fontSize: 11,
+                fill: textColor,
+                listening: false,
+            },
             dots,
         };
     });
@@ -413,10 +603,10 @@ return null;
         const s = store.activeSettings;
 
         if (!s || s.frameType !== 'terminal') {
-return null;
-}
+            return null;
+        }
 
-        const { w } = cardDimensions.value;
+        const { width: w } = frameBounds.value;
         const dots = s.frameShowButtons
             ? [
                   { x: 14, y: 14, radius: 5, fill: '#ff5f57' },
@@ -426,9 +616,21 @@ return null;
             : [];
 
         return {
-            barConfig: { x: 0, y: 0, width: w, height: CHROME_HEIGHT_TERMINAL, fill: '#1e1e1e', listening: false },
+            barConfig: {
+                x: 0,
+                y: 0,
+                width: w,
+                height: CHROME_HEIGHT_TERMINAL,
+                fill: '#1e1e1e',
+                listening: false,
+            },
             separatorConfig: {
-                points: [0, CHROME_HEIGHT_TERMINAL - 0.5, w, CHROME_HEIGHT_TERMINAL - 0.5],
+                points: [
+                    0,
+                    CHROME_HEIGHT_TERMINAL - 0.5,
+                    w,
+                    CHROME_HEIGHT_TERMINAL - 0.5,
+                ],
                 stroke: '#333333',
                 strokeWidth: 1,
                 listening: false,
@@ -454,10 +656,10 @@ return null;
         const s = store.activeSettings;
 
         if (!s || s.frameType !== 'window-minimal') {
-return null;
-}
+            return null;
+        }
 
-        const { w } = cardDimensions.value;
+        const { width: w } = frameBounds.value;
         const dots = s.frameShowButtons
             ? [
                   { x: 14, y: 12, radius: 5, fill: '#ff5f57' },
@@ -467,9 +669,21 @@ return null;
             : [];
 
         return {
-            barConfig: { x: 0, y: 0, width: w, height: CHROME_HEIGHT_MINIMAL, fill: '#2a2a2a', listening: false },
+            barConfig: {
+                x: 0,
+                y: 0,
+                width: w,
+                height: CHROME_HEIGHT_MINIMAL,
+                fill: '#2a2a2a',
+                listening: false,
+            },
             separatorConfig: {
-                points: [0, CHROME_HEIGHT_MINIMAL - 0.5, w, CHROME_HEIGHT_MINIMAL - 0.5],
+                points: [
+                    0,
+                    CHROME_HEIGHT_MINIMAL - 0.5,
+                    w,
+                    CHROME_HEIGHT_MINIMAL - 0.5,
+                ],
                 stroke: '#363636',
                 strokeWidth: 1,
                 listening: false,
@@ -482,30 +696,51 @@ return null;
         const s = store.activeSettings;
 
         if (!s || s.frameType !== 'code-editor') {
-return null;
-}
+            return null;
+        }
 
-        const { w, h } = cardDimensions.value;
+        const { width: w, height: h } = frameBounds.value;
         const tabH = CHROME_HEIGHT_CODE_EDITOR_TAB;
         const aw = 40;
         const filename = s.frameTitle || 'index.ts';
 
         return {
-            activityBarConfig: { x: 0, y: 0, width: aw, height: h, fill: '#1e1e1e', listening: false },
+            activityBarConfig: {
+                x: 0,
+                y: 0,
+                width: aw,
+                height: h,
+                fill: '#1e1e1e',
+                listening: false,
+            },
             activityBarBorderConfig: {
                 points: [aw - 0.5, 0, aw - 0.5, h],
                 stroke: '#333333',
                 strokeWidth: 1,
                 listening: false,
             },
-            tabBarConfig: { x: aw, y: 0, width: w - aw, height: tabH, fill: '#252526', listening: false },
+            tabBarConfig: {
+                x: aw,
+                y: 0,
+                width: w - aw,
+                height: tabH,
+                fill: '#252526',
+                listening: false,
+            },
             tabBarBorderConfig: {
                 points: [aw, tabH - 0.5, w, tabH - 0.5],
                 stroke: '#3c3c3c',
                 strokeWidth: 1,
                 listening: false,
             },
-            activeTabConfig: { x: aw, y: 0, width: 140, height: tabH, fill: '#1e1e1e', listening: false },
+            activeTabConfig: {
+                x: aw,
+                y: 0,
+                width: 140,
+                height: tabH,
+                fill: '#1e1e1e',
+                listening: false,
+            },
             activeTabBorderTopConfig: {
                 points: [aw, 0, aw + 140, 0],
                 stroke: '#007acc',
@@ -542,8 +777,16 @@ return null;
         cardDimensions,
         cardX,
         cardY,
-        contentArea,
+        cardBounds,
+        frameBounds,
+        frameAbsoluteBounds,
+        frameOverlayBounds,
+        imageBounds,
+        contentArea: imageBounds,
+        exportBounds,
+        frameGroupConfig,
         chromeHeight,
         activityBarWidth,
+        hasFrameOverlay,
     };
 }

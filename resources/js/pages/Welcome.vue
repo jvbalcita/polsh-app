@@ -4,7 +4,6 @@ import { Layers, Palette, FileCode, Zap, Archive } from 'lucide-vue-next';
 import { ref, onMounted, onUnmounted } from 'vue';
 import UserMenu from '@/components/UserMenu.vue';
 import { changelog, editor } from '@/routes';
-import { github as githubRoute } from '@/routes/auth';
 import { api as apiDocs } from '@/routes/docs';
 import styles from '@/styles';
 import type { StyleConfig } from '@/types/style';
@@ -125,34 +124,34 @@ function rrPath(
     ctx.lineTo(x + w - cr, y);
 
     if (cr > 0) {
-ctx.arcTo(x + w, y, x + w, y + cr, cr);
-} else {
-ctx.lineTo(x + w, y);
-}
+        ctx.arcTo(x + w, y, x + w, y + cr, cr);
+    } else {
+        ctx.lineTo(x + w, y);
+    }
 
     ctx.lineTo(x + w, y + h - cr);
 
     if (cr > 0) {
-ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
-} else {
-ctx.lineTo(x + w, y + h);
-}
+        ctx.arcTo(x + w, y + h, x + w - cr, y + h, cr);
+    } else {
+        ctx.lineTo(x + w, y + h);
+    }
 
     ctx.lineTo(x + cr, y + h);
 
     if (cr > 0) {
-ctx.arcTo(x, y + h, x, y + h - cr, cr);
-} else {
-ctx.lineTo(x, y + h);
-}
+        ctx.arcTo(x, y + h, x, y + h - cr, cr);
+    } else {
+        ctx.lineTo(x, y + h);
+    }
 
     ctx.lineTo(x, y + cr);
 
     if (cr > 0) {
-ctx.arcTo(x, y, x + cr, y, cr);
-} else {
-ctx.lineTo(x, y);
-}
+        ctx.arcTo(x, y, x + cr, y, cr);
+    } else {
+        ctx.lineTo(x, y);
+    }
 
     ctx.closePath();
 }
@@ -171,8 +170,8 @@ function renderStyleFrame(
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
-return;
-}
+        return;
+    }
 
     ctx.scale(dpr, dpr);
 
@@ -285,14 +284,14 @@ async function renderHero(slug: string): Promise<void> {
     const canvas = heroCanvas.value;
 
     if (!canvas) {
-return;
-}
+        return;
+    }
 
     const style = styles.find((s) => s.slug === slug);
 
     if (!style) {
-return;
-}
+        return;
+    }
 
     const img = await loadDemoImage();
     renderStyleFrame(canvas, style, img);
@@ -328,8 +327,8 @@ function baMoveAt(clientX: number): void {
     const container = baContainerRef.value;
 
     if (!container) {
-return;
-}
+        return;
+    }
 
     const rect = container.getBoundingClientRect();
     baDivPct.value = Math.min(
@@ -345,8 +344,8 @@ function onBaMouseDown(e: MouseEvent): void {
 
 function onWindowMouseMove(e: MouseEvent): void {
     if (baIsDragging) {
-baMoveAt(e.clientX);
-}
+        baMoveAt(e.clientX);
+    }
 }
 
 function onWindowMouseUp(): void {
@@ -355,8 +354,8 @@ function onWindowMouseUp(): void {
 
 function onBaTouchMove(e: TouchEvent): void {
     if (e.cancelable) {
-e.preventDefault();
-}
+        e.preventDefault();
+    }
 
     baMoveAt(e.touches[0].clientX);
 }
@@ -373,8 +372,8 @@ function renderBefore(img: HTMLImageElement): void {
     const canvas = baBeforeCanvas.value;
 
     if (!canvas) {
-return;
-}
+        return;
+    }
 
     const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
     const cssW = canvas.offsetWidth || 760;
@@ -384,8 +383,8 @@ return;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
-return;
-}
+        return;
+    }
 
     ctx.scale(dpr, dpr);
     ctx.fillStyle = '#1a1a22';
@@ -465,8 +464,8 @@ onMounted(async () => {
         const canvas = galleryRefs.value[i];
 
         if (canvas) {
-renderStyleFrame(canvas, style, img);
-}
+            renderStyleFrame(canvas, style, img);
+        }
     });
 
     // Before canvas (raw, greyed by CSS filter)
@@ -483,8 +482,8 @@ renderStyleFrame(canvas, style, img);
 
 onUnmounted(() => {
     if (heroCycleTimer) {
-clearInterval(heroCycleTimer);
-}
+        clearInterval(heroCycleTimer);
+    }
 
     window.removeEventListener('mousemove', onWindowMouseMove);
     window.removeEventListener('mouseup', onWindowMouseUp);
@@ -526,20 +525,6 @@ clearInterval(heroCycleTimer);
                     <Link :href="editor()" class="btn-primary"
                         >Open the editor →</Link
                     >
-                    <a :href="githubRoute.url()" class="btn-ghost">
-                        <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
-                            />
-                        </svg>
-                        Save presets with GitHub
-                    </a>
                 </div>
 
                 <p class="hero-footnote">
@@ -783,7 +768,9 @@ clearInterval(heroCycleTimer);
                     <p class="footer-ph">Made in the Philippines 🇵🇭</p>
                 </div>
                 <div class="footer-links">
-                    <Link :href="changelog()" class="footer-link">Changelog</Link>
+                    <Link :href="changelog()" class="footer-link"
+                        >Changelog</Link
+                    >
                     <Link :href="apiDocs()" class="footer-link">API Docs</Link>
                 </div>
                 <div class="footer-social">
