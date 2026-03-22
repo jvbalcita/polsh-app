@@ -53,3 +53,19 @@ Always verify both before proceeding:
 
 1. source branch for the worktree
 2. whether the user's active branch has uncommitted related changes
+
+## Polsh worktree setup needs shared deps and non-conflicting services
+
+This project can run from a git worktree, but setup is not zero-config.
+
+- A fresh worktree may not have its own `vendor/` or `node_modules/`; symlinking them from the main workspace is the quickest path when dependencies are already installed.
+- Sail can fail inside a worktree because host ports are already claimed by the main workspace stack (we hit Mailpit on `1025` and Redis on `6379`). For frontend-only verification, prefer direct Node/Vitest/ESLint/build commands when the Docker conflict is unrelated to the change.
+- Before relying on Sail in a worktree, check whether the existing project containers are already running and whether port collisions will block startup.
+- When cleanup is complete and the work has been merged or carried forward, remove stale worktrees promptly so old feature branches do not stay artificially locked.
+
+Recommended sequence for future Polsh worktrees:
+
+1. start from the user's active feature branch
+2. symlink `vendor` and `node_modules` if needed
+3. use direct frontend verification if Sail ports conflict
+4. merge/carry commits back to the long-lived feature branch before deleting the worktree
