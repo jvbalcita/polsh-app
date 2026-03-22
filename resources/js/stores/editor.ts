@@ -51,6 +51,14 @@ function settingsFromStyle(style: StyleConfig): Partial<ImageSettings> {
     };
 }
 
+function isWindowsDesktopFrame(frameType: string): boolean {
+    return (
+        frameType === 'browser' ||
+        frameType === 'terminal' ||
+        frameType === 'window-minimal'
+    );
+}
+
 export const useEditorStore = defineStore('editor', () => {
     const page = usePage();
     const images = ref<SessionImage[]>([]);
@@ -179,6 +187,25 @@ return;
         img.settings = { ...img.settings, [key]: value };
     }
 
+    function setFramePlatform(platform: ImageSettings['framePlatform']): void {
+        const img = images.value[activeIndex.value];
+
+        if (!img || img.locked) {
+            return;
+        }
+
+        const nextSettings: ImageSettings = {
+            ...img.settings,
+            framePlatform: platform,
+        };
+
+        if (platform === 'windows' && isWindowsDesktopFrame(nextSettings.frameType)) {
+            nextSettings.radius = 0;
+        }
+
+        img.settings = nextSettings;
+    }
+
     function applyToAll(): void {
         const source = images.value[activeIndex.value];
 
@@ -259,6 +286,7 @@ return;
         presetsLoaded,
         applyStyle,
         updateSetting,
+        setFramePlatform,
         applyToAll,
         addImage,
         removeImage,

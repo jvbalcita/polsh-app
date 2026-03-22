@@ -37,6 +37,7 @@ describe('useCanvas', () => {
                 },
             },
         ];
+        store.setFramePlatform('windows');
 
         const canvas = useCanvas(ref(1400), ref(900)) as Record<string, any>;
 
@@ -113,6 +114,38 @@ describe('useCanvas', () => {
                 bottomRight: 10,
                 bottomLeft: 10,
             },
+        });
+    });
+
+    it('defaults windows desktop frames to square corners in preview', () => {
+        const store = useEditorStore();
+        store.images = [
+            {
+                id: 'image-3',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'browser',
+                    framePlatform: 'windows',
+                    canvasSize: 'twitter-landscape',
+                },
+            },
+        ];
+        store.setFramePlatform('windows');
+
+        const canvas = useCanvas(ref(1400), ref(900)) as Record<string, any>;
+
+        expect(canvas.shadowRectConfig.value.cornerRadius).toBe(0);
+        expect(canvas.borderConfig.value.cornerRadius).toBe(0);
+        expect(canvas.imageClipConfig.value.cornerRadii).toEqual({
+            topLeft: 0,
+            topRight: 0,
+            bottomRight: 0,
+            bottomLeft: 0,
         });
     });
 });

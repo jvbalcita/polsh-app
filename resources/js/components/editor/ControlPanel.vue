@@ -591,12 +591,7 @@ function cancelSavePreset(): void {
                                         'toggle-btn--active':
                                             s?.framePlatform === 'macos',
                                     }"
-                                    @click="
-                                        store.updateSetting(
-                                            'framePlatform',
-                                            'macos',
-                                        )
-                                    "
+                                    @click="store.setFramePlatform('macos')"
                                 >
                                     macOS
                                 </button>
@@ -607,12 +602,7 @@ function cancelSavePreset(): void {
                                         'toggle-btn--active':
                                             s?.framePlatform === 'windows',
                                     }"
-                                    @click="
-                                        store.updateSetting(
-                                            'framePlatform',
-                                            'windows',
-                                        )
-                                    "
+                                    @click="store.setFramePlatform('windows')"
                                 >
                                     Windows
                                 </button>
