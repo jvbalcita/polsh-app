@@ -28,8 +28,9 @@ class BillingController extends Controller
 
         return Inertia::render('Billing/Index', [
             'subscription' => $user->subscriptions()
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'cancelled'])
                 ->where('current_period_end', '>', now())
+                ->latest('current_period_end')
                 ->first(),
             'isPro' => $user->isPro(),
         ]);
@@ -43,6 +44,22 @@ class BillingController extends Controller
         $amounts = ['pro_monthly' => 50000, 'pro_yearly' => 450000];
         $names = ['pro_monthly' => 'Polsh Pro Monthly', 'pro_yearly' => 'Polsh Pro Yearly'];
 
+        // Detect monthly → yearly upgrade so we can cancel the old sub after payment
+        $oldSub = null;
+        if ($plan === 'pro_yearly') {
+            $oldSub = $user->subscriptions()
+                ->where('status', 'active')
+                ->where('plan', 'pro_monthly')
+                ->where('current_period_end', '>', now())
+                ->latest('current_period_end')
+                ->first();
+        }
+
+        $description = "user:{$user->id}|plan:{$plan}";
+        if ($oldSub) {
+            $description .= "|switch:1|old_sub:{$oldSub->id}";
+        }
+
         $session = $this->paymongo->createCheckoutSession([
             'billing' => [
                 'name' => $user->name,
@@ -55,22 +72,27 @@ class BillingController extends Controller
                 'description' => $names[$plan],
                 'quantity' => 1,
             ]],
-            'payment_method_types' => ['card', 'gcash', 'maya'],
+            'payment_method_types' => ['card', 'gcash', 'paymaya'],
             'success_url' => route('billing.success').'?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('editor'),
             // Encode user context for webhook recovery
-            'description' => "user:{$user->id}|plan:{$plan}",
+            'description' => $description,
         ]);
+
+        session(['paymongo_checkout_id' => $session['id']]);
 
         return redirect($session['attributes']['checkout_url']);
     }
 
     public function success(Request $request): RedirectResponse
     {
-        $sessionId = $request->input('session_id');
+        // Prefer the session-stored ID (reliable) over the URL param, which PayMongo
+        // may not substitute (e.g. GCash returns literal '{CHECKOUT_SESSION_ID}').
+        $sessionId = session()->pull('paymongo_checkout_id')
+            ?: $request->input('session_id');
         $user = $request->user();
 
-        if (! $sessionId) {
+        if (! $sessionId || $sessionId === '{CHECKOUT_SESSION_ID}') {
             return redirect()->route('billing.portal')->with('error', 'Invalid session.');
         }
 
@@ -86,7 +108,7 @@ class BillingController extends Controller
             return redirect()->route('billing.portal')->with('error', 'Payment not completed.');
         }
 
-        ['userId' => $checkoutUserId, 'plan' => $plan] = $this->extractCheckoutMetadata(
+        ['userId' => $checkoutUserId, 'plan' => $plan, 'oldSubId' => $oldSubId] = $this->extractCheckoutMetadata(
             $attributes['description'] ?? ''
         );
 
@@ -98,6 +120,13 @@ class BillingController extends Controller
             paymentMethodId: $attributes['payment_method_used'] ?? null,
         );
 
+        if ($oldSubId) {
+            Subscription::query()
+                ->where('id', $oldSubId)
+                ->where('status', 'active')
+                ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+        }
+
         return redirect()->route('billing.portal');
     }
 
@@ -108,6 +137,13 @@ class BillingController extends Controller
         $request->user()->cancelSubscription();
 
         return redirect()->route('billing.portal')->with('cancelled', true);
+    }
+
+    public function reactivate(Request $request): RedirectResponse
+    {
+        $request->user()->reactivateSubscription();
+
+        return redirect()->route('billing.portal')->with('reactivated', true);
     }
 
     public function webhook(Request $request): JsonResponse
@@ -142,7 +178,7 @@ class BillingController extends Controller
             return;
         }
 
-        ['userId' => $userId, 'plan' => $plan] = $this->extractCheckoutMetadata(
+        ['userId' => $userId, 'plan' => $plan, 'oldSubId' => $oldSubId] = $this->extractCheckoutMetadata(
             $attributes['description'] ?? ''
         );
 
@@ -157,6 +193,13 @@ class BillingController extends Controller
             amount: $attributes['line_items'][0]['amount'] ?? 0,
             paymentMethodId: $attributes['payment_method_used'] ?? null,
         );
+
+        if ($oldSubId) {
+            Subscription::query()
+                ->where('id', $oldSubId)
+                ->where('status', 'active')
+                ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+        }
     }
 
     private function handlePaymentFailed(array $resource): void
@@ -235,16 +278,18 @@ class BillingController extends Controller
     }
 
     /**
-     * @return array{userId: int|null, plan: string}
+     * @return array{userId: int|null, plan: string, oldSubId: int|null}
      */
     private function extractCheckoutMetadata(string $description): array
     {
         preg_match('/user:(\d+)/', $description, $userMatch);
         preg_match('/plan:(\w+)/', $description, $planMatch);
+        preg_match('/old_sub:(\d+)/', $description, $oldSubMatch);
 
         return [
             'userId' => isset($userMatch[1]) ? (int) $userMatch[1] : null,
             'plan' => $planMatch[1] ?? 'pro_monthly',
+            'oldSubId' => isset($oldSubMatch[1]) ? (int) $oldSubMatch[1] : null,
         ];
     }
 }

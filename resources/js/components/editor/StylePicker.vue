@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
+import UpgradeModal from '@/components/editor/UpgradeModal.vue';
 import { loadDemoImage, renderStyleFrame } from '@/composables/useStyleCanvas';
 import { useEditorStore  } from '@/stores/editor';
 import type {SavedPreset} from '@/stores/editor';
@@ -8,6 +9,11 @@ import type { StyleConfig } from '@/types/style';
 
 const store = useEditorStore();
 const page = usePage();
+
+const isPro = computed(() => page.props.isPro as boolean);
+const FREE_PRESET_LIMIT = 5;
+const atPresetLimit = computed(() => store.presets.length >= FREE_PRESET_LIMIT);
+const showUpgrade = ref(false);
 
 const styleFilter = ref('');
 
@@ -71,11 +77,20 @@ renderStyleFrame(canvas, style, img);
             />
         </div>
 
-        <!-- My presets -->
-        <template v-if="page.props.auth?.user && store.presets.length > 0">
+        <!-- My presets — always shown for authenticated free users; pro only when populated -->
+        <template v-if="page.props.auth?.user && (!isPro || store.presets.length > 0)">
             <div class="sp-section">
-                <p class="sp-section-label">My presets</p>
-                <div class="sp-preset-list">
+                <!-- Header row: label (clickable at limit to open upgrade modal) -->
+                <p
+                    class="sp-section-label"
+                    style="margin: 0 0 6px"
+                    :style="!isPro && atPresetLimit ? { color: '#ffaa4f', cursor: 'pointer' } : {}"
+                    @click="!isPro && atPresetLimit ? (showUpgrade = true) : null"
+                >
+                    <template v-if="!isPro">Presets · {{ store.presets.length }} / {{ FREE_PRESET_LIMIT }}</template>
+                    <template v-else>My presets</template>
+                </p>
+                <div v-if="store.presets.length > 0" class="sp-preset-list">
                     <div
                         v-for="preset in store.presets"
                         :key="preset.id"
@@ -164,6 +179,8 @@ renderStyleFrame(canvas, style, img);
             </button>
         </div>
     </div>
+
+    <UpgradeModal v-model:open="showUpgrade" />
 </template>
 
 <style scoped>

@@ -29,6 +29,8 @@ export interface FrameLayoutInput {
     imageHeight: number;
     topInset: number;
     leftInset: number;
+    bottomInset?: number;
+    rightInset?: number;
 }
 
 export interface FrameLayout {
@@ -120,12 +122,20 @@ export function calculateImagePlacement(
 }
 
 export function calculateFrameLayout(input: FrameLayoutInput): FrameLayout {
+    const bottomInset = input.bottomInset ?? 0;
+    const rightInset = input.rightInset ?? 0;
     const safeImageAspect =
         input.imageWidth > 0 && input.imageHeight > 0
             ? input.imageWidth / input.imageHeight
             : 16 / 9;
-    const maxViewportWidth = Math.max(0, input.areaWidth - input.leftInset);
-    const maxViewportHeight = Math.max(0, input.areaHeight - input.topInset);
+    const maxViewportWidth = Math.max(
+        0,
+        input.areaWidth - input.leftInset - rightInset,
+    );
+    const maxViewportHeight = Math.max(
+        0,
+        input.areaHeight - input.topInset - bottomInset,
+    );
 
     let viewportWidth = Math.max(
         0,
@@ -133,13 +143,13 @@ export function calculateFrameLayout(input: FrameLayoutInput): FrameLayout {
     );
     let viewportHeight = Math.max(0, viewportWidth / safeImageAspect);
 
-    if (viewportHeight + input.topInset > input.areaHeight) {
+    if (viewportHeight + input.topInset + bottomInset > input.areaHeight) {
         viewportHeight = maxViewportHeight;
         viewportWidth = viewportHeight * safeImageAspect;
     }
 
-    const frameWidth = viewportWidth + input.leftInset;
-    const frameHeight = viewportHeight + input.topInset;
+    const frameWidth = viewportWidth + input.leftInset + rightInset;
+    const frameHeight = viewportHeight + input.topInset + bottomInset;
     const frameX = input.areaX + (input.areaWidth - frameWidth) / 2;
     const frameY = input.areaY + (input.areaHeight - frameHeight) / 2;
 
@@ -165,9 +175,9 @@ export function getDesktopWindowControls(
     const inset = input.inset ?? 14;
 
     if (input.framePlatform === 'windows') {
-        const minimizeWidth = 24;
-        const maximizeWidth = 24;
-        const closeWidth = 36;
+        const minimizeWidth = 28;
+        const maximizeWidth = 28;
+        const closeWidth = 34;
         const buttonHeight = input.height;
         const firstButtonX =
             input.width - (minimizeWidth + maximizeWidth + closeWidth);

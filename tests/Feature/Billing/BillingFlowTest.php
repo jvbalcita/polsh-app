@@ -96,6 +96,7 @@ test('checkout redirects to the paymongo checkout url when given a valid plan', 
         $mock->shouldReceive('createCheckoutSession')
             ->once()
             ->andReturn([
+                'id' => 'cs_valid_plan',
                 'attributes' => [
                     'checkout_url' => 'https://paymongo.test/checkout/cs_valid_plan',
                 ],
@@ -312,6 +313,99 @@ test('cancel marks active subscriptions cancelled and redirects with cancelled f
     expect($expiredSubscription->fresh()?->cancelled_at)->toBeNull();
 });
 
+test('portal returns a cancelled subscription and isPro true when the period has not expired', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+
+    $cancelledSubscription = Subscription::create([
+        'user_id' => $user->id,
+        'plan' => 'pro_monthly',
+        'status' => 'cancelled',
+        'paymongo_subscription_id' => 'cs_portal_cancelled',
+        'paymongo_payment_method_id' => 'pm_portal_cancelled',
+        'current_period_start' => now()->subWeek(),
+        'current_period_end' => now()->addWeek(),
+        'cancelled_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('billing.portal'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Billing/Index')
+            ->where('subscription.id', $cancelledSubscription->id)
+            ->where('subscription.status', 'cancelled')
+            ->where('isPro', true),
+        );
+});
+
+test('portal returns null subscription and isPro false when cancelled subscription has expired', function () {
+    $user = User::factory()->create(['plan' => 'free']);
+
+    Subscription::create([
+        'user_id' => $user->id,
+        'plan' => 'pro_monthly',
+        'status' => 'cancelled',
+        'paymongo_subscription_id' => 'cs_portal_expired_cancelled',
+        'paymongo_payment_method_id' => 'pm_portal_expired_cancelled',
+        'current_period_start' => now()->subMonth(),
+        'current_period_end' => now()->subDay(),
+        'cancelled_at' => now()->subWeek(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('billing.portal'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Billing/Index')
+            ->where('subscription', null)
+            ->where('isPro', false),
+        );
+});
+
+test('reactivate restores a cancelled subscription to active and redirects with reactivated flash', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+
+    $cancelledSubscription = Subscription::create([
+        'user_id' => $user->id,
+        'plan' => 'pro_monthly',
+        'status' => 'cancelled',
+        'paymongo_subscription_id' => 'cs_reactivate',
+        'paymongo_payment_method_id' => 'pm_reactivate',
+        'current_period_start' => now()->subWeek(),
+        'current_period_end' => now()->addWeek(),
+        'cancelled_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('billing.reactivate'))
+        ->assertRedirect(route('billing.portal'))
+        ->assertSessionHas('reactivated', true);
+
+    expect($cancelledSubscription->fresh()?->status)->toBe('active');
+    expect($cancelledSubscription->fresh()?->cancelled_at)->toBeNull();
+});
+
+test('reactivate does not affect already expired subscriptions', function () {
+    $user = User::factory()->create(['plan' => 'free']);
+
+    $expiredSubscription = Subscription::create([
+        'user_id' => $user->id,
+        'plan' => 'pro_monthly',
+        'status' => 'cancelled',
+        'paymongo_subscription_id' => 'cs_reactivate_expired',
+        'paymongo_payment_method_id' => 'pm_reactivate_expired',
+        'current_period_start' => now()->subMonth(),
+        'current_period_end' => now()->subDay(),
+        'cancelled_at' => now()->subWeek(),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('billing.reactivate'))
+        ->assertRedirect(route('billing.portal'));
+
+    expect($expiredSubscription->fresh()?->status)->toBe('cancelled');
+});
+
 test('webhook rejects invalid signatures', function () {
     $this->mock(PayMongoService::class, function (MockInterface $mock): void {
         $mock->shouldReceive('verifyWebhookSignature')
@@ -427,4 +521,89 @@ test('webhook does not create duplicate subscriptions or payments when the same 
 
     expect(Subscription::query()->where('paymongo_subscription_id', 'cs_duplicate_webhook')->count())->toBe(1);
     expect(Payment::query()->where('paymongo_payment_id', 'cs_duplicate_webhook')->count())->toBe(1);
+});
+
+test('checkout success cancels old monthly subscription when switching to yearly', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+
+    $oldSubscription = Subscription::create([
+        'user_id' => $user->id,
+        'plan' => 'pro_monthly',
+        'status' => 'active',
+        'paymongo_subscription_id' => 'cs_old_monthly',
+        'paymongo_payment_method_id' => 'pm_old_monthly',
+        'current_period_start' => now()->subDay(),
+        'current_period_end' => now()->addWeeks(3),
+    ]);
+
+    $this->mock(PayMongoService::class, function (MockInterface $mock) use ($user, $oldSubscription): void {
+        $mock->shouldReceive('retrieveCheckoutSession')
+            ->once()
+            ->with('cs_yearly_switch')
+            ->andReturn([
+                'attributes' => [
+                    'status' => 'paid',
+                    'description' => "user:{$user->id}|plan:pro_yearly|switch:1|old_sub:{$oldSubscription->id}",
+                    'payment_method_used' => 'pm_yearly_switch',
+                    'line_items' => [['amount' => 450000]],
+                ],
+            ]);
+    });
+
+    session(['paymongo_checkout_id' => 'cs_yearly_switch']);
+
+    $this->actingAs($user)
+        ->get(route('billing.success', ['session_id' => 'cs_yearly_switch']))
+        ->assertRedirect(route('billing.portal'));
+
+    expect(Subscription::query()->where('paymongo_subscription_id', 'cs_yearly_switch')->first()?->plan)->toBe('pro_yearly');
+    expect($oldSubscription->fresh()?->status)->toBe('cancelled');
+    expect($oldSubscription->fresh()?->cancelled_at)->not->toBeNull();
+    // Old sub period_end should be unchanged (user keeps access until it expires)
+    expect($oldSubscription->fresh()?->current_period_end->gt(now()))->toBeTrue();
+});
+
+test('webhook cancels old monthly subscription when processing yearly switch payment', function () {
+    $user = User::factory()->create(['plan' => 'pro']);
+
+    $oldSubscription = Subscription::create([
+        'user_id' => $user->id,
+        'plan' => 'pro_monthly',
+        'status' => 'active',
+        'paymongo_subscription_id' => 'cs_old_monthly_wh',
+        'paymongo_payment_method_id' => 'pm_old_monthly_wh',
+        'current_period_start' => now()->subDay(),
+        'current_period_end' => now()->addWeeks(3),
+    ]);
+
+    $this->mock(PayMongoService::class, function (MockInterface $mock): void {
+        $mock->shouldReceive('verifyWebhookSignature')
+            ->once()
+            ->andReturn(true);
+    });
+
+    $payload = [
+        'data' => [
+            'attributes' => [
+                'type' => 'checkout_session.payment.paid',
+                'data' => [
+                    'id' => 'cs_yearly_switch_wh',
+                    'attributes' => [
+                        'description' => "user:{$user->id}|plan:pro_yearly|switch:1|old_sub:{$oldSubscription->id}",
+                        'payment_method_used' => 'pm_yearly_switch_wh',
+                        'line_items' => [['amount' => 450000]],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $this->withHeaders([
+        'Paymongo-Signature' => 't=123,te=valid',
+    ])->postJson(route('paymongo.webhook'), $payload)->assertOk();
+
+    expect(Subscription::query()->where('paymongo_subscription_id', 'cs_yearly_switch_wh')->first()?->plan)->toBe('pro_yearly');
+    expect($oldSubscription->fresh()?->status)->toBe('cancelled');
+    expect($oldSubscription->fresh()?->cancelled_at)->not->toBeNull();
+    expect($oldSubscription->fresh()?->current_period_end->gt(now()))->toBeTrue();
 });

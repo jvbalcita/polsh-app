@@ -18,9 +18,16 @@
                 "shadcn-vue@latest",
                 "mcp"
             ]
+        },
+        "context-mode": {
+            "type": "local",
+            "command": [
+                "context-mode"
+            ]
         }
     },
     "plugin": [
-        "superpowers@git+https://github.com/obra/superpowers.git"
+        "superpowers@git+https://github.com/obra/superpowers.git",
+        "context-mode"
     ]
 }

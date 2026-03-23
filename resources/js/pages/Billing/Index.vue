@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Link, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import {
     Dialog,
     DialogContent,
@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import billing from '@/routes/billing';
+import { editor } from '@/routes';
 
 interface Subscription {
     id: number;
@@ -19,16 +20,24 @@ interface Subscription {
     cancelled_at: string | null;
 }
 
-defineProps<{
+const props = defineProps<{
     subscription: Subscription | null;
     isPro: boolean;
 }>();
 
+// State A — free (no sub)  State B — active  State C — cancelled but paid  State D — expired (same as A)
+const billingState = computed<'free' | 'active' | 'cancelled'>(() => {
+    if (!props.subscription) return 'free';
+    if (props.subscription.status === 'active') return 'active';
+    return 'cancelled';
+});
+
 const cycle = ref<'monthly' | 'yearly'>('yearly');
 const showCancelDialog = ref(false);
+const checkoutLoading = ref(false);
 
-const checkoutForm = useForm({ plan: '' });
 const cancelForm = useForm({});
+const reactivateForm = useForm({});
 
 function trackEvent(name: string): void {
     if (typeof window !== 'undefined' && (window as any).plausible) {
@@ -38,8 +47,34 @@ function trackEvent(name: string): void {
 
 function checkout(plan: string): void {
     trackEvent('billing_checkout_started');
-    checkoutForm.plan = plan;
-    checkoutForm.post(billing.checkout.url());
+    checkoutLoading.value = true;
+
+    // Use a native form POST so the server's redirect to PayMongo is followed
+    // as a full page navigation. Inertia's XHR cannot follow cross-origin redirects.
+    // Read the plaintext CSRF token from the meta tag (not the XSRF-TOKEN cookie,
+    // which contains the encrypted token and is only valid via X-XSRF-TOKEN header).
+    const token =
+        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+            ?.content ?? '';
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = billing.checkout.url();
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = token;
+    form.appendChild(csrfInput);
+
+    const planInput = document.createElement('input');
+    planInput.type = 'hidden';
+    planInput.name = 'plan';
+    planInput.value = plan;
+    form.appendChild(planInput);
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 function checkoutSelected(): void {
@@ -52,6 +87,10 @@ function confirmCancel(): void {
             showCancelDialog.value = false;
         },
     });
+}
+
+function confirmReactivate(): void {
+    reactivateForm.post(billing.reactivate.url());
 }
 
 function formatDate(dateStr: string): string {
@@ -95,18 +134,24 @@ const PRO_FEATURES = [
         <div class="billing-wrap">
             <!-- Page header -->
             <div class="billing-header">
+                <Link :href="editor.url()" class="back-link"
+                    >← Back to editor</Link
+                >
                 <h1 class="billing-title">Billing &amp; Plan</h1>
                 <p class="billing-subtitle">Simple pricing. No surprises.</p>
             </div>
 
-            <!-- Current plan status (Pro subscribers only) -->
-            <div v-if="isPro && subscription" class="current-plan-card">
+            <!-- State B: Active Pro subscription -->
+            <div v-if="billingState === 'active'" class="current-plan-card">
                 <div class="current-plan-row">
                     <div>
                         <p class="current-plan-eyebrow">Current Plan</p>
-                        <p class="current-plan-name">{{ planLabel[subscription.plan] }}</p>
+                        <p class="current-plan-name">
+                            {{ planLabel[props.subscription!.plan] }}
+                        </p>
                         <p class="current-plan-renew">
-                            Renews on {{ formatDate(subscription.current_period_end) }}
+                            Renews on
+                            {{ formatDate(props.subscription!.current_period_end) }}
                         </p>
                     </div>
                     <span class="plan-active-badge">Active</span>
@@ -117,6 +162,71 @@ const PRO_FEATURES = [
                     @click="showCancelDialog = true"
                 >
                     Cancel subscription
+                </button>
+            </div>
+
+            <!-- Switch to yearly — only for active monthly subscribers -->
+            <div
+                v-if="billingState === 'active' && props.subscription!.plan === 'pro_monthly'"
+                class="switch-yearly-card"
+            >
+                <div class="switch-yearly-row">
+                    <div>
+                        <p class="switch-yearly-eyebrow">Save more</p>
+                        <p class="switch-yearly-title">Switch to Yearly</p>
+                        <p class="switch-yearly-desc">
+                            ₱4,500/yr · save ₱1,500 vs monthly. Your current
+                            monthly plan continues until
+                            {{ formatDate(props.subscription!.current_period_end) }},
+                            then your yearly plan takes over.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="switch-yearly-btn"
+                        :disabled="checkoutLoading"
+                        @click="checkout('pro_yearly')"
+                    >
+                        {{
+                            checkoutLoading ? 'Redirecting…' : 'Switch — ₱4,500'
+                        }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- State C: Cancelled but still within paid period -->
+            <div
+                v-else-if="billingState === 'cancelled'"
+                class="current-plan-card current-plan-card--cancelled"
+            >
+                <div class="current-plan-row">
+                    <div>
+                        <p class="current-plan-eyebrow">
+                            Subscription cancelled
+                        </p>
+                        <p class="current-plan-name">
+                            {{ planLabel[props.subscription!.plan] }}
+                        </p>
+                        <p class="current-plan-renew">
+                            Pro access ends on
+                            {{ formatDate(props.subscription!.current_period_end) }}
+                        </p>
+                    </div>
+                    <span class="plan-active-badge plan-active-badge--cancelled"
+                        >Cancelled</span
+                    >
+                </div>
+                <button
+                    type="button"
+                    class="reactivate-btn"
+                    :disabled="reactivateForm.processing"
+                    @click="confirmReactivate"
+                >
+                    {{
+                        reactivateForm.processing
+                            ? 'Reactivating…'
+                            : 'Reactivate subscription'
+                    }}
                 </button>
             </div>
 
@@ -151,7 +261,9 @@ const PRO_FEATURES = [
                         <span class="price-amount">0</span>
                         <span class="price-period">/mo</span>
                     </div>
-                    <p class="plan-description">Start styling screenshots today. No card required.</p>
+                    <p class="plan-description">
+                        Start styling screenshots today. No card required.
+                    </p>
 
                     <ul class="feature-list">
                         <li
@@ -159,10 +271,21 @@ const PRO_FEATURES = [
                             :key="feature.text"
                             class="feature-item"
                         >
-                            <span :class="feature.included ? 'feature-check' : 'feature-dash'">
+                            <span
+                                :class="
+                                    feature.included
+                                        ? 'feature-check'
+                                        : 'feature-dash'
+                                "
+                            >
                                 {{ feature.included ? '✓' : '—' }}
                             </span>
-                            <span class="feature-text" :class="{ 'feature-text--dim': !feature.included }">
+                            <span
+                                class="feature-text"
+                                :class="{
+                                    'feature-text--dim': !feature.included,
+                                }"
+                            >
                                 {{ feature.text }}
                             </span>
                         </li>
@@ -178,8 +301,12 @@ const PRO_FEATURES = [
                     <div class="plan-tier">Pro</div>
                     <div class="plan-price">
                         <span class="price-currency">₱</span>
-                        <span class="price-amount">{{ cycle === 'monthly' ? '500' : '4,500' }}</span>
-                        <span class="price-period">{{ cycle === 'monthly' ? '/mo' : '/yr' }}</span>
+                        <span class="price-amount">{{
+                            cycle === 'monthly' ? '500' : '4,500'
+                        }}</span>
+                        <span class="price-period">{{
+                            cycle === 'monthly' ? '/mo' : '/yr'
+                        }}</span>
                     </div>
                     <p class="plan-description">
                         {{
@@ -202,15 +329,18 @@ const PRO_FEATURES = [
 
                     <div class="plan-cta">
                         <button
-                            v-if="!isPro"
+                            v-if="billingState !== 'active'"
                             type="button"
                             class="pro-btn"
-                            :disabled="checkoutForm.processing"
+                            :disabled="checkoutLoading"
                             @click="checkoutSelected"
                         >
-                            {{ checkoutForm.processing ? 'Redirecting…' : 'Get Pro' }}
+                            {{ checkoutLoading ? 'Redirecting…' : 'Get Pro' }}
                         </button>
-                        <div v-else class="current-plan-chip current-plan-chip--pro">
+                        <div
+                            v-else
+                            class="current-plan-chip current-plan-chip--pro"
+                        >
                             Current plan
                         </div>
                     </div>
@@ -230,13 +360,18 @@ const PRO_FEATURES = [
         </div>
 
         <!-- Cancel confirmation dialog -->
-        <Dialog :open="showCancelDialog" @update:open="showCancelDialog = $event">
+        <Dialog
+            :open="showCancelDialog"
+            @update:open="showCancelDialog = $event"
+        >
             <DialogContent class="billing-dialog">
                 <DialogHeader>
-                    <DialogTitle class="dialog-title">Cancel subscription?</DialogTitle>
+                    <DialogTitle class="dialog-title"
+                        >Cancel subscription?</DialogTitle
+                    >
                     <DialogDescription class="dialog-desc">
-                        You'll keep Pro access until your current period ends. After that, you'll
-                        be downgraded to the free plan.
+                        You'll keep Pro access until your current period ends.
+                        After that, you'll be downgraded to the free plan.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="dialog-footer">
@@ -253,7 +388,11 @@ const PRO_FEATURES = [
                         :disabled="cancelForm.processing"
                         @click="confirmCancel"
                     >
-                        {{ cancelForm.processing ? 'Cancelling…' : 'Yes, cancel' }}
+                        {{
+                            cancelForm.processing
+                                ? 'Cancelling…'
+                                : 'Yes, cancel'
+                        }}
                     </button>
                 </DialogFooter>
             </DialogContent>
@@ -280,6 +419,20 @@ const PRO_FEATURES = [
 .billing-header {
     text-align: center;
     margin-bottom: 4px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #4a4a58;
+    text-decoration: none;
+    transition: color 150ms ease;
+}
+
+.back-link:hover {
+    color: #8a8a9a;
 }
 
 .billing-title {
@@ -347,6 +500,16 @@ const PRO_FEATURES = [
     border-radius: 999px;
 }
 
+.plan-active-badge--cancelled {
+    background: rgba(255, 79, 79, 0.1);
+    border-color: rgba(255, 79, 79, 0.25);
+    color: #ff4f4f;
+}
+
+.current-plan-card--cancelled {
+    border-color: rgba(255, 79, 79, 0.2);
+}
+
 .cancel-link {
     margin-top: 14px;
     background: transparent;
@@ -359,7 +522,103 @@ const PRO_FEATURES = [
     transition: color 150ms ease;
 }
 
-.cancel-link:hover { color: #ff4f4f; }
+.cancel-link:hover {
+    color: #ff4f4f;
+}
+
+.reactivate-btn {
+    margin-top: 14px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(224, 255, 79, 0.4);
+    background: rgba(224, 255, 79, 0.08);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #e0ff4f;
+    cursor: pointer;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+.reactivate-btn:hover:not(:disabled) {
+    background: rgba(224, 255, 79, 0.14);
+    border-color: rgba(224, 255, 79, 0.6);
+}
+
+.reactivate-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ── Switch to yearly card ── */
+.switch-yearly-card {
+    background: #111114;
+    border: 1px solid rgba(224, 255, 79, 0.15);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-top: 12px;
+}
+
+.switch-yearly-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.switch-yearly-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: #e0ff4f;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+    opacity: 0.7;
+}
+
+.switch-yearly-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: #f0f0f2;
+    margin: 0 0 6px;
+}
+
+.switch-yearly-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #4a4a58;
+    margin: 0;
+    max-width: 400px;
+}
+
+.switch-yearly-btn {
+    flex-shrink: 0;
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(224, 255, 79, 0.4);
+    background: rgba(224, 255, 79, 0.08);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #e0ff4f;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+.switch-yearly-btn:hover:not(:disabled) {
+    background: rgba(224, 255, 79, 0.14);
+    border-color: rgba(224, 255, 79, 0.6);
+}
+
+.switch-yearly-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 
 /* ── Cycle toggle ── */
 .toggle-wrap {
@@ -389,7 +648,9 @@ const PRO_FEATURES = [
     font-size: 14px;
     color: #8a8a9a;
     cursor: pointer;
-    transition: background 150ms ease, color 150ms ease;
+    transition:
+        background 150ms ease,
+        color 150ms ease;
 }
 
 .plan-toggle button.active {
@@ -426,7 +687,11 @@ const PRO_FEATURES = [
 
 .plan-card--pro {
     border-color: #e0ff4f;
-    background: linear-gradient(160deg, rgba(224, 255, 79, 0.05) 0%, #111114 55%);
+    background: linear-gradient(
+        160deg,
+        rgba(224, 255, 79, 0.05) 0%,
+        #111114 55%
+    );
     position: relative;
 }
 
@@ -511,7 +776,9 @@ const PRO_FEATURES = [
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.feature-item:last-child { border-bottom: none; }
+.feature-item:last-child {
+    border-bottom: none;
+}
 
 .feature-check {
     font-family: 'DM Mono', monospace;
@@ -536,7 +803,9 @@ const PRO_FEATURES = [
     color: #8a8a9a;
 }
 
-.feature-text--dim { color: #4a4a58; }
+.feature-text--dim {
+    color: #4a4a58;
+}
 
 /* ── Plan CTA ── */
 .plan-cta {
@@ -557,8 +826,13 @@ const PRO_FEATURES = [
     transition: opacity 150ms ease;
 }
 
-.pro-btn:hover:not(:disabled) { opacity: 0.88; }
-.pro-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pro-btn:hover:not(:disabled) {
+    opacity: 0.88;
+}
+.pro-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 
 .current-plan-chip {
     width: 100%;
@@ -627,9 +901,13 @@ const PRO_FEATURES = [
     color: #f0f0f2 !important;
 }
 
-.dialog-title { color: #f0f0f2; }
+.dialog-title {
+    color: #f0f0f2;
+}
 
-.dialog-desc { color: #8a8a9a; }
+.dialog-desc {
+    color: #8a8a9a;
+}
 
 .dialog-footer {
     display: flex;
@@ -647,7 +925,9 @@ const PRO_FEATURES = [
     font-size: 13px;
     color: #8a8a9a;
     cursor: pointer;
-    transition: border-color 150ms ease, color 150ms ease;
+    transition:
+        border-color 150ms ease,
+        color 150ms ease;
 }
 
 .dialog-btn-keep:hover {
@@ -668,8 +948,13 @@ const PRO_FEATURES = [
     transition: background 150ms ease;
 }
 
-.dialog-btn-cancel:hover:not(:disabled) { background: rgba(255, 79, 79, 0.22); }
-.dialog-btn-cancel:disabled { opacity: 0.45; cursor: not-allowed; }
+.dialog-btn-cancel:hover:not(:disabled) {
+    background: rgba(255, 79, 79, 0.22);
+}
+.dialog-btn-cancel:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 
 /* ── Responsive ── */
 @media (max-width: 600px) {

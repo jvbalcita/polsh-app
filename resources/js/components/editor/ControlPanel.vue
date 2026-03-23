@@ -58,16 +58,20 @@ const FREE_FRAMES = [
 ];
 
 const PRO_FRAMES = [
-    { id: 'iphone-15', label: 'iPhone 15' },
-    { id: 'ipad-pro', label: 'iPad Pro' },
     { id: 'arc-browser', label: 'Arc Browser' },
+    { id: 'iphone_17_pro', label: 'iPhone 17 Pro' },
+    { id: 'ipad_pro_m5', label: 'iPad Pro M5' },
 ];
 
 const isPro = computed(() => page.props.isPro as boolean);
 const showUpgrade = ref(false);
 
 const hasFrame = computed(() => s.value?.frameType !== 'none');
-const isBrowserFrame = computed(() => s.value?.frameType === 'browser');
+const isBrowserFrame = computed(
+    () =>
+        s.value?.frameType === 'browser' ||
+        s.value?.frameType === 'arc-browser',
+);
 const supportsDesktopPlatform = computed(() => {
     const ft = s.value?.frameType;
 
@@ -566,7 +570,11 @@ function cancelSavePreset(): void {
                         v-for="frame in PRO_FRAMES"
                         :key="frame.id"
                         type="button"
-                        class="frame-btn frame-btn--pro"
+                        class="frame-btn"
+                        :class="{
+                            'frame-btn--pro': !isPro,
+                            'frame-btn--active': s?.frameType === frame.id,
+                        }"
                         @click="
                             !isPro
                                 ? (showUpgrade = true)

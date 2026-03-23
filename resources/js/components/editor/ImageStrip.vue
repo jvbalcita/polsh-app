@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import UpgradeModal from '@/components/editor/UpgradeModal.vue';
 import { useEditorStore } from '@/stores/editor';
 
 const store = useEditorStore();
+const page = usePage();
 const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const isPro = computed(() => page.props.isPro as boolean);
+const imageLimit = computed(() => (page.props.imageLimit as number) ?? 3);
+const atImageLimit = computed(() => store.images.length >= imageLimit.value);
+const showUpgrade = ref(false);
 
 function triggerFileInput(): void {
     fileInputRef.value?.click();
@@ -25,6 +33,26 @@ return;
 </script>
 
 <template>
+    <!-- Screenshot counter — free users only, always visible -->
+    <div
+        v-if="!isPro"
+        class="flex h-7 shrink-0 items-center gap-2 border-t border-white/[0.07] px-4"
+        style="background: #111114"
+    >
+        <span
+            class="text-[10px] tabular-nums"
+            :style="atImageLimit ? 'color: #ffaa4f; font-family: DM Mono, monospace' : 'color: #4a4a58; font-family: DM Mono, monospace'"
+        >{{ store.images.length }} / {{ imageLimit }} screenshots</span>
+        <button
+            v-if="atImageLimit"
+            type="button"
+            class="border-0 bg-transparent p-0 text-[10px] text-[#4a4a58] cursor-pointer transition-colors duration-150 hover:text-[#e0ff4f]"
+            style="font-family: 'DM Sans', sans-serif"
+            @click="showUpgrade = true"
+        >Upgrade to Pro →</button>
+    </div>
+
+    <!-- Thumbnail strip — shown when images exist -->
     <div
         v-if="store.images.length > 0"
         class="flex h-[72px] items-center gap-2 overflow-x-auto border-t border-white/8 px-4"
@@ -96,4 +124,6 @@ return;
             </svg>
         </button>
     </div>
+
+    <UpgradeModal v-model:open="showUpgrade" />
 </template>

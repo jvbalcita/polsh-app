@@ -43,9 +43,11 @@ class CheckSubscriptionRenewals implements ShouldQueue
      */
     private function chargeRenewals(PayMongoService $paymongo): void
     {
+        // Only charge subscriptions with a real PayMongo payment method resource ID (prefix: pm_).
+        // GCash/Maya checkouts store the method type name, not a reusable ID.
         Subscription::where('status', 'active')
             ->where('current_period_end', '<=', now())
-            ->whereNotNull('paymongo_payment_method_id')
+            ->where('paymongo_payment_method_id', 'like', 'pm_%')
             ->with('user')
             ->each(function (Subscription $subscription) use ($paymongo) {
                 $amount = $subscription->plan === 'pro_yearly' ? 450000 : 50000;
