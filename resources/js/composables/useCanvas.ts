@@ -5,6 +5,12 @@ import {
     calculateImagePlacement,
     getDesktopWindowControls,
 } from '@/composables/editorPresentation';
+import {
+    getIPhone15ProFrameConfig,
+    getIPhone17ProFrameConfig,
+    getIPadProFrameConfig,
+    getIPadProM5FrameConfig,
+} from '@/composables/useFrameRenderer';
 import { useEditorStore } from '@/stores/editor';
 import type { StyleConfig } from '@/types/style';
 
@@ -35,6 +41,15 @@ const CHROME_HEIGHT_BROWSER = 72;
 const CHROME_HEIGHT_TERMINAL = 28;
 const CHROME_HEIGHT_MINIMAL = 24;
 const CHROME_HEIGHT_CODE_EDITOR_TAB = 36;
+const CHROME_HEIGHT_IPHONE_STATUS = 44;
+const CHROME_BOTTOM_IPHONE = 52;
+const IPHONE_SIDE_BEZEL = 18;
+const CHROME_HEIGHT_IPAD_STATUS = 28;
+const CHROME_BOTTOM_IPAD = 32;
+const IPAD_SIDE_BEZEL = 16;
+const CHROME_HEIGHT_ARC_TOOLBAR = 40;
+const ACTIVITY_BAR_WIDTH_ARC = 200;
+const DEVICE_FRAME_RADIUS_FACTOR = 0.085;
 const CANVAS_MARGIN = 64;
 
 interface CanvasWindowControl {
@@ -134,7 +149,113 @@ function chromeHeightForFrame(frameType: string): number {
         return CHROME_HEIGHT_CODE_EDITOR_TAB;
     }
 
+    if (frameType === 'iphone-15') {
+        return CHROME_HEIGHT_IPHONE_STATUS;
+    }
+
+    if (frameType === 'ipad-pro') {
+        return CHROME_HEIGHT_IPAD_STATUS;
+    }
+
+    // Pro frames: 0 here — insets are computed proportionally in frameOverlayBounds
+    // using the actual rendered frameBounds so bezels scale at every canvas size.
+    if (
+        frameType === 'iphone_15_pro' ||
+        frameType === 'iphone_17_pro' ||
+        frameType === 'ipad_pro' ||
+        frameType === 'ipad_pro_m5'
+    ) {
+        return 0;
+    }
+
+    if (frameType === 'arc-browser') {
+        return CHROME_HEIGHT_ARC_TOOLBAR;
+    }
+
     return 0;
+}
+
+function bottomChromeHeightForFrame(frameType: string): number {
+    if (frameType === 'iphone-15') {
+        return CHROME_BOTTOM_IPHONE;
+    }
+
+    if (frameType === 'ipad-pro') {
+        return CHROME_BOTTOM_IPAD;
+    }
+
+    // Pro frames: 0 — proportional insets live in frameOverlayBounds.
+    if (
+        frameType === 'iphone_15_pro' ||
+        frameType === 'iphone_17_pro' ||
+        frameType === 'ipad_pro' ||
+        frameType === 'ipad_pro_m5'
+    ) {
+        return 0;
+    }
+
+    return 0;
+}
+
+function rightBezelForFrame(frameType: string): number {
+    if (frameType === 'iphone-15') {
+        return IPHONE_SIDE_BEZEL;
+    }
+
+    if (frameType === 'ipad-pro') {
+        return IPAD_SIDE_BEZEL;
+    }
+
+    // Pro frames: 0 — proportional insets live in frameOverlayBounds.
+    if (
+        frameType === 'iphone_15_pro' ||
+        frameType === 'iphone_17_pro' ||
+        frameType === 'ipad_pro' ||
+        frameType === 'ipad_pro_m5'
+    ) {
+        return 0;
+    }
+
+    return 0;
+}
+
+/**
+ * Returns forced portrait screen dimensions for device frames so the phone
+ * body always renders in portrait regardless of the uploaded image's aspect
+ * ratio. Returns null for non-device frames (use image dimensions instead).
+ */
+function deviceScreenDimensions(
+    frameType: string,
+): { w: number; h: number } | null {
+    if (frameType === 'iphone-15') {
+        return { w: 390, h: 844 }; // iPhone 15 logical points
+    }
+
+    if (frameType === 'ipad-pro') {
+        return { w: 834, h: 1194 }; // iPad Pro 11" logical points
+    }
+
+    // Pro frames: return BODY dimensions (screen + bezels) so calculateFrameLayout
+    // sizes the full device body. Proportional bezels are then computed in
+    // frameOverlayBounds using the actual rendered frameBounds dimensions — this
+    // ensures bezels scale correctly at every canvas size / export resolution.
+    if (frameType === 'iphone_15_pro') {
+        return { w: 417, h: 878 }; // body: 393+24 × 852+26 (12px sides, 13px top/bottom)
+    }
+
+    if (frameType === 'iphone_17_pro') {
+        return { w: 424, h: 898 }; // body: 402+22 × 874+24 (11px sides, 12px top/bottom)
+    }
+
+    if (frameType === 'ipad_pro') {
+        return { w: 1024, h: 1366 }; // body (16px sides, 20px top/bottom)
+    }
+
+    if (frameType === 'ipad_pro_m5') {
+        return { w: 1024, h: 1366 }; // body (14px sides, 18px top/bottom)
+    }
+
+    return null;
 }
 
 function buildWindowControlsConfig(
@@ -200,20 +321,17 @@ function buildWindowControlsConfig(
             width: button.width,
             height: button.height,
             cornerRadius: 0,
-            fill:
-                button.kind === 'close'
-                    ? 'rgba(232, 70, 88, 0.95)'
-                    : 'rgba(255,255,255,0.04)',
+            fill: 'rgba(255,255,255,0.04)',
             kind: button.kind,
         })),
         iconLines: [
             {
                 kind: 'minimize',
                 points: [
-                    minimizeButton.x + 7,
-                    minimizeButton.height / 2 + 4,
-                    minimizeButton.x + minimizeButton.width - 7,
-                    minimizeButton.height / 2 + 4,
+                    minimizeButton.x + 9,
+                    minimizeButton.height / 2,
+                    minimizeButton.x + minimizeButton.width - 9,
+                    minimizeButton.height / 2,
                 ],
                 stroke: 'rgba(255,255,255,0.78)',
                 strokeWidth: 1.25,
@@ -221,33 +339,33 @@ function buildWindowControlsConfig(
             {
                 kind: 'close',
                 points: [
-                    closeButton.x + 11,
+                    closeButton.x + 12,
                     closeButton.height / 2 - 5,
-                    closeButton.x + closeButton.width - 11,
+                    closeButton.x + closeButton.width - 12,
                     closeButton.height / 2 + 5,
                 ],
-                stroke: '#ffffff',
+                stroke: 'rgba(255,255,255,0.78)',
                 strokeWidth: 1.25,
             },
             {
                 kind: 'close',
                 points: [
-                    closeButton.x + closeButton.width - 11,
+                    closeButton.x + closeButton.width - 12,
                     closeButton.height / 2 - 5,
-                    closeButton.x + 11,
+                    closeButton.x + 12,
                     closeButton.height / 2 + 5,
                 ],
-                stroke: '#ffffff',
+                stroke: 'rgba(255,255,255,0.78)',
                 strokeWidth: 1.25,
             },
         ],
         iconRects: [
             {
                 kind: 'maximize',
-                x: maximizeButton.x + 7,
-                y: maximizeButton.height / 2 - 5,
-                width: maximizeButton.width - 14,
-                height: 10,
+                x: maximizeButton.x + 9,
+                y: maximizeButton.height / 2 - 4,
+                width: maximizeButton.width - 18,
+                height: 8,
                 stroke: 'rgba(255,255,255,0.78)',
                 strokeWidth: 1.25,
             },
@@ -265,8 +383,44 @@ export function useCanvas(
         chromeHeightForFrame(store.activeSettings?.frameType ?? 'none'),
     );
 
-    const activityBarWidth = computed<number>(() =>
-        store.activeSettings?.frameType === 'code-editor' ? 40 : 0,
+    const activityBarWidth = computed<number>(() => {
+        const ft = store.activeSettings?.frameType;
+
+        if (ft === 'code-editor') {
+            return 40;
+        }
+
+        if (ft === 'arc-browser') {
+            return ACTIVITY_BAR_WIDTH_ARC;
+        }
+
+        if (ft === 'iphone-15') {
+            return IPHONE_SIDE_BEZEL;
+        }
+
+        if (ft === 'ipad-pro') {
+            return IPAD_SIDE_BEZEL;
+        }
+
+        // Pro frames: 0 — proportional insets live in frameOverlayBounds.
+        if (
+            ft === 'iphone_15_pro' ||
+            ft === 'iphone_17_pro' ||
+            ft === 'ipad_pro' ||
+            ft === 'ipad_pro_m5'
+        ) {
+            return 0;
+        }
+
+        return 0;
+    });
+
+    const bottomChromeHeight = computed<number>(() =>
+        bottomChromeHeightForFrame(store.activeSettings?.frameType ?? 'none'),
+    );
+
+    const rightBezelWidth = computed<number>(() =>
+        rightBezelForFrame(store.activeSettings?.frameType ?? 'none'),
     );
 
     const hasFrameOverlay = computed<boolean>(
@@ -274,6 +428,29 @@ export function useCanvas(
     );
 
     const artifactRadius = computed<number>(() => {
+        const ft = store.activeSettings?.frameType;
+        const { width: fw } = frameBounds.value;
+
+        // Pro frames: exact body cornerRadius — no rounding so it matches
+        // frameGroupConfig.clipFunc exactly (avoids sub-pixel border artifacts).
+        if (ft === 'iphone_15_pro') {
+            return fw * 54 / 417;
+        }
+        if (ft === 'iphone_17_pro') {
+            return fw * 56 / 424;
+        }
+        if (ft === 'ipad_pro') {
+            return fw * 20 / 1024;
+        }
+        if (ft === 'ipad_pro_m5') {
+            return fw * 22 / 1024;
+        }
+
+        if (ft === 'iphone-15' || ft === 'ipad-pro') {
+            const { height: fh } = frameBounds.value;
+            return Math.min(fw, fh) * DEVICE_FRAME_RADIUS_FACTOR;
+        }
+
         if (hasFrameOverlay.value) {
             return (
                 store.activeStyle?.radius ?? store.activeSettings?.radius ?? 12
@@ -342,15 +519,22 @@ export function useCanvas(
         }
 
         if (activeImage) {
+            const ft = s?.frameType ?? 'none';
+            const screenDims = deviceScreenDimensions(ft);
+            const imgW = screenDims?.w ?? activeImage.naturalWidth;
+            const imgH = screenDims?.h ?? activeImage.naturalHeight;
+
             const layout = calculateFrameLayout({
                 areaX: pad,
                 areaY: pad,
                 areaWidth: Math.max(0, w - pad * 2),
                 areaHeight: Math.max(0, h - pad * 2),
-                imageWidth: activeImage.naturalWidth,
-                imageHeight: activeImage.naturalHeight,
+                imageWidth: imgW,
+                imageHeight: imgH,
                 topInset: chromeHeight.value,
                 leftInset: activityBarWidth.value,
+                bottomInset: bottomChromeHeight.value,
+                rightInset: rightBezelWidth.value,
             });
 
             return {
@@ -376,15 +560,57 @@ export function useCanvas(
         height: frameBounds.value.height,
     }));
 
-    const frameOverlayBounds = computed(() => ({
-        x: frameBounds.value.x,
-        y: frameBounds.value.y,
-        width: frameBounds.value.width,
-        height: frameBounds.value.height,
-        topInset: chromeHeight.value,
-        leftInset: activityBarWidth.value,
-        hasFrame: hasFrameOverlay.value,
-    }));
+    const frameOverlayBounds = computed(() => {
+        const ft = store.activeSettings?.frameType;
+        const fw = frameBounds.value.width;
+        const fh = frameBounds.value.height;
+
+        // Pro frames compute bezels proportionally from the rendered frame
+        // dimensions so they scale correctly at every canvas size / export res.
+        let topInset: number;
+        let leftInset: number;
+        let bottomInset: number;
+        let rightInset: number;
+
+        if (ft === 'iphone_15_pro') {
+            topInset = Math.round(fh * 13 / 878);
+            leftInset = Math.round(fw * 12 / 417);
+            bottomInset = topInset;
+            rightInset = leftInset;
+        } else if (ft === 'iphone_17_pro') {
+            topInset = Math.round(fh * 12 / 898);
+            leftInset = Math.round(fw * 11 / 424);
+            bottomInset = topInset;
+            rightInset = leftInset;
+        } else if (ft === 'ipad_pro') {
+            topInset = Math.round(fh * 20 / 1366);
+            leftInset = Math.round(fw * 16 / 1024);
+            bottomInset = topInset;
+            rightInset = leftInset;
+        } else if (ft === 'ipad_pro_m5') {
+            topInset = Math.round(fh * 18 / 1366);
+            leftInset = Math.round(fw * 14 / 1024);
+            bottomInset = topInset;
+            rightInset = leftInset;
+        } else {
+            topInset = chromeHeight.value;
+            leftInset = activityBarWidth.value;
+            bottomInset = bottomChromeHeight.value;
+            rightInset = rightBezelWidth.value;
+        }
+
+        return {
+            x: frameBounds.value.x,
+            y: frameBounds.value.y,
+            width: fw,
+            height: fh,
+            topInset,
+            leftInset,
+            bottomInset,
+            rightInset,
+            hasFrame: hasFrameOverlay.value,
+        };
+    });
 
     const imageBounds = computed(() => {
         const s = store.activeSettings;
@@ -398,12 +624,14 @@ export function useCanvas(
                 width: Math.max(
                     0,
                     frameBounds.value.width -
-                        frameOverlayBounds.value.leftInset,
+                        frameOverlayBounds.value.leftInset -
+                        frameOverlayBounds.value.rightInset,
                 ),
                 height: Math.max(
                     0,
                     frameBounds.value.height -
-                        frameOverlayBounds.value.topInset,
+                        frameOverlayBounds.value.topInset -
+                        frameOverlayBounds.value.bottomInset,
                 ),
                 fit: 'contain' as const,
             };
@@ -447,7 +675,7 @@ export function useCanvas(
             y: bounds.y,
             width: bounds.width,
             height: bounds.height,
-            cornerRadius: s?.radius ?? 12,
+            cornerRadius: artifactRadius.value,
             fill: 'transparent',
             shadowColor: s?.shadowColor ?? '#000000',
             shadowBlur: s?.shadowBlur ?? 40,
@@ -482,21 +710,45 @@ export function useCanvas(
         x: frameBounds.value.x,
         y: frameBounds.value.y,
         clipFunc: (ctx: CanvasRenderingContext2D) => {
-            const r = store.activeSettings?.radius ?? 12;
-            const w = frameBounds.value.width;
-            const h = frameBounds.value.height;
+            const ft = store.activeSettings?.frameType;
+            const fw = frameBounds.value.width;
+            const fh = frameBounds.value.height;
+            // Use the exact body cornerRadius for each Pro frame so the clip
+            // matches the body shape — prevents the body stroke from showing
+            // in the corner gap between clip and body.
+            let r: number;
+            if (ft === 'iphone_15_pro') {
+                r = fw * 54 / 417;
+            } else if (ft === 'iphone_17_pro') {
+                r = fw * 56 / 424;
+            } else if (ft === 'ipad_pro') {
+                r = fw * 20 / 1024;
+            } else if (ft === 'ipad_pro_m5') {
+                r = fw * 22 / 1024;
+            } else if (ft === 'iphone-15' || ft === 'ipad-pro') {
+                r = Math.round(Math.min(fw, fh) * DEVICE_FRAME_RADIUS_FACTOR);
+            } else {
+                r = store.activeSettings?.radius ?? 12;
+            }
             ctx.beginPath();
             ctx.moveTo(r, 0);
-            ctx.lineTo(w - r, 0);
-            ctx.arcTo(w, 0, w, r, r);
-            ctx.lineTo(w, h - r);
-            ctx.arcTo(w, h, w - r, h, r);
-            ctx.lineTo(r, h);
-            ctx.arcTo(0, h, 0, h - r, r);
+            ctx.lineTo(fw - r, 0);
+            ctx.arcTo(fw, 0, fw, r, r);
+            ctx.lineTo(fw, fh - r);
+            ctx.arcTo(fw, fh, fw - r, fh, r);
+            ctx.lineTo(r, fh);
+            ctx.arcTo(0, fh, 0, fh - r, r);
             ctx.lineTo(0, r);
             ctx.arcTo(0, 0, r, 0, r);
             ctx.closePath();
         },
+    }));
+
+    // Same position as frameGroupConfig but NO clipFunc — used to render
+    // device buttons that protrude beyond the body edge (negative x/y coords).
+    const frameButtonsGroupConfig = computed(() => ({
+        x: frameBounds.value.x,
+        y: frameBounds.value.y,
     }));
 
     const cardBgConfig = computed(() => {
@@ -565,6 +817,34 @@ export function useCanvas(
             return null;
         }
 
+        // Device frames use COVER — scale to fill the screen area while
+        // preserving the image's aspect ratio. The imageClipGroupConfig clips
+        // any overflow to the rounded screen shape so no distortion occurs.
+        const ft = settings.frameType;
+        const isDeviceFrame =
+            ft === 'iphone-15' ||
+            ft === 'ipad-pro' ||
+            ft === 'iphone_15_pro' ||
+            ft === 'iphone_17_pro' ||
+            ft === 'ipad_pro' ||
+            ft === 'ipad_pro_m5';
+
+        if (isDeviceFrame) {
+            const scaleX = width / img.naturalWidth;
+            const scaleY = height / img.naturalHeight;
+            const scale = Math.max(scaleX, scaleY);
+            const scaledW = img.naturalWidth * scale;
+            const scaledH = img.naturalHeight * scale;
+            return {
+                image: img.element,
+                x: x + (width - scaledW) / 2,
+                y: y + (height - scaledH) / 2,
+                width: scaledW,
+                height: scaledH,
+                listening: false,
+            };
+        }
+
         const placement = calculateImagePlacement({
             viewportX: x,
             viewportY: y,
@@ -590,7 +870,56 @@ export function useCanvas(
     const imageClipConfig = computed(() => {
         const { x, y, width, height } = imageBounds.value;
         const radius = Math.max(0, (store.activeSettings?.radius ?? 12) - 2);
-        const topRadius = frameOverlayBounds.value.topInset > 0 ? 0 : radius;
+        const ft = store.activeSettings?.frameType;
+
+        let topRadius: number;
+        let bottomRadius: number;
+
+        if (ft === 'iphone-15' || ft === 'ipad-pro') {
+            const { width: fw, height: fh } = frameBounds.value;
+            const screenR = Math.max(
+                Math.round(Math.min(fw, fh) * DEVICE_FRAME_RADIUS_FACTOR) - 10,
+                4,
+            );
+            topRadius = screenR;
+            bottomRadius = screenR;
+        } else if (ft === 'iphone_15_pro') {
+            // screen rx=46 at BASE_W=417
+            const screenR = Math.max(
+                Math.round((frameBounds.value.width / 417) * 46),
+                4,
+            );
+            topRadius = screenR;
+            bottomRadius = screenR;
+        } else if (ft === 'iphone_17_pro') {
+            // screen rx=48 at BASE_W=424
+            const screenR = Math.max(
+                Math.round((frameBounds.value.width / 424) * 48),
+                4,
+            );
+            topRadius = screenR;
+            bottomRadius = screenR;
+        } else if (ft === 'ipad_pro') {
+            // rx=14 proportional to frame width (base 1024, BEZEL_V=16, BEZEL_H=20)
+            const screenR = Math.max(
+                Math.round((frameBounds.value.width / 1024) * 14),
+                2,
+            );
+            topRadius = screenR;
+            bottomRadius = screenR;
+        } else if (ft === 'ipad_pro_m5') {
+            // rx=16 proportional to frame width (base 1024, BEZEL_V=14, BEZEL_H=18)
+            const screenR = Math.max(
+                Math.round((frameBounds.value.width / 1024) * 16),
+                2,
+            );
+            topRadius = screenR;
+            bottomRadius = screenR;
+        } else {
+            topRadius = frameOverlayBounds.value.topInset > 0 ? 0 : radius;
+            bottomRadius =
+                frameOverlayBounds.value.bottomInset > 0 ? 0 : radius;
+        }
 
         return {
             x,
@@ -600,8 +929,8 @@ export function useCanvas(
             cornerRadii: {
                 topLeft: topRadius,
                 topRight: topRadius,
-                bottomRight: radius,
-                bottomLeft: radius,
+                bottomRight: bottomRadius,
+                bottomLeft: bottomRadius,
             },
         };
     });
@@ -671,7 +1000,7 @@ export function useCanvas(
             y: bounds.y + bw / 2,
             width: bounds.width - bw,
             height: bounds.height - bw,
-            cornerRadius: s.radius,
+            cornerRadius: artifactRadius.value,
             fill: 'transparent',
             stroke: strokeColor,
             strokeWidth: bw,
@@ -1024,6 +1353,367 @@ export function useCanvas(
         };
     });
 
+    /** Phone / tablet body — drawn before the image so chrome sits on top */
+    const deviceBodyConfig = computed(() => {
+        const ft = store.activeSettings?.frameType;
+
+        // iphone_15_pro and ipad_pro render their own body via Pro frame configs
+        if (
+            ft !== 'iphone-15' &&
+            ft !== 'ipad-pro'
+        ) {
+            return null;
+        }
+
+        const { width: w, height: h } = frameBounds.value;
+
+        return {
+            x: 0,
+            y: 0,
+            width: w,
+            height: h,
+            fill: '#1C1C1E',
+            listening: false,
+        };
+    });
+
+    const iphoneFrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'iphone-15') {
+            return null;
+        }
+
+        const { width: w, height: h } = frameBounds.value;
+        const side = IPHONE_SIDE_BEZEL;
+        const top = CHROME_HEIGHT_IPHONE_STATUS;
+        const bottom = CHROME_BOTTOM_IPHONE;
+        const vW = w - side * 2;
+        const vH = h - top - bottom;
+        const btnColor = '#2D2D30';
+
+        // Dynamic Island — centered within screen
+        const diW = Math.round(vW * 0.28);
+        const diH = 18;
+        const dynamicIslandConfig = {
+            x: side + Math.round((vW - diW) / 2),
+            y: top + 10,
+            width: diW,
+            height: diH,
+            cornerRadius: diH / 2,
+            fill: '#000000',
+            listening: false,
+        };
+
+        // Left side buttons (silent + volume up/down)
+        const leftButtons = [
+            {
+                x: 0,
+                y: Math.round(h * 0.13),
+                width: 4,
+                height: Math.round(h * 0.05),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+            {
+                x: 0,
+                y: Math.round(h * 0.21),
+                width: 4,
+                height: Math.round(h * 0.10),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+            {
+                x: 0,
+                y: Math.round(h * 0.34),
+                width: 4,
+                height: Math.round(h * 0.10),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+        ];
+
+        // Right side — power button
+        const rightButtons = [
+            {
+                x: w - 4,
+                y: Math.round(h * 0.27),
+                width: 4,
+                height: Math.round(h * 0.15),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+        ];
+
+        // Home indicator — centered in bottom bezel
+        const homeW = Math.round(vW * 0.32);
+        const homeIndicatorConfig = {
+            x: side + Math.round((vW - homeW) / 2),
+            y: top + vH + Math.round((bottom - 5) / 2),
+            width: homeW,
+            height: 5,
+            cornerRadius: 3,
+            fill: 'rgba(255,255,255,0.4)',
+            listening: false,
+        };
+
+        return {
+            dynamicIslandConfig,
+            leftButtons,
+            rightButtons,
+            homeIndicatorConfig,
+        };
+    });
+
+    const ipadFrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'ipad-pro') {
+            return null;
+        }
+
+        const { width: w, height: h } = frameBounds.value;
+        const side = IPAD_SIDE_BEZEL;
+        const top = CHROME_HEIGHT_IPAD_STATUS;
+        const bottom = CHROME_BOTTOM_IPAD;
+        const vW = w - side * 2;
+        const vH = h - top - bottom;
+        const btnColor = '#2D2D30';
+
+        // Front camera (small pill at top of screen, centered)
+        const cameraConfig = {
+            x: side + Math.round((vW - 14) / 2),
+            y: top + 8,
+            width: 14,
+            height: 8,
+            cornerRadius: 4,
+            fill: '#0a0a0a',
+            listening: false,
+        };
+
+        // Left side buttons (volume up/down)
+        const leftButtons = [
+            {
+                x: 0,
+                y: Math.round(h * 0.22),
+                width: 4,
+                height: Math.round(h * 0.09),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+            {
+                x: 0,
+                y: Math.round(h * 0.34),
+                width: 4,
+                height: Math.round(h * 0.09),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+        ];
+
+        // Right side — power/Touch ID button
+        const rightButtons = [
+            {
+                x: w - 4,
+                y: Math.round(h * 0.28),
+                width: 4,
+                height: Math.round(h * 0.13),
+                fill: btnColor,
+                cornerRadius: 2,
+                listening: false,
+            },
+        ];
+
+        // Home indicator
+        const homeW = Math.round(vW * 0.28);
+        const homeIndicatorConfig = {
+            x: side + Math.round((vW - homeW) / 2),
+            y: top + vH + Math.round((bottom - 4) / 2),
+            width: homeW,
+            height: 4,
+            cornerRadius: 2,
+            fill: 'rgba(255,255,255,0.35)',
+            listening: false,
+        };
+
+        return {
+            cameraConfig,
+            leftButtons,
+            rightButtons,
+            homeIndicatorConfig,
+        };
+    });
+
+    const arcBrowserFrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'arc-browser') {
+            return null;
+        }
+
+        const { width: w, height: h } = frameBounds.value;
+        const sidebarW = ACTIVITY_BAR_WIDTH_ARC;
+        const toolbarH = CHROME_HEIGHT_ARC_TOOLBAR;
+        const contentW = w - sidebarW;
+
+        const sidebarBgConfig = {
+            x: 0,
+            y: 0,
+            width: sidebarW,
+            height: h,
+            fill: '#1A1A2E',
+            listening: false,
+        };
+
+        const sidebarBorderConfig = {
+            points: [sidebarW, 0, sidebarW, h],
+            stroke: 'rgba(255,255,255,0.06)',
+            strokeWidth: 1,
+            listening: false,
+        };
+
+        const toolbarBgConfig = {
+            x: sidebarW,
+            y: 0,
+            width: contentW,
+            height: toolbarH,
+            fill: '#1E1E3A',
+            listening: false,
+        };
+
+        const toolbarBorderConfig = {
+            points: [sidebarW, toolbarH, w, toolbarH],
+            stroke: 'rgba(255,255,255,0.06)',
+            strokeWidth: 1,
+            listening: false,
+        };
+
+        const urlPillW = Math.min(220, contentW * 0.5);
+        const urlPillConfig = {
+            x: sidebarW + (contentW - urlPillW) / 2,
+            y: (toolbarH - 22) / 2,
+            width: urlPillW,
+            height: 22,
+            cornerRadius: 11,
+            fill: 'rgba(255,255,255,0.08)',
+            listening: false,
+        };
+
+        const urlText = s.frameUrl || '';
+        const urlTextConfig = urlText
+            ? {
+                  x: sidebarW + (contentW - urlPillW) / 2 + 10,
+                  y: (toolbarH - 22) / 2,
+                  width: urlPillW - 20,
+                  height: 22,
+                  text: urlText,
+                  fontSize: 11,
+                  fontFamily: 'DM Mono, monospace',
+                  fill: 'rgba(255,255,255,0.4)',
+                  verticalAlign: 'middle',
+                  listening: false,
+              }
+            : null;
+
+        const tabItems = [
+            {
+                x: 12,
+                y: 12,
+                width: sidebarW - 24,
+                height: 26,
+                cornerRadius: 8,
+                fill: 'rgba(255,255,255,0.12)',
+                listening: false,
+            },
+            {
+                x: 12,
+                y: 46,
+                width: sidebarW - 24,
+                height: 26,
+                cornerRadius: 8,
+                fill: 'rgba(255,255,255,0.04)',
+                listening: false,
+            },
+            {
+                x: 12,
+                y: 80,
+                width: sidebarW - 24,
+                height: 26,
+                cornerRadius: 8,
+                fill: 'rgba(255,255,255,0.04)',
+                listening: false,
+            },
+        ];
+
+        return {
+            sidebarBgConfig,
+            sidebarBorderConfig,
+            toolbarBgConfig,
+            toolbarBorderConfig,
+            urlPillConfig,
+            urlTextConfig,
+            tabItems,
+        };
+    });
+
+    /** iPhone 15 Pro — titanium device frame with Dynamic Island */
+    const iphone15ProFrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'iphone_15_pro') {
+            return null;
+        }
+
+        const { width: fw, height: fh } = frameBounds.value;
+
+        return getIPhone15ProFrameConfig(fw, fh);
+    });
+
+    /** iPhone 17 Pro — warmer titanium, slightly thinner bezels */
+    const iphone17ProFrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'iphone_17_pro') {
+            return null;
+        }
+
+        const { width: fw, height: fh } = frameBounds.value;
+
+        return getIPhone17ProFrameConfig(fw, fh);
+    });
+
+    /** iPad Pro — dark space gray device frame */
+    const ipadProFrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'ipad_pro') {
+            return null;
+        }
+
+        const { width: fw, height: fh } = frameBounds.value;
+
+        return getIPadProFrameConfig(fw, fh);
+    });
+
+    /** iPad Pro M5 — Space Black, very thin bezels, Face ID sensor bar */
+    const ipadProM5FrameConfig = computed(() => {
+        const s = store.activeSettings;
+
+        if (!s || s.frameType !== 'ipad_pro_m5') {
+            return null;
+        }
+
+        const { width: fw, height: fh } = frameBounds.value;
+
+        return getIPadProM5FrameConfig(fw, fh);
+    });
+
     return {
         stageConfig,
         canvasBgConfig,
@@ -1039,6 +1729,14 @@ export function useCanvas(
         terminalChromeConfig,
         minimalWindowChromeConfig,
         codeEditorChromeConfig,
+        deviceBodyConfig,
+        iphoneFrameConfig,
+        ipadFrameConfig,
+        arcBrowserFrameConfig,
+        iphone15ProFrameConfig,
+        iphone17ProFrameConfig,
+        ipadProFrameConfig,
+        ipadProM5FrameConfig,
         cardDimensions,
         cardX,
         cardY,
@@ -1050,6 +1748,7 @@ export function useCanvas(
         contentArea: imageBounds,
         exportBounds,
         frameGroupConfig,
+        frameButtonsGroupConfig,
         chromeHeight,
         activityBarWidth,
         hasFrameOverlay,

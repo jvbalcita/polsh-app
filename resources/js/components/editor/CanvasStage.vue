@@ -135,6 +135,26 @@ function onClickUpload(): void {
                     <v-rect :config="canvas.cardBgConfig.value" />
 
                     <v-group :config="canvas.frameGroupConfig.value">
+                        <!-- Device body (phone/tablet bezel — drawn before image) -->
+                        <v-rect
+                            v-if="canvas.deviceBodyConfig.value"
+                            :config="canvas.deviceBodyConfig.value"
+                        />
+
+                        <!-- iPhone 17 Pro — body, bevel, screen bg (before image) -->
+                        <template v-if="canvas.iphone17ProFrameConfig.value">
+                            <v-rect :config="canvas.iphone17ProFrameConfig.value.bodyConfig" />
+                            <v-rect :config="canvas.iphone17ProFrameConfig.value.bevelConfig" />
+                            <v-rect :config="canvas.iphone17ProFrameConfig.value.screenBgConfig" />
+                        </template>
+
+                        <!-- iPad Pro M5 — body, bevel, screen bg (before image) -->
+                        <template v-if="canvas.ipadProM5FrameConfig.value">
+                            <v-rect :config="canvas.ipadProM5FrameConfig.value.bodyConfig" />
+                            <v-rect :config="canvas.ipadProM5FrameConfig.value.bevelConfig" />
+                            <v-rect :config="canvas.ipadProM5FrameConfig.value.screenBgConfig" />
+                        </template>
+
                         <!-- User image -->
                         <v-group
                             v-if="canvas.imageConfig.value"
@@ -377,8 +397,158 @@ function onClickUpload(): void {
                                 "
                             />
                         </template>
+                        <!-- iPhone 15 chrome (Dynamic Island + buttons + home bar) -->
+                        <template v-if="canvas.iphoneFrameConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.iphoneFrameConfig.value
+                                        .dynamicIslandConfig
+                                "
+                            />
+                            <v-rect
+                                v-for="(btn, i) in canvas.iphoneFrameConfig
+                                    .value.leftButtons"
+                                :key="`iphone-left-${i}`"
+                                :config="btn"
+                            />
+                            <v-rect
+                                v-for="(btn, i) in canvas.iphoneFrameConfig
+                                    .value.rightButtons"
+                                :key="`iphone-right-${i}`"
+                                :config="btn"
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.iphoneFrameConfig.value
+                                        .homeIndicatorConfig
+                                "
+                            />
+                        </template>
+
+                        <!-- iPad Pro chrome (camera + buttons + home bar) -->
+                        <template v-if="canvas.ipadFrameConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.ipadFrameConfig.value.cameraConfig
+                                "
+                            />
+                            <v-rect
+                                v-for="(btn, i) in canvas.ipadFrameConfig.value
+                                    .leftButtons"
+                                :key="`ipad-left-${i}`"
+                                :config="btn"
+                            />
+                            <v-rect
+                                v-for="(btn, i) in canvas.ipadFrameConfig.value
+                                    .rightButtons"
+                                :key="`ipad-right-${i}`"
+                                :config="btn"
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.ipadFrameConfig.value
+                                        .homeIndicatorConfig
+                                "
+                            />
+                        </template>
+
+                        <!-- iPhone 17 Pro — screen ring, DI, camera (after image; inside clip) -->
+                        <template v-if="canvas.iphone17ProFrameConfig.value">
+                            <v-rect :config="canvas.iphone17ProFrameConfig.value.screenRingConfig" />
+                            <v-rect :config="canvas.iphone17ProFrameConfig.value.dynamicIslandConfig" />
+                            <v-circle :config="canvas.iphone17ProFrameConfig.value.cameraDotConfig" />
+                        </template>
+
+                        <!-- iPad Pro M5 — screen ring, Face ID sensor (after image; inside clip) -->
+                        <template v-if="canvas.ipadProM5FrameConfig.value">
+                            <v-rect :config="canvas.ipadProM5FrameConfig.value.screenRingConfig" />
+                            <v-rect :config="canvas.ipadProM5FrameConfig.value.sensorConfig" />
+                        </template>
+
+                        <!-- Arc Browser chrome -->
+                        <template v-if="canvas.arcBrowserFrameConfig.value">
+                            <v-rect
+                                :config="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .sidebarBgConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .sidebarBorderConfig
+                                "
+                            />
+                            <v-rect
+                                v-for="(tab, i) in canvas.arcBrowserFrameConfig
+                                    .value.tabItems"
+                                :key="`arc-tab-${i}`"
+                                :config="tab"
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .toolbarBgConfig
+                                "
+                            />
+                            <v-line
+                                :config="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .toolbarBorderConfig
+                                "
+                            />
+                            <v-rect
+                                :config="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .urlPillConfig
+                                "
+                            />
+                            <v-text
+                                v-if="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .urlTextConfig
+                                "
+                                :config="
+                                    canvas.arcBrowserFrameConfig.value
+                                        .urlTextConfig
+                                "
+                            />
+                        </template>
+
                         <!-- Noise overlay -->
                         <v-rect v-if="noiseConfig" :config="noiseConfig" />
+                    </v-group>
+
+                    <!-- Device side/top buttons — rendered OUTSIDE the body clip group
+                         so they protrude visibly beyond the frame body edges. -->
+                    <v-group :config="canvas.frameButtonsGroupConfig.value">
+                        <!-- iPhone 17 Pro buttons -->
+                        <template v-if="canvas.iphone17ProFrameConfig.value">
+                            <v-rect
+                                v-for="(btn, i) in canvas.iphone17ProFrameConfig.value.leftButtons"
+                                :key="`i17-left-${i}`"
+                                :config="btn"
+                            />
+                            <v-rect
+                                v-for="(btn, i) in canvas.iphone17ProFrameConfig.value.rightButtons"
+                                :key="`i17-right-${i}`"
+                                :config="btn"
+                            />
+                        </template>
+
+                        <!-- iPad Pro M5 buttons -->
+                        <template v-if="canvas.ipadProM5FrameConfig.value">
+                            <v-rect
+                                v-for="(btn, i) in canvas.ipadProM5FrameConfig.value.leftButtons"
+                                :key="`m5-left-${i}`"
+                                :config="btn"
+                            />
+                            <v-rect
+                                v-for="(btn, i) in canvas.ipadProM5FrameConfig.value.rightButtons"
+                                :key="`m5-right-${i}`"
+                                :config="btn"
+                            />
+                        </template>
                     </v-group>
                 </v-group>
 
