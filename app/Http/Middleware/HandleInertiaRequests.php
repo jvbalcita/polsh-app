@@ -54,6 +54,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'isPro' => $isPro,
+            'debug_is_pro' => auth()->check() ? auth()->user()->isPro() : false,
             'imageLimit' => $isPro ? 10 : 3,
             'teamId' => $user?->currentTeam()?->id,
         ];

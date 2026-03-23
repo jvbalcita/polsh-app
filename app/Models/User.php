@@ -77,12 +77,20 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isPro(): bool
     {
-        return in_array($this->plan, ['pro', 'team']);
+        if ($this->plan === 'team') {
+            return true;
+        }
+
+        return $this->subscriptions()
+            ->whereIn('status', ['active', 'cancelled'])
+            ->where('current_period_end', '>', now())
+            ->exists();
     }
 
     public function subscriptionEndsAt(): ?Carbon
     {
-        return $this->subscriptions()->where('status', 'active')
+        return $this->subscriptions()
+            ->whereIn('status', ['active', 'cancelled'])
             ->where('current_period_end', '>', now())
             ->value('current_period_end');
     }
@@ -91,6 +99,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $this->subscriptions()->where('status', 'active')
             ->update(['cancelled_at' => now(), 'status' => 'cancelled']);
+    }
+
+    public function reactivateSubscription(): void
+    {
+        $this->subscriptions()
+            ->where('status', 'cancelled')
+            ->where('current_period_end', '>', now())
+            ->update(['status' => 'active', 'cancelled_at' => null]);
     }
 
     public function apiKeys(): HasMany

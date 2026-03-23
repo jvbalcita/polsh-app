@@ -8,6 +8,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
     Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
     Route::post('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+    Route::post('/billing/reactivate', [BillingController::class, 'reactivate'])->name('billing.reactivate');
 });
 
 // Webhook — signature verified in controller; CSRF excluded in bootstrap/app.php
