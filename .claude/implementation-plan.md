@@ -579,6 +579,43 @@ When all parts complete and tests pass:
 
 ---
 
+## Phase 7.7 — Pro Device Frames (iPhone 15 Pro + iPad Pro 12.9")
+> **Status:** ✅ COMPLETED | **Tag:** batched with v1.3.2
+
+- ✅ `useFrameRenderer.ts` — `getIPhone15ProFrameConfig()` + `getIPadProFrameConfig()` config factories
+- ✅ `DEVICE_FRAME_REGISTRY` + `frameThumbnails` inline SVGs (64×64)
+- ✅ `useCanvas.ts` — chrome heights, bezel insets, screen dims, `iphone15ProFrameConfig` + `ipadProFrameConfig` computed props
+- ✅ `CanvasStage.vue` — VueKonva template sections (before-image: body/bevel/screenBg; after-image: ring/buttons/DI/camera)
+- ✅ `ControlPanel.vue` — `iphone_15_pro` + `ipad_pro` added to `PRO_FRAMES` (pro gate auto-applied)
+- ✅ Build: 0 errors, 0 warnings
+
+## Phase 7.8 — Device Frame Fixes + iphone_17_pro + ipad_pro_m5
+> **Status:** ✅ COMPLETED | **Tag:** batched with v1.3.2
+
+- ✅ **TASK 1** — `iphone_15_pro` renderer: body fills frame (no centering offset), fixed 14 px bezels, proportional internals, dark titanium #2C2C2E
+- ✅ **TASK 2** — `ipad_pro` renderer: dark space gray #1C1C1E (was silver #D4D4D2), sensorConfig, stronger screen shadow, fixed 24/32 px bezels
+- ✅ **TASK 3** — `iphone_17_pro` added: #3A3A3A warm titanium, 12 px bezels, rx=58, registered in all helpers + ControlPanel + CanvasStage
+- ✅ **TASK 4** — `ipad_pro_m5` added: Space Black #1C1C1E, 20/28 px bezels, Face ID sensor bar, no home indicator, rx=22, registered everywhere
+- ✅ **Image fill fix** (all 6 device frames): `imageConfig` bypasses `calculateImagePlacement` → FILL mode (stretch to screen area)
+- ✅ **Offset fix**: `deviceScreenDimensions` now returns SCREEN dims (362×816, 366×820, 976×1302, 984×1310) → body fills frame exactly, offsetX/offsetY=0
+- ✅ Updated thumbnails for all 4 Pro frames
+- ✅ Build: 0 errors, 0 warnings
+
+## Phase 7.9 — Device Frame Polish (bezel thinning, border fix, frame cleanup)
+> **Status:** ✅ COMPLETED | **Tag:** batched with v1.3.2
+
+- ✅ **TASK 1** — Removed `iphone-15` (iPhone 15) and `ipad-pro` (old thick-bezel iPad) from `PRO_FRAMES` in ControlPanel.vue; exactly 4 device frames remain: iPhone 15 Pro, iPhone 17 Pro, iPad Pro, iPad Pro M5
+- ✅ **TASK 2** — iPhone 15 Pro: asymmetric bezels (8px sides, 12px top/bottom), rx=54, screen rx=46, strokeRing rgba(0,0,0,0.35)/2px
+- ✅ **TASK 2** — iPhone 17 Pro: thinner bezels (7px sides, 11px top/bottom), body #3A3A38, stroke #525250, rx=56, screen rx=48
+- ✅ **TASK 3** — iPad Pro: bezels 16px sides/20px top-bottom, body #1A1A1A, camera pill on right bezel, volume+power on top edge
+- ✅ **TASK 3** — iPad Pro M5: bezels 14px sides/18px top-bottom, Face ID pill on right bezel, volume+power on top edge
+- ✅ **TASK 4** — useCanvas.ts bezel helpers updated to match renderer constants (chromeHeight, bottomChrome, activityBarWidth, rightBezel, deviceScreenDimensions)
+- ✅ **TASK 5** — Button positions standardized: silent toggle y=130, vol-up y=188, vol-down y=256, power y=248 (15 Pro fill #3A3A3C, 17 Pro fill #4A4A48)
+- ✅ **TASK 6** — `frameGroupConfig.clipFunc` now uses exact body cornerRadius per frame (fw*54/390 etc.) instead of global `DEVICE_FRAME_RADIUS_FACTOR`; `artifactRadius` also per-frame — eliminates extra outer border artifact
+- ✅ Build: 0 errors, 0 warnings
+
+---
+
 ## Phase 8 — Community Style Marketplace Core
 > **Duration:** ~3 weeks | **Roadmap:** V2.0 Weeks 19–22 | **Status:** 🔲 PENDING
 >

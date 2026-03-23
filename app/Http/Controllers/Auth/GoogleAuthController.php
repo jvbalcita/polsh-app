@@ -31,6 +31,8 @@ class GoogleAuthController extends Controller
                 'name' => $googleUser->getName() ?? 'Google User',
                 'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
+                // Email is pre-verified by Google — mark it immediately.
+                'email_verified_at' => now(),
                 // Random password — this account uses Google OAuth only.
                 'password' => Str::password(32),
             ]);

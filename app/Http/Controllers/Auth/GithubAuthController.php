@@ -39,6 +39,8 @@ class GithubAuthController extends Controller
                 'github_id' => $githubUser->getId(),
                 'github_token' => $githubUser->token,
                 'avatar' => $githubUser->getAvatar(),
+                // Email is pre-verified by GitHub — mark it immediately.
+                'email_verified_at' => now(),
                 // Random password — this account uses GitHub OAuth only.
                 'password' => Str::password(32),
             ]);
