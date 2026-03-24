@@ -41,7 +41,7 @@ class BillingController extends Controller
         $user = $request->user();
         $plan = $request->input('plan');
 
-        $amounts = ['pro_monthly' => 50000, 'pro_yearly' => 450000];
+        $amounts = ['pro_monthly' => 39900, 'pro_yearly' => 399000];
         $names = ['pro_monthly' => 'Polsh Pro Monthly', 'pro_yearly' => 'Polsh Pro Yearly'];
 
         // Detect monthly → yearly upgrade so we can cancel the old sub after payment
