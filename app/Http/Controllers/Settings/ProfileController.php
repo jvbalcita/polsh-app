@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\AvatarUploadRequest;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +24,18 @@ class ProfileController extends Controller
         return Inertia::render('settings/Profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'avatarUrl' => $request->user()->avatar_url,
         ]);
+    }
+
+    public function uploadAvatar(AvatarUploadRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->clearMediaCollection('avatar');
+        $user->addMedia($request->file('avatar'))
+            ->toMediaCollection('avatar');
+
+        return response()->json(['avatarUrl' => $user->getFirstMediaUrl('avatar')]);
     }
 
     /**
