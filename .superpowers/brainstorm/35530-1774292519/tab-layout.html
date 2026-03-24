@@ -1,0 +1,67 @@
+<h2>Settings Page — Tab Navigation Layout</h2>
+<p class="subtitle">How should the tab navigation be structured? Each tab is a separate page link.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #0f0f0f; border-radius: 8px;">
+      <div style="display: flex; gap: 4px; border-bottom: 1px solid #2a2a2a; padding-bottom: 0; margin-bottom: 16px;">
+        <div style="padding: 8px 16px; background: #e0ff4f; color: #000; font-size: 12px; font-weight: 600; border-radius: 6px 6px 0 0; margin-bottom: -1px;">Profile</div>
+        <div style="padding: 8px 16px; color: #666; font-size: 12px; border-radius: 6px 6px 0 0;">Billing</div>
+        <div style="padding: 8px 16px; color: #666; font-size: 12px; border-radius: 6px 6px 0 0;">Security</div>
+      </div>
+      <div style="background: #1a1a1a; border-radius: 8px; padding: 16px; height: 80px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: #333;"></div>
+        <div>
+          <div style="width: 100px; height: 8px; background: #333; border-radius: 4px; margin-bottom: 6px;"></div>
+          <div style="width: 140px; height: 6px; background: #222; border-radius: 4px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Top Tabs (underline active)</h3>
+      <p>Horizontal tabs at the top of the content area. Active tab highlighted with the lime accent underline. Clean, familiar SaaS pattern.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #0f0f0f; border-radius: 8px;">
+      <div style="display: flex; gap: 12px;">
+        <div style="width: 110px; flex-shrink: 0;">
+          <div style="padding: 8px 12px; background: #1a1a1a; border-left: 2px solid #e0ff4f; color: #e0ff4f; font-size: 11px; font-weight: 600; margin-bottom: 2px; border-radius: 0 4px 4px 0;">Profile</div>
+          <div style="padding: 8px 12px; color: #555; font-size: 11px; margin-bottom: 2px; border-left: 2px solid transparent;">Billing</div>
+          <div style="padding: 8px 12px; color: #555; font-size: 11px; border-left: 2px solid transparent;">Security</div>
+        </div>
+        <div style="flex: 1; background: #1a1a1a; border-radius: 8px; padding: 12px; height: 100px;">
+          <div style="width: 80px; height: 7px; background: #333; border-radius: 4px; margin-bottom: 8px;"></div>
+          <div style="width: 120px; height: 5px; background: #222; border-radius: 4px; margin-bottom: 6px;"></div>
+          <div style="width: 100px; height: 5px; background: #222; border-radius: 4px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Left Sidebar Nav (current pattern)</h3>
+      <p>Vertical sidebar navigation on the left — same pattern as the existing SettingsLayout. Active item gets lime left-border accent. Familiar since it already exists.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #0f0f0f; border-radius: 8px;">
+      <div style="display: flex; gap: 4px; background: #1a1a1a; border-radius: 8px; padding: 4px; margin-bottom: 14px;">
+        <div style="padding: 6px 14px; background: #2a2a2a; border-radius: 6px; color: #e0ff4f; font-size: 11px; font-weight: 600;">Profile</div>
+        <div style="padding: 6px 14px; color: #555; font-size: 11px;">Billing</div>
+        <div style="padding: 6px 14px; color: #555; font-size: 11px;">Security</div>
+      </div>
+      <div style="background: #1a1a1a; border-radius: 8px; padding: 12px; height: 70px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: #333;"></div>
+        <div>
+          <div style="width: 90px; height: 7px; background: #333; border-radius: 4px; margin-bottom: 6px;"></div>
+          <div style="width: 120px; height: 5px; background: #222; border-radius: 4px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Pill / Segmented Tabs</h3>
+      <p>Pill-style tab bar above the content. Active tab gets a dark pill background. More modern, compact feel — closer to shadcn's Tabs component style.</p>
+    </div>
+  </div>
+</div>

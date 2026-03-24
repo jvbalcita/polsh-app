@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class GithubAuthController extends Controller
@@ -41,8 +40,8 @@ class GithubAuthController extends Controller
                 'avatar' => $githubUser->getAvatar(),
                 // Email is pre-verified by GitHub — mark it immediately.
                 'email_verified_at' => now(),
-                // Random password — this account uses GitHub OAuth only.
-                'password' => Str::password(32),
+                // No password — this account uses GitHub OAuth only.
+                'password' => null,
             ]);
         }
 

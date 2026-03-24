@@ -5,7 +5,7 @@ return [
     |--------------------------------------------------------------------------
     | Polsh API Key
     |--------------------------------------------------------------------------
-    | Your Polsh API key. Generate one at https://polsh.app/dashboard/api-keys
+    | Your Polsh API key. Generate one at https://polsh.work/dashboard/api-keys
     */
     'api_key' => env('POLSH_API_KEY'),
 
@@ -14,7 +14,7 @@ return [
     | API Base URL
     |--------------------------------------------------------------------------
     */
-    'base_url' => env('POLSH_BASE_URL', 'https://polsh.app'),
+    'base_url' => env('POLSH_BASE_URL', 'https://polsh.work'),
 
     /*
     |--------------------------------------------------------------------------

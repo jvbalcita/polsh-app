@@ -5,6 +5,7 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import VueKonva from 'vue-konva';
 import '../css/app.css';
+import 'vue-sonner/style.css';
 import { initializeTheme } from '@/composables/useAppearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

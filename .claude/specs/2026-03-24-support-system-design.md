@@ -2,7 +2,7 @@
 
 > **Project:** Polsh (`polsh.work`)
 > **Date:** 2026-03-24
-> **Status:** Approved
+> **Status:** Approved (rev 2 — post spec-review fixes)
 
 ---
 
@@ -38,7 +38,7 @@ The entry point is a dedicated `/support` page linked from the public footer, th
 |---|---|---|
 | `id` | `bigint` PK | |
 | `support_ticket_id` | `bigint` FK | |
-| `author_id` | `bigint` FK → `users` | admin or authenticated user |
+| `author_id` | `bigint` nullable FK → `users` | null for guest-submitted tickets (admin-only reply) |
 | `is_staff_reply` | `boolean` | distinguishes staff vs user replies |
 | `message` | `text` | |
 | `created_at` | `timestamp` | |
@@ -49,6 +49,7 @@ The entry point is a dedicated `/support` page linked from the public footer, th
 - Both models implement `LogsActivity` (spatie/laravel-activitylog).
 - `SupportTicket` exposes a `submitter()` helper returning either the linked `User` record or a guest value-object built from `submitter_name` / `submitter_email` — controllers always use the same interface.
 - `SupportTicket` casts `type` and `status` as enums (`SupportTicketType`, `SupportTicketStatus`).
+- **Guest reply scope:** Guest tickets (`user_id` is null) are reply-only from the admin side. Guests receive email notifications but cannot log in to reply. The user-facing reply route (`POST /support/tickets/{ticket}/reply`) is `auth only` and enforced by the `SupportTicketPolicy` — guest submitters cannot access it. This is an explicit design decision: guests are encouraged to create an account if they need ongoing conversation.
 
 ---
 
@@ -95,6 +96,7 @@ All controllers are thin: validate via Form Request → mutate model → dispatc
 ### Authorization
 
 - `SupportTicketPolicy` — `view` and `reply` gates check `user_id === auth()->id()` for user-facing routes.
+- **Closed-ticket guard:** `StoreSupportTicketReplyRequest` (or the controller before persisting) rejects replies to tickets with `status === closed` with a 422 response. Client-side disabled state is a UX hint only.
 - Admin routes protected by `role:admin` middleware; no additional policy needed.
 
 ---
@@ -116,7 +118,7 @@ Three `Notification` classes, all sent via the `mail` channel using a shared Mar
 - **Body:** new status label; link to ticket (authenticated users only)
 
 ### `SupportTicketReplied`
-- **Sent to:** submitter (when admin replies) or all admins (when user replies)
+- **Sent to:** submitter (when admin replies) or `assigned_admin_id` when user replies (falls back to all admins if unassigned)
 - **Trigger:** either `SupportTicketReplyController@store` or `Admin\SupportTicketReplyController@store`
 - **Subject:** `New reply on your request — #POLSH-{id}`
 - **Body:** the reply message; link to ticket
@@ -146,16 +148,30 @@ ProductionSeeder         ← prod (php artisan db:seed --class=ProductionSeeder)
   AdminUserSeeder
 ```
 
+### `config/admin.php`
+
+A dedicated config file bridges `.env` → seeder (per project rule: no `env()` outside config files):
+
+```php
+return [
+    'name'     => env('ADMIN_NAME', 'Polsh Admin'),
+    'email'    => env('ADMIN_EMAIL', 'admin@polsh.work'),
+    'password' => env('ADMIN_PASSWORD', null),
+];
+```
+
 ### `AdminUserSeeder`
 
-Reads from `.env`:
-```
-ADMIN_NAME="Polsh Admin"
-ADMIN_EMAIL=admin@polsh.work
-ADMIN_PASSWORD=change-me-in-production
+Reads via `config('admin.*')`:
+
+```php
+User::firstOrCreate(
+    ['email' => config('admin.email')],
+    ['name' => config('admin.name'), 'password' => bcrypt(config('admin.password'))]
+)->assignRole('admin');
 ```
 
-Uses `User::firstOrCreate(['email' => ...])` — safe to re-run. Assigns `admin` role after creation. Hashes the password via `bcrypt()`.
+Safe to re-run (idempotent). Password is hashed via `bcrypt()`. Throws if `ADMIN_PASSWORD` is null in production.
 
 ### `.env.example` additions
 
@@ -229,15 +245,19 @@ All Vue pages use Inertia v2 patterns (`defineProps`, `<Form>`, `<Link>`). TypeS
 File: `tests/Feature/SupportTest.php`
 
 - Guest can submit a ticket (name + email required)
-- Authenticated user can submit a ticket (name/email pre-filled)
+- Guest submission fails validation without name or email (422)
+- Authenticated user can submit a ticket (name/email pre-filled, name + email not required in payload)
 - Authenticated user can view their own tickets
 - Authenticated user cannot view another user's ticket (403)
-- Authenticated user can reply to their own ticket
+- Authenticated user can reply to their own open ticket
+- Authenticated user cannot reply to a closed ticket (422, server-side guard)
 - Admin can view all tickets
 - Admin can update ticket status
+- Admin can assign ticket to themselves or another admin
 - Admin can reply to any ticket
 - `SupportTicketReceived` notification sent on creation
 - `SupportTicketReplied` notification sent on admin reply
+- `SupportTicketReplied` notification sent to assigned admin (or all admins) on user reply
 - `SupportTicketUpdated` notification sent on status change
 - Non-admin cannot access `/admin/support` (403)
 
@@ -248,6 +268,7 @@ File: `tests/Feature/SupportTest.php`
 ### New files
 
 ```
+config/admin.php
 routes/support.php
 app/Http/Controllers/SupportController.php
 app/Http/Controllers/SupportTicketReplyController.php

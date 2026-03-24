@@ -1,12 +1,37 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Layers, Palette, FileCode, Zap, Archive } from 'lucide-vue-next';
+import { Layers, Palette, FileCode, Zap, Archive, Clock } from 'lucide-vue-next';
 import { ref, onMounted, onUnmounted } from 'vue';
-import UserMenu from '@/components/UserMenu.vue';
-import { changelog, editor } from '@/routes';
+import { useSeo } from '@/composables/useSeo';
+import PublicLayout from '@/layouts/PublicLayout.vue';
+import { editor } from '@/routes';
 import { api as apiDocs } from '@/routes/docs';
 import styles from '@/styles';
 import type { StyleConfig } from '@/types/style';
+
+// ── SEO ───────────────────────────────────────────────────────────────────────
+const { fullTitle, description, ogImage, twitterCard } = useSeo({
+    title: 'Polish Your Screenshots',
+    description:
+        'Drop in a screenshot, pick from 18 hand-crafted styles, and export a stunning PNG, WebP, or SVG — no Figma plugins, no install required. Free forever, no watermarks.',
+    type: 'website',
+});
+
+const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Polsh',
+    url: 'https://polsh.work',
+    applicationCategory: 'DesignApplication',
+    operatingSystem: 'Web',
+    offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'PHP',
+    },
+    description:
+        'Polish your screenshots. Drop in a screenshot, pick a style, export a stunning PNG, WebP, or SVG — no Figma plugins, no install required.',
+});
 
 // ── Demo image — inline SVG blob, no file asset needed ───────────────────────
 const DEMO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
@@ -273,6 +298,23 @@ function renderStyleFrame(
     }
 }
 
+// ── Hero interactive grid ─────────────────────────────────────────────────────
+const heroSectionRef = ref<HTMLElement | null>(null);
+const heroMx = ref('50%');
+const heroMy = ref('50%');
+
+function onHeroMouseMove(e: MouseEvent): void {
+    const el = heroSectionRef.value;
+
+    if (!el) {
+        return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    heroMx.value = `${((e.clientX - rect.left) / rect.width) * 100}%`;
+    heroMy.value = `${((e.clientY - rect.top) / rect.height) * 100}%`;
+}
+
 // ── Hero cycling ──────────────────────────────────────────────────────────────
 const heroCanvas = ref<HTMLCanvasElement | null>(null);
 const heroOpacity = ref<number>(1);
@@ -422,32 +464,39 @@ const compRows = [
         brandbird: false,
     },
     {
-        feature: 'SVG vector export',
+        feature: 'SVG export',
         polsh: true,
         screely: false,
         pika: false,
         brandbird: false,
     },
     {
-        feature: 'REST API access',
+        feature: 'REST API',
         polsh: true,
         screely: false,
         pika: false,
         brandbird: false,
     },
     {
-        feature: 'Batch ZIP export',
+        feature: 'No watermark (free)',
+        polsh: true,
+        screely: true,
+        pika: false,
+        brandbird: false,
+    },
+    {
+        feature: 'Export history',
         polsh: true,
         screely: false,
         pika: false,
         brandbird: false,
     },
     {
-        feature: 'Free open beta',
+        feature: 'Saved presets',
         polsh: true,
         screely: false,
         pika: true,
-        brandbird: false,
+        brandbird: true,
     },
 ];
 
@@ -491,772 +540,835 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head title="Polish your screenshots" />
+    <Head>
+        <title>{{ fullTitle }}</title>
+        <meta name="description" :content="description" />
+        <meta property="og:title" :content="fullTitle" />
+        <meta property="og:description" :content="description" />
+        <meta property="og:image" :content="ogImage" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://polsh.work/" />
+        <meta name="twitter:card" :content="twitterCard" />
+        <meta name="twitter:title" :content="fullTitle" />
+        <meta name="twitter:description" :content="description" />
+        <meta name="twitter:image" :content="ogImage" />
+        <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component -->
+        <component :is="'script'" type="application/ld+json" v-html="jsonLd" />
+    </Head>
 
-    <div class="lp-root">
-        <!-- ── Nav ── -->
-        <nav class="lp-nav">
-            <span class="lp-wordmark">polsh</span>
-            <div class="lp-nav-right">
-                <Link :href="editor()" class="btn-editor">Open editor →</Link>
-                <UserMenu />
-            </div>
-        </nav>
+    <PublicLayout>
+        <!-- ── §1 Hero ─────────────────────────────────────────────────────── -->
+        <section
+            ref="heroSectionRef"
+            class="hero"
+            :style="{ '--hero-mx': heroMx, '--hero-my': heroMy }"
+            @mousemove="onHeroMouseMove"
+        >
+            <div class="hero-grid-bg" aria-hidden="true" />
+            <div class="hero-glow" aria-hidden="true" />
 
-        <!-- ── Hero ── -->
-        <section class="hero-section">
-            <div class="hero-copy">
-                <div class="beta-badge">
-                    <span class="beta-dot" />
-                    Open beta · Free while we build
-                </div>
+            <div class="container hero-container">
+                <div class="hero-inner">
+                    <div class="hero-copy">
+                        <div class="beta-pill">
+                            <span class="beta-dot" aria-hidden="true" />
+                            Open beta · Free while we build
+                        </div>
 
-                <h1 class="hero-h1">
-                    Polish your<br />
-                    <span class="hero-accent">screenshots.</span>
-                </h1>
+                        <h1 class="hero-h1">
+                            Polish your<br />
+                            <em class="hero-em">screenshots.</em>
+                        </h1>
 
-                <p class="hero-body">
-                    Drop in a screenshot. Pick a style. Export a stunning PNG,
-                    WebP, or SVG — no Figma plugins, no subscriptions.
-                </p>
+                        <p class="hero-p">
+                            Drop in a screenshot. Pick a style. Export a stunning PNG,
+                            WebP, or SVG — no Figma plugins, no install required.
+                        </p>
 
-                <div class="hero-ctas">
-                    <Link :href="editor()" class="btn-primary"
-                        >Open the editor →</Link
-                    >
-                </div>
+                        <div class="hero-actions">
+                            <Link :href="editor()" class="btn-primary">Open the editor →</Link>
+                        </div>
 
-                <p class="hero-footnote">
-                    Free forever · No watermark · Works in your browser
-                </p>
-            </div>
+                        <div class="hero-pills">
+                            <span class="hero-pill">Free forever</span>
+                            <span class="hero-dot" aria-hidden="true">·</span>
+                            <span class="hero-pill">No watermarks</span>
+                            <span class="hero-dot" aria-hidden="true">·</span>
+                            <span class="hero-pill">Works in your browser</span>
+                        </div>
+                    </div>
 
-            <div class="hero-demo-wrap">
-                <div class="hero-demo">
-                    <canvas
-                        ref="heroCanvas"
-                        class="hero-canvas"
-                        :style="{ opacity: heroOpacity }"
-                        width="800"
-                        height="520"
-                    />
-                </div>
-            </div>
-        </section>
-
-        <!-- ── Style gallery ── -->
-        <section class="gallery-section">
-            <p class="gallery-label">18 ready-to-use styles</p>
-            <div class="style-gallery">
-                <div
-                    v-for="(style, i) in styles"
-                    :key="style.slug"
-                    class="style-gallery-card"
-                >
-                    <canvas
-                        :ref="
-                            (el) =>
-                                setGalleryRef(el as HTMLCanvasElement | null, i)
-                        "
-                        class="gallery-canvas"
-                    />
-                    <div class="style-gallery-card-name">{{ style.name }}</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── Features ── -->
-        <section class="features-section">
-            <h2 class="section-heading">Built for developers who ship.</h2>
-            <div class="features-grid">
-                <!-- Brand Sessions — large (row-span 2) -->
-                <div class="feature-card feature-card--large">
-                    <Layers class="feature-icon" aria-hidden="true" />
-                    <h3>Brand Sessions</h3>
-                    <p>
-                        Save padding, radius, shadow, and color combos as named
-                        presets. Apply in one click across every screenshot in a
-                        session.
-                    </p>
-                </div>
-                <!-- Named Styles -->
-                <div class="feature-card">
-                    <Palette class="feature-icon" aria-hidden="true" />
-                    <h3>Named Styles</h3>
-                    <p>
-                        18 hand-crafted styles from minimal white to neon-halo
-                        dark. One click, instant results.
-                    </p>
-                </div>
-                <!-- SVG Export -->
-                <div class="feature-card">
-                    <FileCode class="feature-icon" aria-hidden="true" />
-                    <h3>SVG Export</h3>
-                    <p>
-                        Export lossless vector frames — perfect for Notion,
-                        Figma docs, and README headers.
-                    </p>
-                </div>
-                <!-- REST API -->
-                <div class="feature-card">
-                    <Zap class="feature-icon" aria-hidden="true" />
-                    <h3>REST API</h3>
-                    <p>
-                        Automate via <code>POST /api/v1/glaze</code>. Style
-                        screenshots straight from your CI pipeline or build
-                        scripts.
-                    </p>
-                </div>
-                <!-- Batch Export -->
-                <div class="feature-card">
-                    <Archive class="feature-icon" aria-hidden="true" />
-                    <h3>Batch Export</h3>
-                    <p>
-                        Style up to 10 screenshots at once and download as a
-                        ZIP. One consistent look for your whole launch.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ── Before / After ── -->
-        <section class="ba-section">
-            <div class="ba-header">
-                <h2 class="ba-heading">Before and after.</h2>
-                <p class="ba-sub">The same screenshot. One click.</p>
-            </div>
-
-            <div
-                ref="baContainerRef"
-                class="ba-container"
-                role="group"
-                aria-label="Before and after screenshot comparison"
-                @mousedown="onBaMouseDown"
-            >
-                <!-- Before (raw) -->
-                <canvas
-                    ref="baBeforeCanvas"
-                    class="ba-canvas ba-canvas--before"
-                    aria-hidden="true"
-                />
-                <div class="ba-label ba-label--before">Before</div>
-
-                <!-- After (styled, clipped from left) -->
-                <canvas
-                    ref="baAfterCanvas"
-                    class="ba-canvas ba-canvas--after"
-                    :style="{ clipPath: `inset(0 0 0 ${baDivPct}%)` }"
-                    aria-hidden="true"
-                />
-                <div
-                    class="ba-label ba-label--after"
-                    :style="{ left: `${Math.min(baDivPct + 3, 88)}%` }"
-                >
-                    After
-                </div>
-
-                <!-- Divider line + handle -->
-                <div
-                    class="ba-divider"
-                    :style="{ left: `${baDivPct}%` }"
-                    role="slider"
-                    :aria-valuenow="Math.round(baDivPct)"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-label="Comparison divider — use arrow keys to move"
-                    tabindex="0"
-                    @keydown="onBaKeyDown"
-                    @touchstart.passive="baIsDragging = true"
-                    @touchmove="onBaTouchMove"
-                    @touchend="baIsDragging = false"
-                >
-                    <div class="ba-handle">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M5 3L1 7L5 11M9 3L13 7L9 11"
-                                stroke="currentColor"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                    <div class="hero-visual">
+                        <div class="hero-canvas-wrap">
+                            <div class="hero-canvas-glow" aria-hidden="true" />
+                            <canvas
+                                ref="heroCanvas"
+                                class="hero-canvas"
+                                :style="{ opacity: heroOpacity }"
+                                width="800"
+                                height="520"
                             />
-                        </svg>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- ── Competitive table ── -->
+        <!-- ── §2 Social proof strip ──────────────────────────────────────── -->
+        <div class="stats-strip">
+            <div class="container">
+                <div class="stats-inner">
+                    <p class="stats-label">Built for developers who ship.</p>
+                    <div class="stats-pills">
+                        <span class="stats-pill">18 styles</span>
+                        <span class="stats-sep" aria-hidden="true">·</span>
+                        <span class="stats-pill">Browser-native</span>
+                        <span class="stats-sep" aria-hidden="true">·</span>
+                        <span class="stats-pill">No watermarks</span>
+                        <span class="stats-sep" aria-hidden="true">·</span>
+                        <span class="stats-pill">No Figma required</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── §3 Style showcase ──────────────────────────────────────────── -->
+        <section class="styles-section">
+            <div class="container">
+                <p class="section-label">18 ready-to-use styles</p>
+            </div>
+            <div class="styles-scroll-wrap">
+                <div class="styles-strip">
+                    <div
+                        v-for="(style, i) in styles"
+                        :key="style.slug"
+                        class="style-card"
+                    >
+                        <canvas
+                            :ref="(el) => setGalleryRef(el as HTMLCanvasElement | null, i)"
+                            class="style-canvas"
+                        />
+                        <span class="style-name">{{ style.name }}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── §4 Bento features ──────────────────────────────────────────── -->
+        <section class="bento-section">
+            <div class="container">
+                <h2 class="section-heading">Everything you need to ship polished screenshots.</h2>
+
+                <div class="bento-grid">
+                    <!-- Brand Sessions — tall left card -->
+                    <div class="bento-card bento-card--brand">
+                        <div class="bento-icon-wrap">
+                            <Layers class="bento-icon" aria-hidden="true" />
+                        </div>
+                        <h3 class="bento-title">Brand Sessions</h3>
+                        <p class="bento-desc">
+                            Save padding, radius, shadow, and color combos as named presets.
+                            Apply in one click across every screenshot in a session. Your brand,
+                            every time.
+                        </p>
+                    </div>
+
+                    <!-- Named Styles — top center -->
+                    <div class="bento-card">
+                        <div class="bento-icon-wrap">
+                            <Palette class="bento-icon" aria-hidden="true" />
+                        </div>
+                        <h3 class="bento-title">Named Styles</h3>
+                        <p class="bento-desc">
+                            18 hand-crafted styles from minimal white to neon-halo dark. One
+                            click, instant results.
+                        </p>
+                    </div>
+
+                    <!-- SVG Export — top right -->
+                    <div class="bento-card">
+                        <div class="bento-icon-wrap">
+                            <FileCode class="bento-icon" aria-hidden="true" />
+                        </div>
+                        <h3 class="bento-title">SVG Export</h3>
+                        <p class="bento-desc">
+                            Export lossless vector frames — perfect for Notion, Figma docs, and
+                            README headers.
+                        </p>
+                    </div>
+
+                    <!-- Batch Export — bottom center -->
+                    <div class="bento-card">
+                        <div class="bento-icon-wrap">
+                            <Archive class="bento-icon" aria-hidden="true" />
+                        </div>
+                        <h3 class="bento-title">Batch Export</h3>
+                        <p class="bento-desc">
+                            Style up to 10 screenshots at once and download as a ZIP. One
+                            consistent look for your whole launch.
+                        </p>
+                    </div>
+
+                    <!-- REST API — bottom right -->
+                    <div class="bento-card">
+                        <div class="bento-icon-wrap">
+                            <Zap class="bento-icon" aria-hidden="true" />
+                        </div>
+                        <h3 class="bento-title">REST API</h3>
+                        <p class="bento-desc">
+                            Automate via <code>POST /api/v1/glaze</code>. Style screenshots
+                            straight from your CI pipeline or build scripts.
+                            <Link :href="apiDocs()" class="bento-link">View API docs →</Link>
+                        </p>
+                    </div>
+
+                    <!-- Export History — full-width bottom -->
+                    <div class="bento-card bento-card--history">
+                        <div class="bento-icon-wrap">
+                            <Clock class="bento-icon" aria-hidden="true" />
+                        </div>
+                        <h3 class="bento-title">Export History</h3>
+                        <p class="bento-desc">
+                            Every export is saved to your account. Re-download, re-apply styles,
+                            or share with your team.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── §5 Before / After ──────────────────────────────────────────── -->
+        <section class="ba-section">
+            <div class="container">
+                <div class="ba-header">
+                    <h2 class="section-heading">One click. That's the whole workflow.</h2>
+                    <p class="section-sub">Drag the handle to see the difference.</p>
+                </div>
+
+                <div
+                    ref="baContainerRef"
+                    class="ba-container"
+                    role="group"
+                    aria-label="Before and after screenshot comparison"
+                    @mousedown="onBaMouseDown"
+                >
+                    <!-- Before (raw) -->
+                    <canvas
+                        ref="baBeforeCanvas"
+                        class="ba-canvas ba-canvas--before"
+                        aria-hidden="true"
+                    />
+                    <div class="ba-label ba-label--before">Before</div>
+
+                    <!-- After (styled, clipped from left) -->
+                    <canvas
+                        ref="baAfterCanvas"
+                        class="ba-canvas ba-canvas--after"
+                        :style="{ clipPath: `inset(0 0 0 ${baDivPct}%)` }"
+                        aria-hidden="true"
+                    />
+                    <div
+                        class="ba-label ba-label--after"
+                        :style="{ left: `${Math.min(baDivPct + 3, 88)}%` }"
+                    >
+                        After
+                    </div>
+
+                    <!-- Divider line + handle -->
+                    <div
+                        class="ba-divider"
+                        :style="{ left: `${baDivPct}%` }"
+                        role="slider"
+                        :aria-valuenow="Math.round(baDivPct)"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-label="Comparison divider — use arrow keys to move"
+                        tabindex="0"
+                        @keydown="onBaKeyDown"
+                        @touchstart.passive="baIsDragging = true"
+                        @touchmove="onBaTouchMove"
+                        @touchend="baIsDragging = false"
+                    >
+                        <div class="ba-handle">
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M5 3L1 7L5 11M9 3L13 7L9 11"
+                                    stroke="currentColor"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── §6 How it works ────────────────────────────────────────────── -->
+        <section class="hiw-section">
+            <div class="container">
+                <h2 class="section-heading">Simple by design.</h2>
+                <p class="section-sub">Three steps from screenshot to share-ready.</p>
+
+                <div class="hiw-steps">
+                    <div class="hiw-step">
+                        <span class="hiw-num">01</span>
+                        <h3 class="hiw-title">Drop</h3>
+                        <p class="hiw-desc">Paste or drag any screenshot into the browser-based editor. No install required.</p>
+                    </div>
+
+                    <div class="hiw-connector" aria-hidden="true" />
+
+                    <div class="hiw-step">
+                        <span class="hiw-num">02</span>
+                        <h3 class="hiw-title">Style</h3>
+                        <p class="hiw-desc">Pick from 18 hand-crafted styles or fine-tune padding, radius, shadow, and background.</p>
+                    </div>
+
+                    <div class="hiw-connector" aria-hidden="true" />
+
+                    <div class="hiw-step">
+                        <span class="hiw-num">03</span>
+                        <h3 class="hiw-title">Export</h3>
+                        <p class="hiw-desc">Download as PNG, WebP, or SVG. Share it instantly — no watermarks, ever.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── §7 Competitive table ───────────────────────────────────────── -->
         <section class="table-section">
-            <h2 class="section-heading" style="margin-bottom: 32px">
-                Why Polsh?
-            </h2>
-            <div class="table-scroll">
-                <table class="competitive-table">
-                    <thead>
-                        <tr>
-                            <th class="comp-th-feat">Feature</th>
-                            <th class="comp-th comp-th--polsh">Polsh</th>
-                            <th class="comp-th">Screely</th>
-                            <th class="comp-th">Pika</th>
-                            <th class="comp-th">BrandBird</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="row in compRows" :key="row.feature">
-                            <td class="comp-feat">{{ row.feature }}</td>
-                            <td class="comp-cell comp-cell--polsh">
-                                <span v-if="row.polsh" class="comp-check"
-                                    >✓</span
-                                >
-                                <span v-else class="comp-dash">—</span>
-                            </td>
-                            <td class="comp-cell">
-                                <span v-if="row.screely" class="comp-check-dim"
-                                    >✓</span
-                                >
-                                <span v-else class="comp-dash">—</span>
-                            </td>
-                            <td class="comp-cell">
-                                <span v-if="row.pika" class="comp-check-dim"
-                                    >✓</span
-                                >
-                                <span v-else class="comp-dash">—</span>
-                            </td>
-                            <td class="comp-cell">
-                                <span
-                                    v-if="row.brandbird"
-                                    class="comp-check-dim"
-                                    >✓</span
-                                >
-                                <span v-else class="comp-dash">—</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="container">
+                <h2 class="section-heading">Why Polsh?</h2>
+                <p class="section-sub">We built what we wanted for ourselves — and made it free.</p>
+
+                <div class="table-scroll">
+                    <table class="comp-table">
+                        <thead>
+                            <tr>
+                                <th class="comp-th-feat">Feature</th>
+                                <th class="comp-th comp-th--polsh">Polsh</th>
+                                <th class="comp-th">Screely</th>
+                                <th class="comp-th">Pika</th>
+                                <th class="comp-th">BrandBird</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in compRows" :key="row.feature" class="comp-row">
+                                <td class="comp-feat">{{ row.feature }}</td>
+                                <td class="comp-cell comp-cell--polsh">
+                                    <span v-if="row.polsh" class="comp-check">✓</span>
+                                    <span v-else class="comp-dash">—</span>
+                                </td>
+                                <td class="comp-cell">
+                                    <span v-if="row.screely" class="comp-check-dim">✓</span>
+                                    <span v-else class="comp-dash">—</span>
+                                </td>
+                                <td class="comp-cell">
+                                    <span v-if="row.pika" class="comp-check-dim">✓</span>
+                                    <span v-else class="comp-dash">—</span>
+                                </td>
+                                <td class="comp-cell">
+                                    <span v-if="row.brandbird" class="comp-check-dim">✓</span>
+                                    <span v-else class="comp-dash">—</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
-        <!-- ── CTA ── -->
-        <section class="cta-section">
-            <h2 class="cta-heading">
-                Ready to ship
-                <span style="color: #e0ff4f">beautiful</span> screenshots?
-            </h2>
-            <p class="cta-sub">
-                No account required. Drop a screenshot and go.
-            </p>
-            <Link :href="editor()" class="btn-primary cta-btn"
-                >Start for free →</Link
-            >
-        </section>
+        <!-- ── §8 Pricing teaser ──────────────────────────────────────────── -->
+        <section class="pricing-section">
+            <div class="container">
+                <h2 class="section-heading">Start free. Upgrade when you're ready.</h2>
+                <p class="section-sub">No credit card required to start.</p>
 
-        <!-- ── Footer ── -->
-        <footer class="lp-footer">
-            <div class="footer-inner">
-                <div class="footer-brand">
-                    <span class="lp-wordmark">polsh</span>
-                    <p class="footer-tagline">
-                        © 2026 Polsh · Screenshot styling for developers
-                    </p>
-                    <p class="footer-ph">Made in the Philippines 🇵🇭</p>
-                </div>
-                <div class="footer-links">
-                    <Link :href="changelog()" class="footer-link"
-                        >Changelog</Link
-                    >
-                    <Link :href="apiDocs()" class="footer-link">API Docs</Link>
-                </div>
-                <div class="footer-social">
-                    <a
-                        href="https://github.com/polsh-app"
-                        class="footer-social-link"
-                        target="_blank"
-                        rel="noopener"
-                        aria-label="GitHub"
-                    >
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
-                            />
-                        </svg>
-                    </a>
-                    <a
-                        href="https://twitter.com/polshapp"
-                        class="footer-social-link"
-                        target="_blank"
-                        rel="noopener"
-                        aria-label="Twitter / X"
-                    >
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-                            />
-                        </svg>
-                    </a>
+                <div class="pricing-cards">
+                    <!-- Free -->
+                    <div class="pricing-card">
+                        <div class="pricing-plan-name">Free</div>
+                        <div class="pricing-price">$0 <span class="pricing-period">/mo</span></div>
+                        <ul class="pricing-features">
+                            <li>10 exports per session</li>
+                            <li>3 saved presets</li>
+                            <li>All 18 styles</li>
+                            <li>No watermarks</li>
+                            <li>Browser-native — no install</li>
+                        </ul>
+                        <Link :href="editor()" class="pricing-cta pricing-cta--free">Open editor →</Link>
+                    </div>
+
+                    <!-- Pro -->
+                    <div class="pricing-card pricing-card--pro">
+                        <div class="pricing-plan-name">Pro</div>
+                        <div class="pricing-price pricing-price--pro">
+                            <span class="pricing-pro-label">Affordable</span>
+                        </div>
+                        <ul class="pricing-features">
+                            <li>Unlimited exports</li>
+                            <li>50 saved presets</li>
+                            <li>Brand sessions</li>
+                            <li>REST API access</li>
+                            <li>Export history</li>
+                        </ul>
+                        <Link href="/settings/billing" class="pricing-cta pricing-cta--pro">View Pro pricing →</Link>
+                    </div>
                 </div>
             </div>
-        </footer>
-    </div>
+        </section>
+
+        <!-- ── §9 Closing CTA strip ───────────────────────────────────────── -->
+        <section class="cta-strip">
+            <div class="container">
+                <div class="cta-inner">
+                    <h2 class="cta-heading">Start polishing today.</h2>
+                    <p class="cta-sub">Free forever. No watermarks. No Figma required.</p>
+                    <Link :href="editor()" class="btn-primary cta-btn">Open the editor →</Link>
+                </div>
+            </div>
+        </section>
+    </PublicLayout>
 </template>
 
 <style scoped>
-/* ── Root ──────────────────────────────────────────────────────────────────── */
-.lp-root {
-    min-height: 100vh;
-    background: #0a0a0c;
-    color: #f0f0f2;
-    overflow-x: hidden;
+/* ── Shared ─────────────────────────────────────────────────────────────────── */
+.container {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
 }
 
-/* ── Nav ───────────────────────────────────────────────────────────────────── */
-.lp-nav {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    background: rgba(10, 10, 12, 0.85);
-    backdrop-filter: blur(12px);
-}
-
-.lp-wordmark {
-    font-family: 'DM Mono', monospace;
-    font-size: 16px;
-    font-weight: 500;
-    color: #f0f0f2;
-}
-
-.lp-nav-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.btn-editor {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: 6px;
-    border: 1px solid rgba(224, 255, 79, 0.3);
-    background: transparent;
-    color: #e0ff4f;
+.section-heading {
     font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    transition:
-        background 150ms ease,
-        border-color 150ms ease;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
+    color: #f0f0f2;
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+    margin: 0 0 0.875rem;
 }
 
-.btn-editor:hover {
-    background: rgba(224, 255, 79, 0.08);
-    border-color: rgba(224, 255, 79, 0.5);
+.section-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: #8a8a9a;
+    margin: 0 0 3rem;
+    line-height: 1.6;
 }
 
-/* ── Shared buttons ─────────────────────────────────────────────────────────── */
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 12px 24px;
-    border-radius: 6px;
-    background: #e0ff4f;
-    color: #0a0a0c;
+.section-label {
     font-family: 'DM Mono', monospace;
-    font-size: 14px;
+    font-size: 0.75rem;
+    color: #4a4a5a;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 1.25rem;
+}
+
+.btn-primary {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.875rem;
     font-weight: 500;
+    color: #0a0a0c;
+    background: #e0ff4f;
+    padding: 0.6875rem 1.5rem;
+    border-radius: 7px;
     text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: background 150ms ease;
+    letter-spacing: -0.01em;
+    transition: opacity 0.15s ease;
+    display: inline-block;
 }
 
 .btn-primary:hover {
-    background: #ecff7a;
+    opacity: 0.88;
 }
 
-.btn-primary:focus-visible {
-    outline: 2px solid #e0ff4f;
-    outline-offset: 2px;
+/* ── §1 Hero ─────────────────────────────────────────────────────────────── */
+.hero {
+    position: relative;
+    padding: 5rem 0 4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    overflow: hidden;
 }
 
-.btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: transparent;
-    color: #f0f0f2;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
-    transition:
-        border-color 150ms ease,
-        background 150ms ease;
+.hero-grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
 }
 
-.btn-ghost:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    background: #1a1a1f;
+.hero-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at var(--hero-mx, 50%) var(--hero-my, 50%),
+        rgba(224, 255, 79, 0.06) 0%,
+        transparent 55%
+    );
+    pointer-events: none;
+    transition: background 0.08s ease;
 }
 
-.btn-ghost:focus-visible {
-    outline: 2px solid #e0ff4f;
-    outline-offset: 2px;
+.hero-container {
+    position: relative;
+    z-index: 1;
 }
 
-/* ── Hero ───────────────────────────────────────────────────────────────────── */
-.hero-section {
+.hero-inner {
     display: grid;
-    grid-template-columns: 55fr 45fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
     align-items: center;
-    gap: 48px;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 80px 32px 96px;
 }
 
-@media (max-width: 900px) {
-    .hero-section {
-        grid-template-columns: 1fr;
-        gap: 48px;
-        padding: 56px 20px 72px;
-        text-align: center;
-    }
+.hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
-.beta-badge {
+.beta-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
+    gap: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
     color: #8a8a9a;
-    margin-bottom: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.3125rem 0.75rem;
+    border-radius: 100px;
+    margin-bottom: 1.75rem;
+    width: fit-content;
 }
 
 .beta-dot {
     width: 6px;
     height: 6px;
-    background: #e0ff4f;
     border-radius: 50%;
+    background: #e0ff4f;
     flex-shrink: 0;
-    animation: badge-pulse 2s ease-in-out infinite;
-}
-
-@keyframes badge-pulse {
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.5;
-        transform: scale(0.85);
-    }
+    box-shadow: 0 0 6px rgba(224, 255, 79, 0.7);
 }
 
 .hero-h1 {
-    font-family: 'DM Mono', monospace;
-    font-size: clamp(40px, 5vw, 56px);
-    line-height: 1.15;
-    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-weight: 700;
     color: #f0f0f2;
-    margin: 0 0 20px;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin: 0 0 1.25rem;
 }
 
-.hero-accent {
+.hero-em {
+    font-style: normal;
     color: #e0ff4f;
 }
 
-.hero-body {
+.hero-p {
     font-family: 'DM Sans', sans-serif;
-    font-size: 17px;
-    line-height: 1.7;
+    font-size: 1.0625rem;
     color: #8a8a9a;
-    margin: 0 0 32px;
-    max-width: 440px;
+    line-height: 1.7;
+    margin: 0 0 2rem;
+    max-width: 32rem;
 }
 
-@media (max-width: 900px) {
-    .hero-body {
-        margin-left: auto;
-        margin-right: auto;
-    }
+.hero-actions {
+    margin-bottom: 1.25rem;
 }
 
-.hero-ctas {
+.hero-pills {
     display: flex;
+    align-items: center;
+    gap: 0.5rem;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 24px;
 }
 
-@media (max-width: 900px) {
-    .hero-ctas {
-        justify-content: center;
-    }
-}
-
-.hero-footnote {
+.hero-pill {
     font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
+    font-size: 0.8125rem;
+    color: #4a4a5a;
+}
+
+.hero-dot {
+    color: #2a2a35;
+    font-size: 0.875rem;
+}
+
+.hero-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-canvas-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 14px;
+    overflow: visible;
+    animation: heroFloat 7s ease-in-out infinite;
+}
+
+@keyframes heroFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.hero-canvas-glow {
+    position: absolute;
+    inset: -20px;
+    border-radius: 24px;
+    background: radial-gradient(ellipse at 50% 50%, rgba(224, 255, 79, 0.12) 0%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hero-canvas {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+        0 0 0 1px rgba(224, 255, 79, 0.06),
+        0 24px 80px rgba(0, 0, 0, 0.6),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: opacity 0.32s ease;
+}
+
+/* ── §2 Stats strip ──────────────────────────────────────────────────────── */
+.stats-strip {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 1.25rem 0;
+}
+
+.stats-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.stats-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
     color: #4a4a5a;
     margin: 0;
 }
 
-.hero-demo-wrap {
+.stats-pills {
     display: flex;
-    justify-content: center;
     align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
-.hero-demo {
-    transform: perspective(1200px) rotateY(-8deg) rotateX(2deg);
-    transition: transform 400ms ease;
-    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
-    border-radius: 10px;
-    overflow: hidden;
-    line-height: 0;
-}
-
-.hero-demo:hover {
-    transform: perspective(1200px) rotateY(-2deg) rotateX(0deg);
-}
-
-.hero-canvas {
-    width: 400px;
-    height: 260px;
-    display: block;
-    transition: opacity 300ms ease;
-}
-
-@media (max-width: 500px) {
-    .hero-canvas {
-        width: 300px;
-        height: 195px;
-    }
-}
-
-/* ── Style gallery ───────────────────────────────────────────────────────────── */
-.gallery-section {
-    padding: 0 0 80px;
-}
-
-.gallery-label {
+.stats-pill {
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    color: #4a4a5a;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    text-align: center;
-    margin: 0 0 20px;
+    font-size: 0.8125rem;
+    color: #8a8a9a;
 }
 
-.style-gallery {
-    display: flex;
-    gap: 12px;
+.stats-sep {
+    color: #2a2a35;
+}
+
+/* ── §3 Style showcase ───────────────────────────────────────────────────── */
+.styles-section {
+    padding: 4rem 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.styles-scroll-wrap {
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    padding: 0 1.5rem 3rem;
     scrollbar-width: none;
-    padding: 0 32px 16px;
 }
 
-.style-gallery::-webkit-scrollbar {
+.styles-scroll-wrap::-webkit-scrollbar {
     display: none;
 }
 
-.style-gallery-card {
-    flex-shrink: 0;
-    width: 200px;
-    height: 130px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+.styles-strip {
+    display: flex;
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
     overflow: hidden;
-    position: relative;
-    scroll-snap-align: start;
-    cursor: pointer;
-    transition:
-        border-color 150ms ease,
-        transform 200ms ease;
+    width: max-content;
+    min-width: 100%;
 }
 
-.style-gallery-card:hover {
-    border-color: rgba(224, 255, 79, 0.35);
-    transform: scale(1.02);
+.style-card {
+    flex: 0 0 190px;
+    background: #111114;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
-.gallery-canvas {
-    width: 100%;
-    height: 100%;
+.style-canvas {
+    width: 190px;
+    height: 120px;
     display: block;
 }
 
-.style-gallery-card-name {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px 10px 8px;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+.style-name {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.9);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.6875rem;
+    color: #4a4a5a;
+    padding: 0.625rem 0.875rem;
+    letter-spacing: -0.01em;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ── Features ───────────────────────────────────────────────────────────────── */
-.features-section {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0 32px 96px;
+/* ── §4 Bento features ───────────────────────────────────────────────────── */
+.bento-section {
+    padding: 5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.section-heading {
-    font-family: 'DM Mono', monospace;
-    font-size: clamp(22px, 3vw, 32px);
-    font-weight: 500;
-    color: #f0f0f2;
-    margin: 0 0 40px;
-}
-
-.features-grid {
+.bento-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     grid-template-rows: auto auto auto;
-    gap: 12px;
-}
-
-@media (max-width: 640px) {
-    .features-grid {
-        grid-template-columns: 1fr;
-    }
-    .feature-card--large {
-        grid-row: span 1;
-    }
-}
-
-.feature-card {
-    background: #111114;
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 8px;
-    padding: 24px;
-    transition:
-        border-color 200ms ease,
-        background 200ms ease;
+    border-radius: 16px;
+    overflow: hidden;
 }
 
-.feature-card:hover {
-    border-color: rgba(255, 255, 255, 0.18);
-    background: #1a1a1f;
+.bento-card {
+    background: #111114;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    transition: background 0.15s ease;
 }
 
-.feature-card--large {
+.bento-card:hover {
+    background: #141417;
+}
+
+/* Brand Sessions: row 1-2, col 1 */
+.bento-card--brand {
     grid-row: span 2;
 }
 
-.feature-icon {
-    width: 28px;
-    height: 28px;
-    color: #e0ff4f;
-    margin-bottom: 16px;
+/* Export History: col 1-3, last row */
+.bento-card--history {
+    grid-column: span 3;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.25rem;
 }
 
-.feature-card h3 {
+.bento-card--history .bento-desc {
+    margin: 0;
+}
+
+.bento-icon-wrap {
+    width: 2.25rem;
+    height: 2.25rem;
+    background: rgba(224, 255, 79, 0.08);
+    border: 1px solid rgba(224, 255, 79, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bento-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #e0ff4f;
+    stroke-width: 1.75;
+}
+
+.bento-title {
     font-family: 'DM Mono', monospace;
-    font-size: 16px;
+    font-size: 0.9375rem;
     font-weight: 500;
     color: #f0f0f2;
-    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+    margin: 0;
 }
 
-.feature-card p {
+.bento-desc {
     font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
+    font-size: 0.9rem;
     color: #8a8a9a;
     line-height: 1.65;
     margin: 0;
 }
 
-.feature-card code {
+.bento-desc code {
     font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    background: rgba(224, 255, 79, 0.08);
+    font-size: 0.8125rem;
     color: #e0ff4f;
-    padding: 1px 5px;
-    border-radius: 3px;
+    background: rgba(224, 255, 79, 0.08);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
 }
 
-/* ── Before / After ─────────────────────────────────────────────────────────── */
+.bento-link {
+    display: inline-block;
+    margin-top: 0.625rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
+    color: #e0ff4f;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(224, 255, 79, 0.3);
+    transition: border-color 0.15s ease;
+}
+
+.bento-link:hover {
+    border-color: #e0ff4f;
+}
+
+/* ── §5 Before / After ───────────────────────────────────────────────────── */
 .ba-section {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0 32px 96px;
+    padding: 5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .ba-header {
-    margin-bottom: 28px;
-}
-
-.ba-heading {
-    font-family: 'DM Mono', monospace;
-    font-size: 28px;
-    font-weight: 500;
-    color: #f0f0f2;
-    margin: 0 0 8px;
-}
-
-.ba-sub {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    color: #8a8a9a;
-    margin: 0;
+    margin-bottom: 2.5rem;
 }
 
 .ba-container {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     cursor: col-resize;
-    user-select: none;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0a0a0c;
+    user-select: none;
 }
 
 .ba-canvas {
@@ -1264,38 +1376,33 @@ onUnmounted(() => {
     inset: 0;
     width: 100%;
     height: 100%;
-    display: block;
 }
 
 .ba-canvas--before {
-    filter: grayscale(100%) brightness(0.65);
-}
-
-.ba-canvas--after {
-    /* clip-path applied inline via :style binding */
+    filter: grayscale(0.6) brightness(0.75);
 }
 
 .ba-label {
     position: absolute;
-    top: 14px;
+    top: 1rem;
     font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 3px 10px;
-    border-radius: 999px;
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     pointer-events: none;
 }
 
 .ba-label--before {
-    left: 14px;
-    color: #4a4a5a;
-    background: rgba(0, 0, 0, 0.5);
+    left: 1rem;
 }
 
 .ba-label--after {
-    color: #e0ff4f;
-    background: rgba(0, 0, 0, 0.5);
-    transition: left 0ms;
+    transition: left 0.05s linear;
 }
 
 .ba-divider {
@@ -1303,220 +1410,445 @@ onUnmounted(() => {
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #e0ff4f;
+    background: rgba(255, 255, 255, 0.6);
     transform: translateX(-50%);
+    cursor: col-resize;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: col-resize;
-    z-index: 10;
+    outline: none;
 }
 
 .ba-divider:focus-visible {
-    outline: 2px solid #e0ff4f;
-    outline-offset: 4px;
-    border-radius: 2px;
+    background: #e0ff4f;
 }
 
 .ba-handle {
-    width: 28px;
-    height: 28px;
+    width: 2rem;
+    height: 2rem;
+    background: #fff;
     border-radius: 50%;
-    background: #e0ff4f;
-    color: #0a0a0c;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    color: #0a0a0c;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     flex-shrink: 0;
 }
 
-/* ── Competitive table ──────────────────────────────────────────────────────── */
+/* ── §6 How it works ─────────────────────────────────────────────────────── */
+.hiw-section {
+    padding: 5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hiw-steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.hiw-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0 2rem;
+}
+
+.hiw-step:first-child {
+    padding-left: 0;
+}
+
+.hiw-step:last-child {
+    padding-right: 0;
+}
+
+.hiw-connector {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 1px;
+    background: repeating-linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0.15) 0,
+        rgba(255, 255, 255, 0.15) 4px,
+        transparent 4px,
+        transparent 10px
+    );
+    margin-top: 1.125rem;
+    align-self: flex-start;
+}
+
+.hiw-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 2rem;
+    font-weight: 500;
+    color: #e0ff4f;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.hiw-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: #f0f0f2;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.hiw-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: #8a8a9a;
+    line-height: 1.65;
+    margin: 0;
+}
+
+/* ── §7 Competitive table ─────────────────────────────────────────────────── */
 .table-section {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 0 32px 96px;
+    padding: 5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .table-scroll {
     overflow-x: auto;
-    border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
-.competitive-table {
+.comp-table {
     width: 100%;
     border-collapse: collapse;
-}
-
-.comp-th-feat,
-.comp-th {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #4a4a5a;
-    padding: 13px 16px;
-    background: #111114;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
 }
 
 .comp-th-feat {
+    padding: 1rem 1.5rem;
     text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #4a4a5a;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: #111114;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    min-width: 12rem;
 }
+
 .comp-th {
+    padding: 1rem 1.5rem;
     text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
+    color: #8a8a9a;
+    background: #111114;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    font-weight: 500;
+    min-width: 7rem;
 }
+
 .comp-th--polsh {
     color: #e0ff4f;
+    background: rgba(224, 255, 79, 0.04);
+}
+
+.comp-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.1s ease;
+}
+
+.comp-row:last-child {
+    border-bottom: none;
+}
+
+.comp-row:hover {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .comp-feat {
-    padding: 11px 16px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
+    padding: 0.875rem 1.5rem;
     color: #8a8a9a;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+    background: #0e0e11;
 }
 
 .comp-cell {
-    padding: 11px 16px;
+    padding: 0.875rem 1.5rem;
     text-align: center;
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: #0e0e11;
+    font-size: 1rem;
 }
 
 .comp-cell--polsh {
-    background: rgba(224, 255, 79, 0.04);
+    background: rgba(224, 255, 79, 0.03);
 }
 
 .comp-check {
     color: #e0ff4f;
-}
-.comp-check-dim {
-    color: rgba(255, 255, 255, 0.4);
-}
-.comp-dash {
-    color: rgba(255, 255, 255, 0.12);
+    font-weight: 600;
 }
 
-/* ── CTA ────────────────────────────────────────────────────────────────────── */
-.cta-section {
+.comp-check-dim {
+    color: #4a4a5a;
+    font-weight: 500;
+}
+
+.comp-dash {
+    color: #2a2a35;
+}
+
+/* ── §8 Pricing ───────────────────────────────────────────────────────────── */
+.pricing-section {
+    padding: 5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pricing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    max-width: 42rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.pricing-card {
+    background: #111114;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.pricing-card--pro {
+    background: #12120f;
+    box-shadow: inset 0 1px 0 rgba(224, 255, 79, 0.2);
+}
+
+.pricing-plan-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #4a4a5a;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.pricing-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 2.25rem;
+    font-weight: 500;
+    color: #f0f0f2;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.pricing-period {
+    font-size: 1rem;
+    color: #4a4a5a;
+    font-weight: 400;
+}
+
+.pricing-price--pro {
+    font-size: 1rem;
+}
+
+.pricing-pro-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: #e0ff4f;
+    letter-spacing: normal;
+    font-weight: 500;
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    flex: 1;
+}
+
+.pricing-features li {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    color: #8a8a9a;
+    padding-left: 1.25rem;
+    position: relative;
+}
+
+.pricing-features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #e0ff4f;
+    font-size: 0.75rem;
+    top: 1px;
+}
+
+.pricing-cta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.625rem 1rem;
+    border-radius: 7px;
+    text-decoration: none;
     text-align: center;
-    padding: 0 32px 96px;
+    transition: opacity 0.15s ease;
+    display: block;
+    letter-spacing: -0.01em;
+}
+
+.pricing-cta--free {
+    background: rgba(255, 255, 255, 0.07);
+    color: #f0f0f2;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pricing-cta--free:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pricing-cta--pro {
+    background: #e0ff4f;
+    color: #0a0a0c;
+}
+
+.pricing-cta--pro:hover {
+    opacity: 0.88;
+}
+
+/* ── §9 CTA strip ─────────────────────────────────────────────────────────── */
+.cta-strip {
+    padding: 5rem 0;
+    background: #0d0d10;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-strip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(224, 255, 79, 0.3), transparent);
+}
+
+.cta-strip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 60% 60% at 50% 100%, black 0%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 100%, black 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.cta-inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
 }
 
 .cta-heading {
-    font-family: 'DM Mono', monospace;
-    font-size: clamp(26px, 4vw, 42px);
-    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 700;
     color: #f0f0f2;
-    margin: 0 0 16px;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin: 0;
 }
 
 .cta-sub {
     font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
+    font-size: 1rem;
     color: #8a8a9a;
-    margin: 0 0 32px;
-}
-
-.cta-btn {
-    padding: 14px 32px;
-    font-size: 15px;
-}
-
-/* ── Footer ─────────────────────────────────────────────────────────────────── */
-.lp-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-    padding: 48px 32px;
-}
-
-.footer-inner {
-    max-width: 960px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: start;
-    gap: 32px;
-}
-
-@media (max-width: 640px) {
-    .footer-inner {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
-
-    .footer-social {
-        justify-content: center;
-    }
-    .footer-links {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-    }
-}
-
-.footer-brand .lp-wordmark {
-    display: block;
-    margin-bottom: 8px;
-}
-
-.footer-tagline {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    color: #4a4a5a;
-    margin: 0 0 4px;
-}
-
-.footer-ph {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    color: #4a4a5a;
     margin: 0;
 }
 
-.footer-links {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.cta-btn {
+    margin-top: 0.5rem;
+    padding: 0.8125rem 2rem;
+    font-size: 0.9375rem;
 }
 
-.footer-link {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    color: #4a4a5a;
-    text-decoration: none;
-    transition: color 150ms ease;
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+
+    .hero {
+        padding: 3.5rem 0 3rem;
+    }
+
+    .bento-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .bento-card--brand {
+        grid-row: span 1;
+        grid-column: span 2;
+    }
+
+    .bento-card--history {
+        grid-column: span 2;
+        flex-direction: column;
+    }
+
+    .hiw-steps {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .hiw-connector {
+        display: none;
+    }
+
+    .hiw-step {
+        padding: 0;
+    }
+
+    .pricing-cards {
+        grid-template-columns: 1fr;
+        max-width: 22rem;
+    }
 }
 
-.footer-link:hover {
-    color: #8a8a9a;
-}
+@media (max-width: 600px) {
+    .hero-h1 {
+        font-size: 2.25rem;
+    }
 
-.footer-social {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
+    .bento-grid {
+        grid-template-columns: 1fr;
+    }
 
-.footer-social-link {
-    color: #4a4a5a;
-    text-decoration: none;
-    transition: color 150ms ease;
-    line-height: 0;
-}
+    .bento-card--brand,
+    .bento-card--history {
+        grid-column: span 1;
+    }
 
-.footer-social-link:hover {
-    color: #8a8a9a;
-}
-
-.footer-social-link:focus-visible {
-    outline: 2px solid #e0ff4f;
-    outline-offset: 3px;
-    border-radius: 3px;
+    .section-heading {
+        font-size: 1.5rem;
+    }
 }
 </style>
