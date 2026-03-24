@@ -58,6 +58,7 @@ function onAvatarSaved(newAvatarUrl: string) {
 
 const userInitials = computed(() => {
     const name = user.value?.name ?? '';
+
     return name
         .split(' ')
         .slice(0, 2)

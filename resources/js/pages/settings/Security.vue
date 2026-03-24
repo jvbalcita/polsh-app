@@ -14,8 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import { disable, enable } from '@/routes/two-factor';
 import { destroy as destroyProvider } from '@/routes/security/providers';
+import { disable, enable } from '@/routes/two-factor';
 
 type Props = {
     hasPassword?: boolean;

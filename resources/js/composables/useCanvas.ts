@@ -436,18 +436,22 @@ export function useCanvas(
         if (ft === 'iphone_15_pro') {
             return fw * 54 / 417;
         }
+
         if (ft === 'iphone_17_pro') {
             return fw * 56 / 424;
         }
+
         if (ft === 'ipad_pro') {
             return fw * 20 / 1024;
         }
+
         if (ft === 'ipad_pro_m5') {
             return fw * 22 / 1024;
         }
 
         if (ft === 'iphone-15' || ft === 'ipad-pro') {
             const { height: fh } = frameBounds.value;
+
             return Math.min(fw, fh) * DEVICE_FRAME_RADIUS_FACTOR;
         }
 
@@ -717,6 +721,7 @@ export function useCanvas(
             // matches the body shape — prevents the body stroke from showing
             // in the corner gap between clip and body.
             let r: number;
+
             if (ft === 'iphone_15_pro') {
                 r = fw * 54 / 417;
             } else if (ft === 'iphone_17_pro') {
@@ -730,6 +735,7 @@ export function useCanvas(
             } else {
                 r = store.activeSettings?.radius ?? 12;
             }
+
             ctx.beginPath();
             ctx.moveTo(r, 0);
             ctx.lineTo(fw - r, 0);
@@ -835,6 +841,7 @@ export function useCanvas(
             const scale = Math.max(scaleX, scaleY);
             const scaledW = img.naturalWidth * scale;
             const scaledH = img.naturalHeight * scale;
+
             return {
                 image: img.element,
                 x: x + (width - scaledW) / 2,
