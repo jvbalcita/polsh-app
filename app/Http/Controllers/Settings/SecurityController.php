@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsurePasswordConfirmedIfHasPassword;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,7 @@ class SecurityController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         if (Features::canManageTwoFactorAuthentication() && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
-            return [new ControllerMiddleware('password.confirm', only: ['edit'])];
+            return [new ControllerMiddleware(EnsurePasswordConfirmedIfHasPassword::class, only: ['edit'])];
         }
 
         return [];

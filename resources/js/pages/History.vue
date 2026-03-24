@@ -2,6 +2,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ProductPageHeader from '@/components/ProductPageHeader.vue';
+import { Empty, EmptyAction, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { editor } from '@/routes';
 import { portal as billingPortal } from '@/routes/billing';
 import { destroy } from '@/routes/sessions';
@@ -94,24 +95,27 @@ return `${days}d ago`;
             </div>
 
             <!-- Empty state -->
-            <div
-                v-if="localSessions.length === 0"
-                class="polsh-panel flex flex-col items-center justify-center rounded-xl border border-white/8 py-20 text-center"
-            >
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" class="mb-4 text-white/20">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <p class="text-sm font-medium text-white/40">No exports yet</p>
-                <p class="mt-1 text-xs text-white/20">Export an image from the editor to see it here</p>
-                <Link
-                    :href="editor()"
-                    class="mt-5 rounded-md px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-80"
-                    style="background: #e0ff4f; color: #080808"
-                >
-                    Open editor
-                </Link>
-            </div>
+            <Empty v-if="localSessions.length === 0">
+                <EmptyMedia variant="icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </EmptyMedia>
+                <EmptyHeader>
+                    <EmptyTitle>No exports yet</EmptyTitle>
+                    <EmptyDescription>Export an image from the editor to see it here.</EmptyDescription>
+                </EmptyHeader>
+                <EmptyAction>
+                    <Link
+                        :href="editor()"
+                        class="rounded-md px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-80"
+                        style="background: #e0ff4f; color: #080808; font-family: 'DM Mono', monospace;"
+                    >
+                        Open editor
+                    </Link>
+                </EmptyAction>
+            </Empty>
 
             <!-- Session grid -->
             <div

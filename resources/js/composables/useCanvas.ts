@@ -659,12 +659,15 @@ export function useCanvas(
         height: containerHeight.value,
     }));
 
+    // Fill is transparent so the Konva <canvas> element passes through to the
+    // CSS background-image grid on the container div. The workspace dark colour
+    // is already supplied by the editor root div (background: #080808).
     const canvasBgConfig = computed(() => ({
         x: 0,
         y: 0,
         width: containerWidth.value,
         height: containerHeight.value,
-        fill: '#080808',
+        fill: 'transparent',
         listening: false,
     }));
 

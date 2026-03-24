@@ -69,7 +69,7 @@ import { editor, home } from '@/routes';
                 </div>
                 <p class="mb-3 text-[13px] font-medium" style="color: rgba(255,255,255,0.55)">Billing & Teams</p>
                 <ul class="space-y-1.5 text-[13px]" style="color: rgba(255,255,255,0.45)">
-                    <li>• PayMongo billing — Pro monthly (₱500/mo) and yearly (₱4,500/yr) plans</li>
+                    <li>• Billing — Pro monthly (₱399/mo) and yearly (₱3,990/yr) plans</li>
                     <li>• Team workspaces — create a team, invite members via email</li>
                     <li>• Team-shared style presets</li>
                     <li>• Billing portal with subscription management and cancellation</li>

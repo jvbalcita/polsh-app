@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { Empty, EmptyAction, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { create } from '@/actions/App/Http/Controllers/SupportController';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 
 defineProps<{
@@ -28,7 +30,7 @@ const typeLabels: Record<string, string> = {
 </script>
 
 <template>
-    <Head title="Support — Polsh" />
+    <Head title="Support Requests" />
     <SettingsLayout>
         <div class="space-y-6">
             <div class="flex items-start justify-between gap-4">
@@ -42,10 +44,20 @@ const typeLabels: Record<string, string> = {
             </div>
 
             <!-- Empty state -->
-            <div v-if="tickets.length === 0" class="empty-state">
-                <p class="text-sm text-muted-foreground">No support requests yet.</p>
-                <Link href="/support" class="new-btn mt-3">Submit a request</Link>
-            </div>
+            <Empty v-if="tickets.length === 0">
+                <EmptyMedia variant="icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </EmptyMedia>
+                <EmptyHeader>
+                    <EmptyTitle>No support requests yet</EmptyTitle>
+                    <EmptyDescription>Submit a request and we'll get back to you within 1–2 business days.</EmptyDescription>
+                </EmptyHeader>
+                <EmptyAction>
+                    <Link :href="create.url()" class="empty-cta">Submit a request</Link>
+                </EmptyAction>
+            </Empty>
 
             <!-- Ticket table -->
             <div v-else class="rounded-lg border border-sidebar-border overflow-hidden">
@@ -111,6 +123,22 @@ const typeLabels: Record<string, string> = {
     vertical-align: middle;
 }
 
+.empty-cta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
+    background: #e0ff4f;
+    color: #0a0a0c;
+    padding: 0.4375rem 0.875rem;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+    display: inline-block;
+}
+
+.empty-cta:hover {
+    opacity: 0.88;
+}
+
 .new-btn {
     font-family: 'DM Mono', monospace;
     font-size: 0.8125rem;
@@ -127,12 +155,5 @@ const typeLabels: Record<string, string> = {
 
 .new-btn:hover {
     opacity: 0.88;
-}
-
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 2rem 0;
 }
 </style>

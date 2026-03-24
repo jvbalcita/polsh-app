@@ -19,7 +19,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
         <meta property="og:image" :content="ogImage" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" :content="twitterCard" />
-        <meta name="robots" content="noindex, follow" />
+        <meta name="robots" content="index, follow" />
     </Head>
 
     <PublicLayout>
