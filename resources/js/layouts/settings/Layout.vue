@@ -23,6 +23,10 @@ const sidebarNavItems: NavItem[] = [
         title: 'Security',
         href: editSecurity(),
     },
+    {
+        title: 'Support',
+        href: '/support',
+    },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { useSeo } from '@/composables/useSeo';
 
@@ -53,7 +53,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
                         <h2>4. How to Request a Refund</h2>
                         <p>To request a refund within the eligible 7-day window:</p>
                         <ol>
-                            <li>Email <a href="mailto:support@polsh.work">support@polsh.work</a> from the email address associated with your account.</li>
+                            <li>Submit a request via <Link href="/support">our support page</Link> from the email address associated with your account.</li>
                             <li>Include the subject line: <strong>"Refund Request — [your email]"</strong></li>
                             <li>Briefly describe why you are requesting a refund.</li>
                         </ol>
@@ -83,7 +83,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
 
                     <section>
                         <h2>8. Contact</h2>
-                        <p>For billing questions or refund requests, email <a href="mailto:support@polsh.work">support@polsh.work</a>. We typically respond within 1–2 business days.</p>
+                        <p>For billing questions or refund requests, visit <Link href="/support">our support page</Link>. We typically respond within 1–2 business days.</p>
                     </section>
                 </div>
             </div>

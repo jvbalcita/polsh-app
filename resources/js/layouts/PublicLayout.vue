@@ -48,6 +48,7 @@ import { terms, privacy, refund } from '@/routes/legal';
                     </div>
                     <div class="pub-footer-col">
                         <p class="pub-footer-col-title">Legal</p>
+                        <Link href="/support" class="pub-footer-link">Support</Link>
                         <Link :href="terms()" class="pub-footer-link">Terms of Service</Link>
                         <Link :href="privacy()" class="pub-footer-link">Privacy Policy</Link>
                         <Link :href="refund()" class="pub-footer-link">Refund Policy</Link>

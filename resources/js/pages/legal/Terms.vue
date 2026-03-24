@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { useSeo } from '@/composables/useSeo';
 
@@ -97,7 +97,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
 
                     <section>
                         <h2>11. Contact</h2>
-                        <p>If you have questions about these Terms, please contact us at <a href="mailto:support@polsh.work">support@polsh.work</a>.</p>
+                        <p>If you have questions about these Terms, please contact us via <Link href="/support">our support page</Link>.</p>
                     </section>
                 </div>
             </div>

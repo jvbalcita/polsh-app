@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { useSeo } from '@/composables/useSeo';
 
@@ -86,7 +86,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
                             <li><strong>Data Portability</strong> — Request your data in a structured, machine-readable format.</li>
                             <li><strong>Lodge a Complaint</strong> — File a complaint with the <strong>National Privacy Commission (NPC)</strong> of the Philippines at <a href="https://www.privacy.gov.ph" target="_blank" rel="noopener noreferrer">privacy.gov.ph</a>.</li>
                         </ul>
-                        <p>To exercise any of these rights, contact our Data Privacy Officer at <a href="mailto:privacy@polsh.work">privacy@polsh.work</a>.</p>
+                        <p>To exercise any of these rights, please contact us via <Link href="/support">our support page</Link>.</p>
                     </section>
 
                     <section>
@@ -104,7 +104,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
                         <h2>9. Contact / Data Privacy Officer</h2>
                         <p>For privacy-related inquiries, requests, or complaints, contact our Data Privacy Officer:</p>
                         <p>
-                            <strong>Email:</strong> <a href="mailto:privacy@polsh.work">privacy@polsh.work</a><br />
+                            <strong>Contact:</strong> <Link href="/support">Support page</Link><br />
                             <strong>Address:</strong> Philippines
                         </p>
                     </section>
