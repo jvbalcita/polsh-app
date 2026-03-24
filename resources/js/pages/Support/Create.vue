@@ -89,12 +89,12 @@ function submit() {
                         <div class="field-row">
                             <div class="field-group">
                                 <label class="field-label" for="submitter_name">Your name</label>
-                                <input id="submitter_name" v-model="form.submitter_name" class="field-input" type="text" placeholder="Full name" required />
+                                <input id="submitter_name" v-model="form.submitter_name" :class="['field-input', { 'field-input--error': form.errors.submitter_name }]" type="text" placeholder="Full name" />
                                 <p v-if="form.errors.submitter_name" class="field-error">{{ form.errors.submitter_name }}</p>
                             </div>
                             <div class="field-group">
                                 <label class="field-label" for="submitter_email">Email address</label>
-                                <input id="submitter_email" v-model="form.submitter_email" class="field-input" type="email" placeholder="you@example.com" required />
+                                <input id="submitter_email" v-model="form.submitter_email" :class="['field-input', { 'field-input--error': form.errors.submitter_email }]" type="email" placeholder="you@example.com" />
                                 <p v-if="form.errors.submitter_email" class="field-error">{{ form.errors.submitter_email }}</p>
                             </div>
                         </div>
@@ -108,14 +108,14 @@ function submit() {
                     <!-- Subject -->
                     <div class="field-group">
                         <label class="field-label" for="subject">Subject</label>
-                        <input id="subject" v-model="form.subject" class="field-input" type="text" placeholder="Brief summary of your request" required />
+                        <input id="subject" v-model="form.subject" :class="['field-input', { 'field-input--error': form.errors.subject }]" type="text" placeholder="Brief summary of your request" />
                         <p v-if="form.errors.subject" class="field-error">{{ form.errors.subject }}</p>
                     </div>
 
                     <!-- Description -->
                     <div class="field-group">
                         <label class="field-label" for="description">Description</label>
-                        <textarea id="description" v-model="form.description" class="field-textarea" rows="6" placeholder="Please provide as much detail as possible..." required />
+                        <textarea id="description" v-model="form.description" :class="['field-textarea', { 'field-input--error': form.errors.description }]" rows="6" placeholder="Please provide as much detail as possible..." />
                         <p v-if="form.errors.description" class="field-error">{{ form.errors.description }}</p>
                     </div>
 
@@ -146,6 +146,7 @@ function submit() {
 .field-label { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #6a6a7a; text-transform: uppercase; letter-spacing: 0.08em; }
 .field-input, .field-textarea { background: #111114; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.625rem 0.875rem; color: #f0f0f2; font-family: 'DM Sans', sans-serif; font-size: 0.9375rem; outline: none; transition: border-color 0.15s ease; width: 100%; box-sizing: border-box; }
 .field-input:focus, .field-textarea:focus { border-color: rgba(224,255,79,0.4); }
+.field-input--error { border-color: rgba(255, 107, 107, 0.5) !important; }
 .field-textarea { resize: vertical; }
 .field-error { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #ff6b6b; margin: 0; }
 .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }

@@ -10,6 +10,8 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(RoleSeeder::class);
+
         $password = config('admin.password');
 
         if (! $password) {
