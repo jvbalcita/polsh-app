@@ -65,6 +65,7 @@ Route::get('/refund-policy', [LegalController::class, 'refund'])->name('legal.re
 // Sitemap
 Route::get('/sitemap.xml', static fn () => response()->file(public_path('sitemap.xml')))->name('sitemap');
 
+require __DIR__.'/admin.php';
 require __DIR__.'/billing.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/teams.php';

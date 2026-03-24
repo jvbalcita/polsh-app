@@ -23,6 +23,6 @@ class SupportTicketUpdated extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject("Your request has been updated — {$this->ticket->reference()}")
-            ->markdown('mail.support.updated', ['ticket' => $this->ticket]);
+            ->view('mail.support.updated', ['ticket' => $this->ticket]);
     }
 }

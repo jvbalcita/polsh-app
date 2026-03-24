@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, LifeBuoy } from 'lucide-vue-next';
+import { LayoutGrid, LifeBuoy, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as adminSupportIndex } from '@/routes/admin/support';
+import { index as adminUsersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -26,6 +27,11 @@ const adminNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Users',
+        href: adminUsersIndex(),
+        icon: Users,
     },
     {
         title: 'Support',

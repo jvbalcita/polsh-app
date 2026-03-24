@@ -1,22 +1,27 @@
-<!DOCTYPE html>
-<html>
-<body style="font-family: sans-serif; color: #333; padding: 24px;">
-    <h2>Your Polsh Pro subscription renews in 3 days</h2>
-    <p>Hi {{ $subscription->user->name }},</p>
-    <p>
-        Your <strong>Polsh Pro {{ $subscription->plan === 'pro_yearly' ? 'Yearly' : 'Monthly' }}</strong>
+@extends('layouts.email')
+
+@section('subject', 'Your Polsh Pro subscription renews in 3 days')
+
+@section('content')
+    <h1 class="title">Your subscription renews soon</h1>
+    <p class="text">Hi {{ $subscription->user->name }},</p>
+    <p class="text">
+        Your <span class="highlight">Polsh Pro {{ $subscription->plan === 'pro_yearly' ? 'Yearly' : 'Monthly' }}</span>
         subscription will automatically renew on
-        <strong>{{ $subscription->current_period_end->format('F j, Y') }}</strong>.
+        <span class="highlight">{{ $subscription->current_period_end->format('F j, Y') }}</span>.
     </p>
     @if($subscription->paymongo_payment_method_id)
-        <p>Your saved payment method will be charged automatically.</p>
+        <p class="text">Your saved payment method will be charged automatically.</p>
     @else
-        <p>
+        <p class="text">
             Since you paid via GCash or Maya, your subscription will not auto-renew.
             Visit your billing page to subscribe again before your access expires.
         </p>
     @endif
-    <p><a href="{{ route('billing.portal') }}" style="color: #e0ff4f;">Manage your subscription →</a></p>
-    <p style="color: #999; font-size: 12px;">Polsh &mdash; Screenshot editor for professionals</p>
-</body>
-</html>
+    <a href="{{ route('billing.portal') }}" class="btn">Manage your subscription →</a>
+@endsection
+
+@section('footer-note')
+    You're receiving this as a renewal reminder for your Polsh Pro subscription.<br>
+    &copy; {{ date('Y') }} Polsh. All rights reserved.
+@endsection

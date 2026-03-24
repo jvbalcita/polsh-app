@@ -27,7 +27,7 @@ class SupportTicketReplied extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject("New reply on your request — {$this->ticket->reference()}")
-            ->markdown('mail.support.replied', [
+            ->view('mail.support.replied', [
                 'ticket' => $this->ticket,
                 'reply' => $this->reply,
             ]);

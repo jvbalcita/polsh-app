@@ -24,7 +24,7 @@ class SupportTicketReceived extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject("We received your request — {$this->ticket->reference()}")
-            ->markdown('mail.support.received', [
+            ->view('mail.support.received', [
                 'ticket' => $this->ticket,
                 'isAdmin' => $notifiable instanceof User && $notifiable->hasRole('admin'),
             ]);

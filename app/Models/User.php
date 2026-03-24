@@ -112,6 +112,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             ->update(['status' => 'active', 'cancelled_at' => null]);
     }
 
+    public function exportSessions(): HasMany
+    {
+        return $this->hasMany(ExportSession::class);
+    }
+
     public function apiKeys(): HasMany
     {
         return $this->hasMany(ApiKey::class);
