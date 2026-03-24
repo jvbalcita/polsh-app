@@ -42,6 +42,19 @@ useFlashToast();
                         <span class="pub-wordmark pub-wordmark--footer">polsh</span>
                     </Link>
                     <p class="pub-footer-tagline">Polish your screenshots.</p>
+                    <a
+                        href="https://www.producthunt.com/products/polsh?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-polsh"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="pub-footer-ph-badge"
+                    >
+                        <img
+                            alt="Polsh - Turn plain screenshots into polished product visuals | Product Hunt"
+                            width="250"
+                            height="54"
+                            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1106415&theme=dark&t=1774383851342"
+                        />
+                    </a>
                 </div>
 
                 <div class="pub-footer-cols">
@@ -199,6 +212,11 @@ main {
     font-size: 0.8125rem;
     color: #4a4a5a;
     margin: 0;
+}
+
+.pub-footer-ph-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
 }
 
 .pub-footer-cols {

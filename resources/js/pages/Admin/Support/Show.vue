@@ -10,6 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { attachment } from '@/actions/App/Http/Controllers/Admin/SupportController';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 
@@ -82,8 +83,8 @@ function submitReply() {
     });
 }
 
-function attachmentUrl(path: string) {
-    return `/storage/${path}`;
+function attachmentUrl(ticket: { id: number }) {
+    return attachment.url(ticket);
 }
 
 function attachmentName(path: string) {
@@ -118,7 +119,7 @@ function attachmentName(path: string) {
                     <!-- Attachment -->
                     <a
                         v-if="ticket.attachment_path"
-                        :href="attachmentUrl(ticket.attachment_path)"
+                        :href="attachmentUrl(ticket)"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="inline-flex items-center gap-2 mt-4 text-xs font-mono text-[#e0ff4f] hover:opacity-80 transition-opacity border border-[rgba(224,255,79,0.25)] px-3 py-1.5 rounded-md"

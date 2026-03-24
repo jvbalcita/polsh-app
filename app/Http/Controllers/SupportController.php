@@ -35,7 +35,7 @@ class SupportController extends Controller
         $user = $request->user();
 
         $attachmentPath = $request->hasFile('attachment')
-            ? $request->file('attachment')->store('support-attachments', 'public')
+            ? $request->file('attachment')->store('support-attachments', config('services.polsh.export_disk', 'public'))
             : null;
 
         $ticket = SupportTicket::create([

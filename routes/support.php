@@ -20,4 +20,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/support/{ticket}', [AdminSupportController::class, 'show'])->name('support.show');
     Route::patch('/support/{ticket}', [AdminSupportController::class, 'update'])->name('support.update');
     Route::post('/support/{ticket}/reply', [AdminSupportTicketReplyController::class, 'store'])->name('support.reply');
+    Route::get('/support/{ticket}/attachment', [AdminSupportController::class, 'attachment'])->name('support.attachment');
 });
