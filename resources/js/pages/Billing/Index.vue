@@ -9,8 +9,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import billing from '@/routes/billing';
 import { editor } from '@/routes';
+import billing from '@/routes/billing';
 
 interface Subscription {
     id: number;
@@ -27,8 +27,14 @@ const props = defineProps<{
 
 // State A — free (no sub)  State B — active  State C — cancelled but paid  State D — expired (same as A)
 const billingState = computed<'free' | 'active' | 'cancelled'>(() => {
-    if (!props.subscription) return 'free';
-    if (props.subscription.status === 'active') return 'active';
+    if (!props.subscription) {
+return 'free';
+}
+
+    if (props.subscription.status === 'active') {
+return 'active';
+}
+
     return 'cancelled';
 });
 

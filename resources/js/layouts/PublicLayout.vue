@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import UserMenu from '@/components/UserMenu.vue';
 import { Toaster } from '@/components/ui/sonner';
+import UserMenu from '@/components/UserMenu.vue';
 import { useFlashToast } from '@/composables/useFlashToast';
 import { editor } from '@/routes';
 import { api as apiDocs } from '@/routes/docs';
