@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import PublicLayout from '@/layouts/PublicLayout.vue';
 import { useSeo } from '@/composables/useSeo';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 
 const { fullTitle, description, ogImage, twitterCard } = useSeo({
     title: 'Terms of Service',

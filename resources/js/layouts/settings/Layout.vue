@@ -2,14 +2,14 @@
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { Separator } from '@/components/ui/separator';
+import { Toaster } from '@/components/ui/sonner';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useFlashToast } from '@/composables/useFlashToast';
 import { toUrl } from '@/lib/utils';
 import { editor } from '@/routes';
 import { edit as editBilling } from '@/routes/billing';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
-import { Toaster } from '@/components/ui/sonner';
-import { useFlashToast } from '@/composables/useFlashToast';
 import type { NavItem } from '@/types';
 
 useFlashToast();
