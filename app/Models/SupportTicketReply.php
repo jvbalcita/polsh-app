@@ -19,6 +19,13 @@ class SupportTicketReply extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function casts(): array
+    {
+        return [
+            'is_staff_reply' => 'boolean',
+        ];
+    }
+
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(SupportTicket::class, 'support_ticket_id');
