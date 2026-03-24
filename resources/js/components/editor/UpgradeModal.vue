@@ -104,7 +104,7 @@ function checkout(plan: string) {
                     >
                         <p class="text-xs text-[#888]">Monthly</p>
                         <p class="mt-0.5 text-lg font-bold">
-                            ₱500<span class="text-xs font-normal text-[#888]"
+                            ₱399<span class="text-xs font-normal text-[#888]"
                                 >/mo</span
                             >
                         </p>
@@ -115,10 +115,10 @@ function checkout(plan: string) {
                         @click="checkout('pro_yearly')"
                     >
                         <p class="text-xs text-[#888]">
-                            Yearly <span class="text-[#e0ff4f]">-25%</span>
+                            Yearly <span class="text-[#e0ff4f]">-17%</span>
                         </p>
                         <p class="mt-0.5 text-lg font-bold">
-                            ₱4,500<span class="text-xs font-normal text-[#888]"
+                            ₱3,990<span class="text-xs font-normal text-[#888]"
                                 >/yr</span
                             >
                         </p>

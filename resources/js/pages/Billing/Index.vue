@@ -181,7 +181,7 @@ const PRO_FEATURES = [
                         <p class="switch-yearly-eyebrow">Save more</p>
                         <p class="switch-yearly-title">Switch to Yearly</p>
                         <p class="switch-yearly-desc">
-                            ₱4,500/yr · save ₱1,500 vs monthly. Your current
+                            ₱3,990/yr · save ₱798 vs monthly. Your current
                             monthly plan continues until
                             {{ formatDate(props.subscription!.current_period_end) }},
                             then your yearly plan takes over.
@@ -194,7 +194,7 @@ const PRO_FEATURES = [
                         @click="checkout('pro_yearly')"
                     >
                         {{
-                            checkoutLoading ? 'Redirecting…' : 'Switch — ₱4,500'
+                            checkoutLoading ? 'Redirecting…' : 'Switch — ₱3,990'
                         }}
                     </button>
                 </div>
@@ -252,7 +252,7 @@ const PRO_FEATURES = [
                         @click="cycle = 'yearly'"
                     >
                         Yearly
-                        <span class="save-pill">Save 25%</span>
+                        <span class="save-pill">Save 17%</span>
                     </button>
                 </div>
             </div>
@@ -308,7 +308,7 @@ const PRO_FEATURES = [
                     <div class="plan-price">
                         <span class="price-currency">₱</span>
                         <span class="price-amount">{{
-                            cycle === 'monthly' ? '500' : '4,500'
+                            cycle === 'monthly' ? '399' : '3,990'
                         }}</span>
                         <span class="price-period">{{
                             cycle === 'monthly' ? '/mo' : '/yr'
@@ -318,7 +318,7 @@ const PRO_FEATURES = [
                         {{
                             cycle === 'monthly'
                                 ? 'Full access, billed monthly.'
-                                : '₱375/mo · best value, billed yearly.'
+                                : '₱332/mo · best value, billed yearly.'
                         }}
                     </p>
 
@@ -360,7 +360,7 @@ const PRO_FEATURES = [
                 <span class="payment-pill">Mastercard</span>
                 <span class="payment-pill">GCash</span>
                 <span class="payment-pill">Maya</span>
-                <span class="payment-powered">· Powered by PayMongo</span>
+                <span class="payment-powered">· Secure payments</span>
             </div>
             <p class="trust-line">No contracts. Cancel anytime.</p>
         </div>

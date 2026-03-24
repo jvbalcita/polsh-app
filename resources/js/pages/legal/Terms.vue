@@ -19,7 +19,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
         <meta property="og:image" :content="ogImage" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" :content="twitterCard" />
-        <meta name="robots" content="noindex, follow" />
+        <meta name="robots" content="index, follow" />
     </Head>
 
     <PublicLayout>
@@ -63,7 +63,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
 
                     <section>
                         <h2>5. Pro Subscription and Payments</h2>
-                        <p>Polsh offers a Pro subscription with additional features. Payments are processed by <strong>PayMongo, Inc.</strong>, a payment service provider regulated in the Philippines. By subscribing to the Pro plan, you authorize PayMongo to charge your chosen payment method on a recurring monthly basis.</p>
+                        <p>Polsh offers a Pro subscription with additional features. Payments are processed by a licensed third-party payment service provider. By subscribing to the Pro plan, you authorize us to charge your chosen payment method on a recurring basis according to your selected billing cycle.</p>
                         <p>Subscriptions automatically renew unless cancelled before the renewal date. You may cancel your subscription at any time through your account settings. Cancellation takes effect at the end of the current billing period. Please refer to our <a href="/refund-policy">Refund Policy</a> for information on refunds.</p>
                         <p>We reserve the right to change subscription pricing with at least 30 days' notice to current subscribers.</p>
                     </section>

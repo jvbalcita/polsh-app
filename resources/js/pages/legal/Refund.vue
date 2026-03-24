@@ -5,7 +5,7 @@ import PublicLayout from '@/layouts/PublicLayout.vue';
 
 const { fullTitle, description, ogImage, twitterCard } = useSeo({
     title: 'Refund Policy',
-    description: 'Learn about Polsh refund eligibility and how to request a refund for your Pro subscription via PayMongo.',
+    description: 'Learn about Polsh refund eligibility and how to request a refund for your Pro subscription.',
     type: 'website',
 });
 </script>
@@ -19,7 +19,7 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
         <meta property="og:image" :content="ogImage" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" :content="twitterCard" />
-        <meta name="robots" content="noindex, follow" />
+        <meta name="robots" content="index, follow" />
     </Head>
 
     <PublicLayout>
@@ -28,13 +28,13 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
                 <header class="legal-header">
                     <div class="legal-label">Legal</div>
                     <h1 class="legal-title">Refund Policy</h1>
-                    <p class="legal-meta">Effective date: March 24, 2026 · Payments processed by PayMongo, Inc.</p>
+                    <p class="legal-meta">Effective date: March 24, 2026</p>
                 </header>
 
                 <div class="legal-body">
                     <section>
                         <h2>1. Overview</h2>
-                        <p>Polsh offers a Free plan with no billing and a paid Pro subscription billed monthly via <strong>PayMongo, Inc.</strong> This policy applies only to paid Pro and Team subscriptions. Free plan users are not billed and thus this policy does not apply to them.</p>
+                        <p>Polsh offers a Free plan with no billing and a paid Pro subscription. This policy applies only to paid Pro subscriptions. Free plan users are not billed and thus this policy does not apply to them.</p>
                     </section>
 
                     <section>
@@ -57,12 +57,12 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
                             <li>Include the subject line: <strong>"Refund Request — [your email]"</strong></li>
                             <li>Briefly describe why you are requesting a refund.</li>
                         </ol>
-                        <p>We will review your request and respond within 2 business days. Approved refunds are processed back to your original payment method via PayMongo.</p>
+                        <p>We will review your request and respond within 2 business days. Approved refunds are processed back to your original payment method.</p>
                     </section>
 
                     <section>
                         <h2>5. Processing Time</h2>
-                        <p>Once approved, refunds are initiated through PayMongo and typically appear on your statement within <strong>7–14 business days</strong>, depending on your card issuer or bank. Polsh has no control over the processing time after the refund is initiated.</p>
+                        <p>Once approved, refunds are typically reflected on your statement within <strong>7–14 business days</strong>, depending on your card issuer or bank. Polsh has no control over the processing time after the refund is initiated.</p>
                     </section>
 
                     <section>

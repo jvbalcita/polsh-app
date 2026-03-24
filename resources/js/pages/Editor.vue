@@ -177,7 +177,7 @@ return;
                 </div>
 
                 <!-- Canvas stage (fills remaining height minus strip) -->
-                <div class="min-h-0 flex-1" @click.self="showSizePopover = false">
+                <div class="canvas-workspace min-h-0 flex-1" @click.self="showSizePopover = false">
                     <CanvasStage @click="showSizePopover = false" />
                 </div>
                 <!-- Image strip (auto-hides when empty) -->
@@ -373,4 +373,16 @@ return;
 }
 
 .csb-custom-apply:hover { background: rgba(224, 255, 79, 0.18); }
+
+/* ── Canvas workspace grid background ── */
+/* Applied via :deep to canvas-stage-container so it sits behind the transparent
+   Konva <canvas> element, rendering wherever Konva hasn't explicitly painted. */
+:deep(.canvas-stage-container) {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
 </style>

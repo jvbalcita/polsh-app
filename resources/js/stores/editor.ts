@@ -236,7 +236,7 @@ return;
                 img.onload = () => {
                     const currentSettings = images.value[activeIndex.value]?.settings ?? DEFAULT_SETTINGS;
                     images.value.push({
-                        id: (crypto.randomUUID ?? (() => `${Date.now()}-${Math.random().toString(36).slice(2)}`))(),
+                        id: crypto.randomUUID(),
                         src,
                         element: img,
                         naturalWidth: img.naturalWidth,

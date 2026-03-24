@@ -573,33 +573,53 @@ function onClickUpload(): void {
                     class="absolute inset-6 rounded-2xl border-2 border-dashed border-[#e0ff4f]/60 bg-[#e0ff4f]/4"
                 />
 
-                <button
-                    type="button"
+                <div
                     class="canvas-empty"
                     :class="{ 'drag-over': isDragOver }"
-                    @click="onClickUpload"
                 >
-                    <svg
-                        width="36"
-                        height="36"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="empty-icon"
-                        aria-hidden="true"
+                    <!-- Glowing circular icon -->
+                    <div class="empty-icon-ring">
+                        <div class="empty-icon-circle">
+                            <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <polyline points="16 16 12 12 8 16" />
+                                <line x1="12" y1="12" x2="12" y2="21" />
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="empty-body">
+                        <p class="empty-title">Drop screenshots here</p>
+                        <p class="empty-hint">
+                            Style and export your screenshots in seconds.<br />
+                            Drop anywhere or click the button below.
+                        </p>
+                    </div>
+
+                    <div class="empty-formats">
+                        <span>PNG</span>
+                        <span>JPG</span>
+                        <span>WebP</span>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="empty-cta"
+                        @click="onClickUpload"
                     >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    <p class="empty-title">Drop screenshots here</p>
-                    <p class="empty-hint">
-                        or click to upload · PNG, JPG, WebP
-                    </p>
-                </button>
+                        Select Files
+                    </button>
+                </div>
             </div>
         </Transition>
 
@@ -632,44 +652,128 @@ function onClickUpload(): void {
 }
 
 .canvas-empty {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 48px 56px;
-    border: 1.5px dashed rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    background: transparent;
-    cursor: pointer;
+    gap: 20px;
+    padding: 48px 52px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    background: #13131a;
     text-align: center;
-    transition:
-        border-color 200ms ease,
-        background 200ms ease;
+    transition: border-color 250ms ease, box-shadow 250ms ease;
+    box-shadow:
+        0 2px 0 0 rgba(255, 255, 255, 0.04) inset,
+        0 24px 80px rgba(0, 0, 0, 0.8);
 }
 
-.canvas-empty:hover,
 .canvas-empty.drag-over {
     border-color: rgba(224, 255, 79, 0.4);
-    background: rgba(224, 255, 79, 0.03);
+    box-shadow:
+        0 0 0 1px rgba(224, 255, 79, 0.15),
+        0 0 80px rgba(224, 255, 79, 0.1),
+        0 24px 80px rgba(0, 0, 0, 0.8);
 }
 
-.empty-icon {
-    color: rgba(255, 255, 255, 0.2);
-    margin-bottom: 4px;
+/* ── Glowing ring + circle icon ── */
+.empty-icon-ring {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(224, 255, 79, 0.18) 0%, transparent 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* The glow ring */
+    box-shadow:
+        0 0 0 2px rgba(224, 255, 79, 0.5),
+        0 0 24px rgba(224, 255, 79, 0.35),
+        0 0 60px rgba(224, 255, 79, 0.15);
+    transition: box-shadow 250ms ease;
+}
+
+.canvas-empty.drag-over .empty-icon-ring {
+    box-shadow:
+        0 0 0 2px rgba(224, 255, 79, 0.8),
+        0 0 32px rgba(224, 255, 79, 0.5),
+        0 0 80px rgba(224, 255, 79, 0.25);
+}
+
+.empty-icon-circle {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #1c1c24;
+    border: 1px solid rgba(224, 255, 79, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e0ff4f;
+}
+
+/* ── Text ── */
+.empty-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 280px;
 }
 
 .empty-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 15px;
-    color: #8a8a9a;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #f0f0f4;
     margin: 0;
+    letter-spacing: -0.025em;
 }
 
 .empty-hint {
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
-    color: #4a4a5a;
+    line-height: 1.6;
+    color: #52526a;
     margin: 0;
+}
+
+/* ── Format badges ── */
+.empty-formats {
+    display: flex;
+    gap: 6px;
+}
+
+.empty-formats span {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    color: #4a4a5a;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+/* ── CTA button ── */
+.empty-cta {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: #e0ff4f;
+    color: #0a0a0c;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: opacity 200ms ease, box-shadow 200ms ease;
+    box-shadow: 0 4px 20px rgba(224, 255, 79, 0.25);
+}
+
+.empty-cta:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 28px rgba(224, 255, 79, 0.4);
 }
 
 .fade-enter-active,

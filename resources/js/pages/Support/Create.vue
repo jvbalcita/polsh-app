@@ -140,7 +140,7 @@ function formatDate(iso: string) {
 </script>
 
 <template>
-    <Head title="Support — Polsh" />
+    <Head title="New Support Request" />
     <PublicLayout>
         <div class="support-page">
             <div class="support-container">

@@ -46,6 +46,13 @@
 
         {{-- Analytics --}}
         <script defer data-domain="polsh.work" src="https://plausible.io/js/script.tagged-events.js"></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4EHL40Q38"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-B4EHL40Q38');
+        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia
