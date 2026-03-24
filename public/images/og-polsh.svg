@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0a0a0c"/>
+
+  <!-- Subtle grid texture -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Top border accent line -->
+  <rect width="1200" height="2" fill="#e0ff4f" opacity="0.6"/>
+
+  <!-- Left content area -->
+  <!-- Beta pill -->
+  <rect x="80" y="180" width="160" height="28" rx="14" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <circle cx="99" cy="194" r="5" fill="#e0ff4f"/>
+  <text x="114" y="199" font-family="monospace" font-size="12" fill="#8a8a9a" letter-spacing="0.5">Open beta</text>
+
+  <!-- Main headline -->
+  <text x="80" y="282" font-family="sans-serif" font-size="72" font-weight="700" fill="#f0f0f2" letter-spacing="-3">Polish your</text>
+  <text x="80" y="362" font-family="sans-serif" font-size="72" font-weight="700" fill="#e0ff4f" letter-spacing="-3">screenshots.</text>
+
+  <!-- Tagline -->
+  <text x="80" y="418" font-family="sans-serif" font-size="20" fill="#8a8a9a">Drop in a screenshot. Pick a style. Export PNG, WebP, or SVG.</text>
+
+  <!-- Stat pills -->
+  <rect x="80" y="450" width="110" height="32" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="135" y="471" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">18 styles</text>
+
+  <rect x="204" y="450" width="140" height="32" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="274" y="471" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">No watermarks</text>
+
+  <rect x="358" y="450" width="130" height="32" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="423" y="471" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">Free forever</text>
+
+  <!-- Wordmark bottom left -->
+  <text x="80" y="580" font-family="monospace" font-size="22" font-weight="500" fill="#2a2a35" letter-spacing="-1">polsh.work</text>
+
+  <!-- Right side: mock screenshot frame preview -->
+  <g transform="translate(700, 100)">
+    <!-- Outer card with gradient bg -->
+    <defs>
+      <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1a1a3e;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#0d1a2e;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="cardBg2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#1f1f1f;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#141414;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+
+    <!-- Card 1: Gradient bg -->
+    <rect x="0" y="0" width="400" height="260" rx="18" fill="url(#cardBg)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <!-- Inner screenshot mockup -->
+    <rect x="24" y="24" width="352" height="212" rx="10" fill="rgba(255,255,255,0.06)"/>
+    <rect x="24" y="24" width="352" height="28" rx="10" fill="rgba(255,255,255,0.04)"/>
+    <circle cx="44" cy="38" r="5" fill="#ff5f57" opacity="0.7"/>
+    <circle cx="60" cy="38" r="5" fill="#febc2e" opacity="0.7"/>
+    <circle cx="76" cy="38" r="5" fill="#28c840" opacity="0.7"/>
+    <rect x="40" y="66" width="120" height="8" rx="4" fill="rgba(255,255,255,0.12)"/>
+    <rect x="40" y="82" width="200" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
+    <rect x="40" y="98" width="160" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
+    <rect x="40" y="122" width="120" height="8" rx="4" fill="#e0ff4f" opacity="0.3"/>
+    <rect x="40" y="138" width="180" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+    <rect x="40" y="154" width="140" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+    <rect x="40" y="178" width="80" height="8" rx="4" fill="#e0ff4f" opacity="0.5"/>
+    <rect x="40" y="194" width="200" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+
+    <!-- Card 2: Dark bg, offset below-right -->
+    <rect x="60" y="286" width="380" height="244" rx="18" fill="url(#cardBg2)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+    <rect x="84" y="310" width="332" height="196" rx="10" fill="rgba(255,255,255,0.04)"/>
+    <rect x="84" y="310" width="332" height="26" rx="10" fill="rgba(255,255,255,0.03)"/>
+    <rect x="100" y="350" width="100" height="7" rx="3" fill="rgba(255,255,255,0.1)"/>
+    <rect x="100" y="366" width="180" height="7" rx="3" fill="rgba(255,255,255,0.07)"/>
+    <rect x="100" y="382" width="140" height="7" rx="3" fill="rgba(255,255,255,0.07)"/>
+    <rect x="100" y="406" width="60" height="7" rx="3" fill="#e0ff4f" opacity="0.6"/>
+    <rect x="100" y="422" width="160" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
+    <rect x="100" y="446" width="80" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
+    <rect x="100" y="462" width="120" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
+  </g>
+</svg>

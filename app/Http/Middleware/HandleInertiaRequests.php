@@ -41,7 +41,7 @@ class HandleInertiaRequests extends Middleware
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'avatar' => $user->avatar,
+            'avatar' => $user->avatar_url,
             'email_verified_at' => $user->email_verified_at?->toJSON(),
         ] : null;
 
@@ -57,6 +57,12 @@ class HandleInertiaRequests extends Middleware
             'debug_is_pro' => auth()->check() ? auth()->user()->isPro() : false,
             'imageLimit' => $isPro ? 10 : 3,
             'teamId' => $user?->currentTeam()?->id,
+            'seo' => [
+                'siteName' => 'Polsh',
+                'description' => 'Polish your screenshots. Drop in a screenshot, pick a style, export a stunning PNG, WebP, or SVG — no Figma plugins, no subscriptions.',
+                'ogImage' => asset('images/og-polsh.svg'),
+                'twitterCard' => 'summary_large_image',
+            ],
         ];
     }
 }
