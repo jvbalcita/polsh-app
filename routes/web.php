@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\GithubAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\EditorController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\PresetController;
 use App\Http\Controllers\SessionController;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +55,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::inertia('docs/api', 'Docs/Api')->name('docs.api');
 
 Route::inertia('changelog', 'Changelog')->name('changelog');
+
+// Legal pages
+Route::get('/terms-of-service', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('/refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
+
+// Sitemap
+Route::get('/sitemap.xml', static fn () => response()->file(public_path('sitemap.xml')))->name('sitemap');
 
 require __DIR__.'/billing.php';
 require __DIR__.'/settings.php';
