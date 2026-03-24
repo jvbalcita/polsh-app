@@ -80,7 +80,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function isPro(): bool
     {
-        if ($this->plan === 'team') {
+        if (in_array($this->plan, ['pro', 'team'], true)) {
             return true;
         }
 

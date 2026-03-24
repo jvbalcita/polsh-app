@@ -2,12 +2,15 @@
 
 use App\Models\ApiKey;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Str;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('authenticated users can visit the api keys page and receive api key props', function () {
+    $this->seed(RoleSeeder::class);
     $user = User::factory()->create();
+    $user->assignRole('admin');
     $apiKey = createApiKeyFor($user, [
         'name' => 'Primary key',
         'key_prefix' => 'pk_live1',
@@ -33,7 +36,9 @@ test('authenticated users can visit the api keys page and receive api key props'
 });
 
 test('api keys page returns newest keys first with expected fields', function () {
+    $this->seed(RoleSeeder::class);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $olderKey = createApiKeyFor($user, [
         'name' => 'Older key',
@@ -70,7 +75,9 @@ test('api keys page returns newest keys first with expected fields', function ()
 });
 
 test('storing an api key returns created json with id name key and key prefix', function () {
+    $this->seed(RoleSeeder::class);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $response = $this->actingAs($user)->postJson(route('api-keys.store'), [
         'name' => 'CLI key',
@@ -96,7 +103,9 @@ test('storing an api key returns created json with id name key and key prefix', 
 });
 
 test('webhook url is accepted as nullable and persisted', function () {
+    $this->seed(RoleSeeder::class);
     $user = User::factory()->create();
+    $user->assignRole('admin');
 
     $response = $this->actingAs($user)->postJson(route('api-keys.store'), [
         'name' => 'No webhook key',
@@ -111,7 +120,9 @@ test('webhook url is accepted as nullable and persisted', function () {
 });
 
 test('revoke marks the key as revoked and redirects back', function () {
+    $this->seed(RoleSeeder::class);
     $user = User::factory()->create();
+    $user->assignRole('admin');
     $apiKey = createApiKeyFor($user);
 
     $this->actingAs($user)
@@ -123,8 +134,11 @@ test('revoke marks the key as revoked and redirects back', function () {
 });
 
 test('non owners cannot revoke another users key', function () {
+    $this->seed(RoleSeeder::class);
     $owner = User::factory()->create();
+    $owner->assignRole('admin');
     $intruder = User::factory()->create();
+    $intruder->assignRole('admin');
     $apiKey = createApiKeyFor($owner);
 
     $this->actingAs($intruder)

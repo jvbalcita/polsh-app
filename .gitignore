@@ -77,3 +77,6 @@ mailpit
 /.worktrees
 /.opencode/skills
 /docs
+
+# Claude Code superpowers
+/.superpowers
