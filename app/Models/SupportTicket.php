@@ -46,7 +46,7 @@ class SupportTicket extends Model
     }
 
     /** Returns the linked User or a simple object for guests. */
-    public function submitter(): User|object
+    public function submitter(): object
     {
         if ($this->user_id) {
             return $this->user;
