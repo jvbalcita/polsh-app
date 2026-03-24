@@ -2,9 +2,13 @@
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import UserMenu from '@/components/UserMenu.vue';
+import { Toaster } from '@/components/ui/sonner';
+import { useFlashToast } from '@/composables/useFlashToast';
 import { editor } from '@/routes';
 import { api as apiDocs } from '@/routes/docs';
 import { terms, privacy, refund } from '@/routes/legal';
+
+useFlashToast();
 </script>
 
 <template>
@@ -59,6 +63,7 @@ import { terms, privacy, refund } from '@/routes/legal';
             </div>
         </footer>
     </div>
+    <Toaster rich-colors position="bottom-right" />
 </template>
 
 <style scoped>

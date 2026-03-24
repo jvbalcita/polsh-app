@@ -19,6 +19,7 @@ class StoreSupportTicketRequest extends FormRequest
             'type' => ['required', Rule::enum(SupportTicketType::class)],
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,pdf,txt,doc,docx'],
         ];
 
         if (! $this->user()) {

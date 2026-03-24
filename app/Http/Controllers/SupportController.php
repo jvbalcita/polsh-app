@@ -16,12 +16,27 @@ class SupportController extends Controller
 {
     public function create(): Response
     {
-        return Inertia::render('Support/Create');
+        $subscription = null;
+
+        if ($user = auth()->user()) {
+            $subscription = $user->subscriptions()
+                ->active()
+                ->latest()
+                ->first(['plan', 'status', 'paymongo_subscription_id', 'current_period_start', 'current_period_end']);
+        }
+
+        return Inertia::render('Support/Create', [
+            'subscription' => $subscription,
+        ]);
     }
 
     public function store(StoreSupportTicketRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        $attachmentPath = $request->hasFile('attachment')
+            ? $request->file('attachment')->store('support-attachments', 'public')
+            : null;
 
         $ticket = SupportTicket::create([
             'user_id' => $user?->id,
@@ -30,6 +45,7 @@ class SupportController extends Controller
             'type' => $request->type,
             'subject' => $request->subject,
             'description' => $request->description,
+            'attachment_path' => $attachmentPath,
             'status' => SupportTicketStatus::Open,
         ]);
 

@@ -1,10 +1,21 @@
 <script setup lang="ts">
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Paperclip, X } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 
 const page = usePage();
 const user = page.props.auth?.user as { name: string; email: string } | null;
+
+const props = defineProps<{
+    subscription?: {
+        plan: string;
+        status: string;
+        paymongo_subscription_id: string;
+        current_period_start: string;
+        current_period_end: string;
+    } | null;
+}>();
 
 const types = [
     { value: 'bug_report', label: 'Bug Report', icon: '🐛', desc: 'Something is not working as expected' },
@@ -19,17 +30,35 @@ const form = useForm({
     description: '',
     submitter_name: '',
     submitter_email: '',
+    attachment: null as File | null,
 });
 
 const submitted = ref(false);
 const ticketRef = ref('');
+const attachmentInput = ref<HTMLInputElement | null>(null);
+
+const isRefund = computed(() => form.type === 'refund_request');
 
 function selectType(value: string) {
     form.type = value;
+    if (value === 'refund_request' && !form.subject) {
+        form.subject = 'Refund Request – Pro Subscription';
+    }
+}
+
+function onFileChange(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0] ?? null;
+    form.attachment = file;
+}
+
+function clearFile() {
+    form.attachment = null;
+    if (attachmentInput.value) attachmentInput.value.value = '';
 }
 
 function submit() {
     form.post('/support', {
+        forceFormData: true,
         onSuccess: () => {
             if (!user) {
                 submitted.value = true;
@@ -37,6 +66,10 @@ function submit() {
             }
         },
     });
+}
+
+function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 </script>
 
@@ -59,11 +92,6 @@ function submit() {
                 </div>
 
                 <form v-else class="support-form" @submit.prevent="submit">
-                    <!-- Flash success for auth users -->
-                    <div v-if="$page.props.flash?.success" class="flash-success">
-                        {{ $page.props.flash.success }}
-                    </div>
-
                     <!-- Type selector -->
                     <div class="field-group">
                         <label class="field-label">What do you need help with?</label>
@@ -84,17 +112,57 @@ function submit() {
                         <p v-if="form.errors.type" class="field-error">{{ form.errors.type }}</p>
                     </div>
 
+                    <!-- Subscription reference card (refund only) -->
+                    <div v-if="isRefund && subscription" class="subscription-card">
+                        <div class="sub-card-header">
+                            <span class="sub-card-label">Active Subscription</span>
+                            <span class="sub-card-badge">{{ subscription.plan }}</span>
+                        </div>
+                        <dl class="sub-card-details">
+                            <div class="sub-detail">
+                                <dt>Subscription ID</dt>
+                                <dd>{{ subscription.paymongo_subscription_id }}</dd>
+                            </div>
+                            <div class="sub-detail">
+                                <dt>Billing period</dt>
+                                <dd>{{ formatDate(subscription.current_period_start) }} – {{ formatDate(subscription.current_period_end) }}</dd>
+                            </div>
+                            <div class="sub-detail">
+                                <dt>Status</dt>
+                                <dd class="sub-status-active">{{ subscription.status }}</dd>
+                            </div>
+                        </dl>
+                        <p class="sub-card-note">This subscription will be referenced in your refund request.</p>
+                    </div>
+
+                    <div v-else-if="isRefund && !subscription" class="no-sub-note">
+                        <span>⚠️</span>
+                        <span>No active subscription found on your account. If you believe this is an error, please describe your situation below.</span>
+                    </div>
+
                     <!-- Guest fields -->
                     <template v-if="!user">
                         <div class="field-row">
                             <div class="field-group">
                                 <label class="field-label" for="submitter_name">Your name</label>
-                                <input id="submitter_name" v-model="form.submitter_name" :class="['field-input', { 'field-input--error': form.errors.submitter_name }]" type="text" placeholder="Full name" />
+                                <input
+                                    id="submitter_name"
+                                    v-model="form.submitter_name"
+                                    :class="['field-input', { 'field-input--error': form.errors.submitter_name }]"
+                                    type="text"
+                                    placeholder="Full name"
+                                />
                                 <p v-if="form.errors.submitter_name" class="field-error">{{ form.errors.submitter_name }}</p>
                             </div>
                             <div class="field-group">
                                 <label class="field-label" for="submitter_email">Email address</label>
-                                <input id="submitter_email" v-model="form.submitter_email" :class="['field-input', { 'field-input--error': form.errors.submitter_email }]" type="email" placeholder="you@example.com" />
+                                <input
+                                    id="submitter_email"
+                                    v-model="form.submitter_email"
+                                    :class="['field-input', { 'field-input--error': form.errors.submitter_email }]"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                />
                                 <p v-if="form.errors.submitter_email" class="field-error">{{ form.errors.submitter_email }}</p>
                             </div>
                         </div>
@@ -108,15 +176,53 @@ function submit() {
                     <!-- Subject -->
                     <div class="field-group">
                         <label class="field-label" for="subject">Subject</label>
-                        <input id="subject" v-model="form.subject" :class="['field-input', { 'field-input--error': form.errors.subject }]" type="text" placeholder="Brief summary of your request" />
+                        <input
+                            id="subject"
+                            v-model="form.subject"
+                            :class="['field-input', { 'field-input--error': form.errors.subject }]"
+                            type="text"
+                            placeholder="Brief summary of your request"
+                        />
                         <p v-if="form.errors.subject" class="field-error">{{ form.errors.subject }}</p>
                     </div>
 
                     <!-- Description -->
                     <div class="field-group">
                         <label class="field-label" for="description">Description</label>
-                        <textarea id="description" v-model="form.description" :class="['field-textarea', { 'field-input--error': form.errors.description }]" rows="6" placeholder="Please provide as much detail as possible..." />
+                        <textarea
+                            id="description"
+                            v-model="form.description"
+                            :class="['field-textarea', { 'field-input--error': form.errors.description }]"
+                            rows="6"
+                            placeholder="Please provide as much detail as possible..."
+                        />
                         <p v-if="form.errors.description" class="field-error">{{ form.errors.description }}</p>
+                    </div>
+
+                    <!-- Optional file attachment -->
+                    <div class="field-group">
+                        <label class="field-label">Attachment <span class="field-label-optional">(optional)</span></label>
+                        <div v-if="!form.attachment" class="file-drop" @click="attachmentInput?.click()">
+                            <Paperclip class="file-icon" />
+                            <span class="file-prompt">Click to attach a file</span>
+                            <span class="file-hint">JPG, PNG, GIF, PDF, TXT, DOC — max 10 MB</span>
+                        </div>
+                        <div v-else class="file-selected">
+                            <Paperclip class="file-icon-sm" />
+                            <span class="file-name">{{ form.attachment.name }}</span>
+                            <span class="file-size">({{ (form.attachment.size / 1024).toFixed(0) }} KB)</span>
+                            <button type="button" class="file-clear" @click="clearFile">
+                                <X class="size-3.5" />
+                            </button>
+                        </div>
+                        <input
+                            ref="attachmentInput"
+                            type="file"
+                            class="hidden"
+                            accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.doc,.docx"
+                            @change="onFileChange"
+                        />
+                        <p v-if="form.errors.attachment" class="field-error">{{ form.errors.attachment }}</p>
                     </div>
 
                     <button type="submit" class="submit-btn" :disabled="form.processing || !form.type">
@@ -140,25 +246,59 @@ function submit() {
 .success-heading { font-family: 'DM Sans', sans-serif; font-size: 1.25rem; font-weight: 600; color: #f0f0f2; margin: 0 0 0.5rem; }
 .success-msg { font-family: 'DM Mono', monospace; font-size: 0.875rem; color: #e0ff4f; margin: 0 0 0.5rem; }
 .success-note { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: #6a6a7a; margin: 0; }
-.flash-success { background: rgba(224,255,79,0.08); border: 1px solid rgba(224,255,79,0.2); color: #e0ff4f; padding: 0.75rem 1rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; }
+
 .field-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .field-label { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #6a6a7a; text-transform: uppercase; letter-spacing: 0.08em; }
+.field-label-optional { text-transform: none; color: #4a4a5a; font-size: 0.6875rem; }
 .field-input, .field-textarea { background: #111114; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.625rem 0.875rem; color: #f0f0f2; font-family: 'DM Sans', sans-serif; font-size: 0.9375rem; outline: none; transition: border-color 0.15s ease; width: 100%; box-sizing: border-box; }
 .field-input:focus, .field-textarea:focus { border-color: rgba(224,255,79,0.4); }
-.field-input--error { border-color: rgba(255, 107, 107, 0.5) !important; }
 .field-textarea { resize: vertical; }
+.field-input--error { border-color: rgba(255, 107, 107, 0.5) !important; }
 .field-error { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #ff6b6b; margin: 0; }
+
+/* Type selector */
 .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .type-card { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; background: #111114; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; cursor: pointer; text-align: left; transition: border-color 0.15s ease, background 0.15s ease; }
 .type-card--active { border-color: rgba(224,255,79,0.5); background: rgba(224,255,79,0.04); }
 .type-icon { font-size: 1.25rem; }
 .type-label { font-family: 'DM Mono', monospace; font-size: 0.875rem; color: #f0f0f2; }
 .type-desc { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #6a6a7a; }
+
+/* Subscription card */
+.subscription-card { background: rgba(224,255,79,0.04); border: 1px solid rgba(224,255,79,0.2); border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.875rem; }
+.sub-card-header { display: flex; align-items: center; justify-content: space-between; }
+.sub-card-label { font-family: 'DM Mono', monospace; font-size: 0.6875rem; color: #e0ff4f; text-transform: uppercase; letter-spacing: 0.1em; }
+.sub-card-badge { font-family: 'DM Mono', monospace; font-size: 0.75rem; background: rgba(224,255,79,0.12); color: #e0ff4f; padding: 0.125rem 0.5rem; border-radius: 4px; text-transform: capitalize; }
+.sub-card-details { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; }
+.sub-detail { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.sub-detail dt { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #6a6a7a; }
+.sub-detail dd { font-family: 'DM Mono', monospace; font-size: 0.8125rem; color: #c0c0d0; margin: 0; word-break: break-all; }
+.sub-status-active { color: #4fff8a !important; }
+.sub-card-note { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #4a4a5a; margin: 0; }
+
+.no-sub-note { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.875rem 1rem; background: rgba(255,165,0,0.06); border: 1px solid rgba(255,165,0,0.2); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: #c8a06a; }
+
+/* Auth user info */
 .submitter-info { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: #6a6a7a; padding: 0.75rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; }
 .submitter-info strong { color: #f0f0f2; }
+
+/* File upload */
+.file-drop { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1.25rem; background: #111114; border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; text-align: center; }
+.file-drop:hover { border-color: rgba(224,255,79,0.3); background: rgba(224,255,79,0.02); }
+.file-icon { width: 1.25rem; height: 1.25rem; color: #4a4a5a; }
+.file-prompt { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: #8a8a9a; }
+.file-hint { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: #4a4a5a; }
+.file-selected { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 0.875rem; background: #111114; border: 1px solid rgba(224,255,79,0.2); border-radius: 8px; }
+.file-icon-sm { width: 1rem; height: 1rem; color: #e0ff4f; flex-shrink: 0; }
+.file-name { font-family: 'DM Mono', monospace; font-size: 0.8125rem; color: #f0f0f2; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: #6a6a7a; white-space: nowrap; }
+.file-clear { display: flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; border: none; background: rgba(255,255,255,0.06); border-radius: 4px; cursor: pointer; color: #8a8a9a; flex-shrink: 0; }
+.file-clear:hover { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+
 .submit-btn { font-family: 'DM Mono', monospace; font-size: 0.875rem; font-weight: 500; background: #e0ff4f; color: #0a0a0c; padding: 0.75rem 1.5rem; border-radius: 8px; border: none; cursor: pointer; transition: opacity 0.15s ease; align-self: flex-start; }
 .submit-btn:hover:not(:disabled) { opacity: 0.88; }
 .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 @media (max-width: 600px) { .type-grid, .field-row { grid-template-columns: 1fr; } }
 </style>
