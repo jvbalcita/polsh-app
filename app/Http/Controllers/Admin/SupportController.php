@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\SupportTicketUpdated;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,6 +43,21 @@ class SupportController extends Controller
             'ticket' => $ticket,
             'admins' => $admins,
         ]);
+    }
+
+    public function attachment(SupportTicket $ticket): RedirectResponse
+    {
+        abort_if(! $ticket->attachment_path, 404);
+
+        $disk = config('services.polsh.export_disk', 'public');
+
+        try {
+            $url = Storage::disk($disk)->temporaryUrl($ticket->attachment_path, now()->addMinutes(15));
+        } catch (\RuntimeException) {
+            $url = Storage::disk($disk)->url($ticket->attachment_path);
+        }
+
+        return redirect()->away($url);
     }
 
     public function update(UpdateSupportTicketRequest $request, SupportTicket $ticket): RedirectResponse

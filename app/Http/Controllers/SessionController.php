@@ -36,8 +36,9 @@ class SessionController extends Controller
         if (str_starts_with($dataUrl, 'data:image/')) {
             $base64 = substr($dataUrl, strpos($dataUrl, ',') + 1);
             $filename = 'thumbnails/'.Str::uuid().'.png';
-            Storage::disk('public')->put($filename, base64_decode($base64));
-            $thumbnailUrl = Storage::disk('public')->url($filename);
+            $disk = config('services.polsh.export_disk', 'public');
+            Storage::disk($disk)->put($filename, base64_decode($base64));
+            $thumbnailUrl = Storage::disk($disk)->url($filename);
         }
 
         $session = ExportSession::create([
@@ -64,8 +65,9 @@ class SessionController extends Controller
 
         // Remove stored thumbnail if it's on our disk
         if ($session->thumbnail_url) {
-            $path = str_replace(Storage::disk('public')->url(''), '', $session->thumbnail_url);
-            Storage::disk('public')->delete($path);
+            $disk = config('services.polsh.export_disk', 'public');
+            $path = str_replace(Storage::disk($disk)->url(''), '', $session->thumbnail_url);
+            Storage::disk($disk)->delete($path);
         }
 
         $session->delete();
