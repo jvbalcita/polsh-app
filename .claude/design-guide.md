@@ -1,5 +1,5 @@
 # Polsh — Design System & Product Spec
-> **polsh.app** · Living reference document
+> **polsh.work** · Living reference document
 > Place at `.claude/design-guide.md` — Claude Code reads this before any UI work.
 > Last updated: March 2026
 
@@ -1822,6 +1822,6 @@ should be prominent in all marketing copy.
 
 ---
 
-*Polsh Design System & Product Spec · polsh.app*
+*Polsh Design System & Product Spec · polsh.work*
 *Implementation plan: `.claude/implementation-plan.md`*
 *Last updated: March 2026*

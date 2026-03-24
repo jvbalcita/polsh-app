@@ -35,7 +35,7 @@ That copies the main repo `.env`, assigns worktree-specific forwarded ports, and
 
 ### Infrastructure
 
-- [ ] Domain `polsh.app` — DNS A/AAAA records pointing to server
+- [ ] Domain `polsh.work` — DNS A/AAAA records pointing to server
 - [ ] SSL certificate provisioned (Let's Encrypt via Forge/Coolify, or managed cert)
 - [ ] Hosting decision: **Laravel Cloud** or **Laravel Forge + DigitalOcean** — document chosen provider here once decided
 - [ ] Queue worker running (`php artisan queue:work` or Supervisor config)
@@ -44,22 +44,22 @@ That copies the main repo `.env`, assigns worktree-specific forwarded ports, and
 ### Environment
 
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`
-- [ ] `APP_URL=https://polsh.app`
+- [ ] `APP_URL=https://polsh.work`
 - [ ] `SESSION_DRIVER=database` or `redis` (not `cookie` in production)
 - [ ] `CACHE_DRIVER=redis`
 - [ ] `QUEUE_CONNECTION=redis`
 
 ### OAuth
 
-- [ ] GitHub OAuth app created at `github.com/settings/developers` with production callback: `https://polsh.app/auth/github/callback`
+- [ ] GitHub OAuth app created at `github.com/settings/developers` with production callback: `https://polsh.work/auth/github/callback`
 - [ ] `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` set in production `.env`
-- [ ] Google OAuth app created at `console.cloud.google.com` with production callback: `https://polsh.app/auth/google/callback`
+- [ ] Google OAuth app created at `console.cloud.google.com` with production callback: `https://polsh.work/auth/google/callback`
 - [ ] `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` set in production `.env`
 
 ### Billing (PayMongo)
 
 - [ ] PayMongo live mode keys obtained and set: `PAYMONGO_PUBLIC_KEY=pk_live_...`, `PAYMONGO_SECRET_KEY=sk_live_...`
-- [ ] PayMongo **live** webhook created pointing to `https://polsh.app/billing/webhook`
+- [ ] PayMongo **live** webhook created pointing to `https://polsh.work/billing/webhook`
 - [ ] `PAYMONGO_WEBHOOK_SIG` set to the live webhook secret
 - [ ] Test a live checkout end-to-end (small amount) before launch
 
@@ -71,7 +71,7 @@ That copies the main repo `.env`, assigns worktree-specific forwarded ports, and
 
 ### Analytics
 
-- [ ] Plausible site `polsh.app` created at plausible.io
+- [ ] Plausible site `polsh.work` created at plausible.io
 - [ ] Verify events (`style_applied`, `export_single`, `export_zip`, `upgrade_modal_shown`, `billing_checkout_started`) appear in Plausible dashboard after first traffic
 
 ### Product Hunt Launch Assets

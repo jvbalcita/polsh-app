@@ -1,6 +1,6 @@
 # laravel-polsh
 
-Official Laravel integration for [Polsh](https://polsh.app) — style your screenshots with a single method call.
+Official Laravel integration for [Polsh](https://polsh.work) — style your screenshots with a single method call.
 
 ## Installation
 
@@ -25,7 +25,7 @@ POLSH_API_KEY=pk_your_key
 Optional environment variables and their defaults:
 
 ```env
-POLSH_BASE_URL=https://polsh.app
+POLSH_BASE_URL=https://polsh.work
 POLSH_FORMAT=png        # png | jpeg | webp
 POLSH_RESOLUTION=2      # 1 | 2 | 4
 ```
@@ -69,4 +69,4 @@ Options:
 
 ## Full API docs
 
-See [https://polsh.app/docs/api](https://polsh.app/docs/api) for all available styles, options, and async polling details.
+See [https://polsh.work/docs/api](https://polsh.work/docs/api) for all available styles, options, and async polling details.

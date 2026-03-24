@@ -15,7 +15,7 @@ const STYLES = [
     'paper-white', 'retro-amber',
 ];
 
-const curlExample = `curl -X POST https://polsh.app/api/v1/polish \\
+const curlExample = `curl -X POST https://polsh.work/api/v1/polish \\
   -H "Authorization: Bearer pk_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -29,7 +29,7 @@ const curlExample = `curl -X POST https://polsh.app/api/v1/polish \\
 
 const phpExample = `<?php
 $response = Http::withToken('pk_your_api_key')
-    ->post('https://polsh.app/api/v1/polish', [
+    ->post('https://polsh.work/api/v1/polish', [
         'image_url'  => 'https://example.com/screenshot.png',
         'style'      => 'obsidian-glass',
         'format'     => 'png',
@@ -40,7 +40,7 @@ file_put_contents('polished.png', $response->body());`;
 
 const nodeExample = `import fs from 'fs';
 
-const res = await fetch('https://polsh.app/api/v1/polish', {
+const res = await fetch('https://polsh.work/api/v1/polish', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer pk_your_api_key',
@@ -60,7 +60,7 @@ fs.writeFileSync('polished.png', buffer);`;
 const pythonExample = `import requests
 
 res = requests.post(
-    'https://polsh.app/api/v1/polish',
+    'https://polsh.work/api/v1/polish',
     headers={'Authorization': 'Bearer pk_your_api_key'},
     json={
         'image_url': 'https://example.com/screenshot.png',
@@ -74,14 +74,14 @@ with open('polished.png', 'wb') as f:
     f.write(res.content)`;
 
 const asyncExample = `# 1. Dispatch 4× job
-curl -X POST https://polsh.app/api/v1/polish \\
+curl -X POST https://polsh.work/api/v1/polish \\
   -H "Authorization: Bearer pk_your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{"image_url": "...", "style": "aurora", "resolution": 4}'
 # → 202 {"job_id": "uuid", "status": "pending", "status_url": "..."}
 
 # 2. Poll for completion
-curl https://polsh.app/api/v1/polish/status/{job_id} \\
+curl https://polsh.work/api/v1/polish/status/{job_id} \\
   -H "Authorization: Bearer pk_your_api_key"
 # → {"status": "done", "url": "https://..."}`;
 
@@ -321,7 +321,7 @@ const codeExamples: Record<string, string> = {
                         <p class="mb-2 text-[11px] font-semibold uppercase tracking-widest text-white/25">Payload</p>
                         <pre class="overflow-x-auto rounded border border-white/8 p-3 font-mono text-[11px] text-white/50" style="background: rgba(0,0,0,0.5)">{
   "event":     "glaze.complete",
-  "url":       "https://cdn.polsh.app/polished/uuid.png",
+  "url":       "https://cdn.polsh.work/polished/uuid.png",
   "style":     "obsidian-glass",
   "format":    "png",
   "job_id":    "550e8400-e29b-41d4-a716-446655440000",

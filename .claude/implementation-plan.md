@@ -1,5 +1,5 @@
 # Polsh — Complete Implementation Plan
-> **polsh.app** · Screenshot styling tool for developers & creators
+> **polsh.work** · Screenshot styling tool for developers & creators
 > Laravel 12 · Inertia 2 · Vue 3 · TypeScript · Tailwind v4 · shadcn-vue
 > Philippines-based · PayMongo billing · March 2026
 
@@ -349,7 +349,7 @@ composer require xendit/xendit-php                  # Requires DTI registration 
 - ✅ FCP ≤ 1.5s, style switch ≤ 200ms, batch apply ≤ 500ms
 
 ### 7.11 — Production carry-over
-- ✅ Domain `polsh.app` live
+- ✅ Domain `polsh.work` live
 - ✅ Hosting decision documented in `README.md`
 - ✅ PayMongo live mode webhook created
 - ✅ Error tracking (Sentry/Flare) confirmed
@@ -1019,7 +1019,7 @@ git push && git push origin --tags
 ## Appendix A — Context-Reload Prompt for New Sessions
 
 ```
-I'm continuing development on Polsh (polsh.app) — a screenshot styling
+I'm continuing development on Polsh (polsh.work) — a screenshot styling
 tool for developers. Starting a new Claude Code session.
 
 TECH STACK:
@@ -1123,7 +1123,7 @@ AWS_SECRET_ACCESS_KEY=
 AWS_DEFAULT_REGION=auto
 AWS_BUCKET=polsh-exports
 AWS_ENDPOINT=https://{account-id}.r2.cloudflarestorage.com
-AWS_URL=https://cdn.polsh.app
+AWS_URL=https://cdn.polsh.work
 
 # PayMongo — Philippines billing (NOT Stripe)
 PAYMONGO_PUBLIC_KEY=pk_test_xxxx
@@ -1146,11 +1146,11 @@ GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/callback"
 MAIL_MAILER=log                   # dev
 # MAIL_MAILER=resend              # production
 RESEND_API_KEY=
-MAIL_FROM_ADDRESS=hello@polsh.app
+MAIL_FROM_ADDRESS=hello@polsh.work
 MAIL_FROM_NAME=Polsh
 
 # Analytics
-PLAUSIBLE_DOMAIN=polsh.app
+PLAUSIBLE_DOMAIN=polsh.work
 
 # Error tracking
 SENTRY_LARAVEL_DSN=
@@ -1287,6 +1287,6 @@ GCash/Maya/GrabPay: PayMongo shows a test simulation page
 
 ---
 
-*Polsh Complete Implementation Plan · polsh.app*
+*Polsh Complete Implementation Plan · polsh.work*
 *Reference: `polsh-docs.md` · `polsh-paymongo-setup.md` · `polsh-design-guide.md`*
 *Last updated: March 2026*

@@ -69,7 +69,7 @@ return [
             'region' => 'auto',
             'bucket' => env('CLOUDFLARE_R2_BUCKET', 'polsh-exports'),
             'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'), // https://<account-id>.r2.cloudflarestorage.com
-            'url' => env('CLOUDFLARE_R2_PUBLIC_URL'),    // https://files.polsh.app (custom domain on bucket)
+            'url' => env('CLOUDFLARE_R2_PUBLIC_URL'),    // https://files.polsh.work (custom domain on bucket)
             'use_path_style_endpoint' => true,
             'visibility' => 'public',
             'throw' => false,
