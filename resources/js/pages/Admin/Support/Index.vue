@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { Inbox } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import {
     Select,
     SelectContent,
@@ -137,7 +139,17 @@ const typeLabels: Record<string, string> = {
                             <td class="td font-mono text-xs text-muted-foreground">{{ new Date(ticket.updated_at).toLocaleDateString() }}</td>
                         </tr>
                         <tr v-if="tickets.data.length === 0">
-                            <td colspan="7" class="td text-center text-muted-foreground py-12">No tickets found.</td>
+                            <td colspan="7" class="py-2">
+                                <Empty class="py-8">
+                                    <EmptyHeader>
+                                        <EmptyMedia variant="icon">
+                                            <Inbox />
+                                        </EmptyMedia>
+                                    </EmptyHeader>
+                                    <EmptyTitle>No tickets found</EmptyTitle>
+                                    <EmptyDescription>Try adjusting your filters to find what you're looking for.</EmptyDescription>
+                                </Empty>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

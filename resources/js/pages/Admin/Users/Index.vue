@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Search, Users } from 'lucide-vue-next';
+import { Search, UserX, Users } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -206,8 +207,16 @@ const breadcrumbs = [
                             </td>
                         </tr>
                         <tr v-if="users.data.length === 0">
-                            <td colspan="5" class="px-4 py-12 text-center text-[var(--muted-foreground)]">
-                                No users found.
+                            <td colspan="5" class="py-2">
+                                <Empty class="py-8">
+                                    <EmptyHeader>
+                                        <EmptyMedia variant="icon">
+                                            <UserX />
+                                        </EmptyMedia>
+                                    </EmptyHeader>
+                                    <EmptyTitle>No users found</EmptyTitle>
+                                    <EmptyDescription>Try adjusting your search or filters.</EmptyDescription>
+                                </Empty>
                             </td>
                         </tr>
                     </tbody>

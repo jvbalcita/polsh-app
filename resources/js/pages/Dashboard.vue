@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { AlertCircle, CheckCircle2, Clock, Inbox, MessageSquare } from 'lucide-vue-next';
+import { AlertCircle, CheckCircle2, Clock, Inbox, MessageSquare, Ticket } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { index as adminSupportIndex, show as adminSupportShow } from '@/routes/admin/support';
 import type { BreadcrumbItem } from '@/types';
 
@@ -108,8 +109,16 @@ function submitterName(ticket: typeof props.recentTickets[number]): string {
                     <Link :href="adminSupportIndex()" class="section-link">View all</Link>
                 </div>
 
-                <div v-if="recentTickets.length === 0" class="empty-state">
-                    No support tickets yet.
+                <div v-if="recentTickets.length === 0" class="py-8">
+                    <Empty>
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                                <Ticket />
+                            </EmptyMedia>
+                        </EmptyHeader>
+                        <EmptyTitle>No tickets yet</EmptyTitle>
+                        <EmptyDescription>Support requests will appear here once submitted.</EmptyDescription>
+                    </Empty>
                 </div>
 
                 <div v-else class="tickets-table-wrap">
@@ -307,13 +316,6 @@ function submitterName(ticket: typeof props.recentTickets[number]): string {
 
 .section-link:hover {
     color: var(--foreground);
-}
-
-.empty-state {
-    padding: 3rem;
-    text-align: center;
-    font-size: 0.875rem;
-    color: var(--muted-foreground);
 }
 
 /* Table */

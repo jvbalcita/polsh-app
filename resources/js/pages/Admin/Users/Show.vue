@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { CheckCircle2, Key, LayoutGrid, Mail, ShieldCheck, XCircle } from 'lucide-vue-next';
+import { Activity, CheckCircle2, CreditCard, Key, LayoutGrid, Mail, Palette, Send, ShieldCheck, Ticket, XCircle } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import {
     Select,
     SelectContent,
@@ -204,7 +205,11 @@ const breadcrumbs = [
 
                         <!-- Subscriptions -->
                         <template v-if="activeTab === 'subscriptions'">
-                            <p v-if="!user.subscriptions.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No subscriptions.</p>
+                            <Empty v-if="!user.subscriptions.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><CreditCard /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No subscriptions</EmptyTitle>
+                                <EmptyDescription>This user has never subscribed to a plan.</EmptyDescription>
+                            </Empty>
                             <table v-else class="w-full text-sm">
                                 <thead><tr class="text-left text-[var(--muted-foreground)]">
                                     <th class="pb-2 font-medium">Plan</th>
@@ -227,7 +232,11 @@ const breadcrumbs = [
 
                         <!-- Payments -->
                         <template v-else-if="activeTab === 'payments'">
-                            <p v-if="!user.payments.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No payments.</p>
+                            <Empty v-if="!user.payments.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><CreditCard /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No payments</EmptyTitle>
+                                <EmptyDescription>No payment transactions on record.</EmptyDescription>
+                            </Empty>
                             <table v-else class="w-full text-sm">
                                 <thead><tr class="text-left text-[var(--muted-foreground)]">
                                     <th class="pb-2 font-medium">Amount</th>
@@ -250,7 +259,11 @@ const breadcrumbs = [
 
                         <!-- Presets -->
                         <template v-else-if="activeTab === 'presets'">
-                            <p v-if="!user.presets.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No presets.</p>
+                            <Empty v-if="!user.presets.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><Palette /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No presets</EmptyTitle>
+                                <EmptyDescription>This user hasn't saved any style presets.</EmptyDescription>
+                            </Empty>
                             <div v-else class="divide-y divide-[var(--sidebar-border)]">
                                 <div v-for="preset in user.presets" :key="preset.id" class="py-2.5 flex items-center justify-between">
                                     <span class="text-sm text-[var(--foreground)]">{{ preset.name }}</span>
@@ -261,7 +274,11 @@ const breadcrumbs = [
 
                         <!-- Exports -->
                         <template v-else-if="activeTab === 'exports'">
-                            <p v-if="!user.export_sessions.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No export sessions.</p>
+                            <Empty v-if="!user.export_sessions.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><Send /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No exports</EmptyTitle>
+                                <EmptyDescription>This user hasn't exported any screenshots yet.</EmptyDescription>
+                            </Empty>
                             <div v-else class="divide-y divide-[var(--sidebar-border)]">
                                 <div v-for="session in user.export_sessions" :key="session.id" class="py-2.5 flex items-center justify-between">
                                     <span class="text-sm text-[var(--foreground)] font-mono">{{ session.settings?.style ?? 'Unknown style' }}</span>
@@ -272,7 +289,11 @@ const breadcrumbs = [
 
                         <!-- Support -->
                         <template v-else-if="activeTab === 'support'">
-                            <p v-if="!user.support_tickets.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No support tickets.</p>
+                            <Empty v-if="!user.support_tickets.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><Ticket /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No support tickets</EmptyTitle>
+                                <EmptyDescription>This user hasn't submitted any support requests.</EmptyDescription>
+                            </Empty>
                             <div v-else class="divide-y divide-[var(--sidebar-border)]">
                                 <div v-for="ticket in user.support_tickets" :key="ticket.id" class="py-2.5 flex items-center gap-3">
                                     <span
@@ -292,7 +313,11 @@ const breadcrumbs = [
 
                         <!-- Activity -->
                         <template v-else-if="activeTab === 'activity'">
-                            <p v-if="!activities.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No activity recorded.</p>
+                            <Empty v-if="!activities.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><Activity /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No activity</EmptyTitle>
+                                <EmptyDescription>No actions have been logged for this user yet.</EmptyDescription>
+                            </Empty>
                             <div v-else class="divide-y divide-[var(--sidebar-border)]">
                                 <div v-for="activity in activities" :key="activity.id" class="py-2.5 flex items-start justify-between gap-4">
                                     <div class="flex-1 min-w-0">
@@ -306,7 +331,11 @@ const breadcrumbs = [
 
                         <!-- API Keys -->
                         <template v-else-if="activeTab === 'api-keys'">
-                            <p v-if="!user.api_keys.length" class="text-sm text-[var(--muted-foreground)] py-6 text-center">No API keys.</p>
+                            <Empty v-if="!user.api_keys.length" class="py-6">
+                                <EmptyHeader><EmptyMedia variant="icon"><Key /></EmptyMedia></EmptyHeader>
+                                <EmptyTitle>No API keys</EmptyTitle>
+                                <EmptyDescription>This user hasn't generated any API keys.</EmptyDescription>
+                            </Empty>
                             <div v-else class="divide-y divide-[var(--sidebar-border)]">
                                 <div v-for="key in user.api_keys" :key="key.id" class="py-2.5 flex items-center gap-3">
                                     <Key class="size-3.5 text-[var(--muted-foreground)] flex-shrink-0" />
