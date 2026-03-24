@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { Search, UserX, Users } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
-import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
-import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,6 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
 import { index as adminUsersIndex, show as adminUsersShow } from '@/routes/admin/users';
 
 interface Subscription {
@@ -229,17 +228,17 @@ const breadcrumbs = [
                     Showing {{ users.from }}–{{ users.to }} of {{ users.total }}
                 </p>
                 <div class="flex items-center gap-2">
-                    <Link
+                    <a
                         v-for="link in users.links"
                         :key="link.label"
                         :href="link.url ?? '#'"
                         :class="[
                             link.active ? 'bg-[var(--foreground)] text-[var(--background)]' : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-                            !link.url ? 'opacity-40 pointer-events-none' : '',
+                            !link.url ? 'opacity-40 pointer-events-none' : 'cursor-pointer',
                         ]"
                         class="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors"
-                        preserve-scroll
                         v-html="link.label"
+                        @click.prevent="link.url && router.visit(link.url, { preserveScroll: true })"
                     />
                 </div>
             </div>

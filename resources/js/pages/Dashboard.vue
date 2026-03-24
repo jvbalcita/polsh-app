@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { AlertCircle, CheckCircle2, Clock, Inbox, MessageSquare, Ticket } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { index as adminSupportIndex, show as adminSupportShow } from '@/routes/admin/support';
 import type { BreadcrumbItem } from '@/types';
 
@@ -10,7 +10,18 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
 ];
 
-const props = defineProps<{
+interface RecentTicket {
+    id: number;
+    user_id: number | null;
+    submitter_name: string | null;
+    type: string;
+    subject: string;
+    status: string;
+    created_at: string;
+    user: { id: number; name: string } | null;
+}
+
+defineProps<{
     stats: {
         total: number;
         open: number;
@@ -18,16 +29,7 @@ const props = defineProps<{
         resolved: number;
         closed: number;
     };
-    recentTickets: Array<{
-        id: number;
-        user_id: number | null;
-        submitter_name: string | null;
-        type: string;
-        subject: string;
-        status: string;
-        created_at: string;
-        user: { id: number; name: string } | null;
-    }>;
+    recentTickets: RecentTicket[];
 }>();
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -48,7 +50,7 @@ function formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function submitterName(ticket: typeof props.recentTickets[number]): string {
+function submitterName(ticket: RecentTicket): string {
     return ticket.user?.name ?? ticket.submitter_name ?? 'Guest';
 }
 </script>

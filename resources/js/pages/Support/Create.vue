@@ -7,7 +7,7 @@ import PublicLayout from '@/layouts/PublicLayout.vue';
 const page = usePage();
 const user = page.props.auth?.user as { name: string; email: string } | null;
 
-const props = defineProps<{
+defineProps<{
     subscription?: {
         plan: string;
         status: string;
@@ -116,7 +116,10 @@ function onFileChange(e: Event) {
 
 function clearFile() {
     form.attachment = null;
-    if (attachmentInput.value) attachmentInput.value.value = '';
+
+    if (attachmentInput.value) {
+attachmentInput.value.value = '';
+}
 }
 
 function submit() {

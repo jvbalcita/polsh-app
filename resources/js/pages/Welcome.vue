@@ -2,11 +2,11 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Layers, Palette, FileCode, Zap, Archive, Clock } from 'lucide-vue-next';
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useSeo } from '@/composables/useSeo';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { editor } from '@/routes';
 import { api as apiDocs } from '@/routes/docs';
 import styles from '@/styles';
-import { useSeo } from '@/composables/useSeo';
 import type { StyleConfig } from '@/types/style';
 
 // ── SEO ───────────────────────────────────────────────────────────────────────
@@ -552,6 +552,7 @@ onUnmounted(() => {
         <meta name="twitter:title" :content="fullTitle" />
         <meta name="twitter:description" :content="description" />
         <meta name="twitter:image" :content="ogImage" />
+        <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component -->
         <component :is="'script'" type="application/ld+json" v-html="jsonLd" />
     </Head>
 

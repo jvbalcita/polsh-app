@@ -15,7 +15,7 @@ type Props = {
     imageSrc: string;
 };
 
-const props = defineProps<Props>();
+defineProps<Props>();
 const emit = defineEmits<{
     'update:open': [value: boolean];
     saved: [avatarUrl: string];
@@ -36,6 +36,7 @@ async function save() {
     canvas.toBlob(async (blob) => {
         if (!blob) {
             saving.value = false;
+
             return;
         }
 

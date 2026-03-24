@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { Activity, CheckCircle2, CreditCard, Key, LayoutGrid, Mail, Palette, Send, ShieldCheck, Ticket, XCircle } from 'lucide-vue-next';
+import { Activity, CheckCircle2, CreditCard, Key, Palette, Send, Ticket, XCircle } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import {
@@ -13,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
 import { index as adminUsersIndex, updateRole as adminUsersUpdateRole } from '@/routes/admin/users';
 
 interface Role { name: string }
@@ -83,7 +83,10 @@ function initials(name: string): string {
 }
 
 function formatDate(d: string | null): string {
-    if (!d) { return '—'; }
+    if (!d) {
+ return '—'; 
+}
+
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
