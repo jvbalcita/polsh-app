@@ -18,7 +18,6 @@ class GenerateSitemap extends Command
 
         $urls = [
             ['loc' => $baseUrl.'/', 'changefreq' => 'weekly', 'priority' => '1.0', 'lastmod' => $now],
-            ['loc' => $baseUrl.'/changelog', 'changefreq' => 'weekly', 'priority' => '0.6', 'lastmod' => $now],
             ['loc' => $baseUrl.'/docs/api', 'changefreq' => 'monthly', 'priority' => '0.5', 'lastmod' => $now],
             ['loc' => $baseUrl.'/terms-of-service', 'changefreq' => 'monthly', 'priority' => '0.3', 'lastmod' => $now],
             ['loc' => $baseUrl.'/privacy-policy', 'changefreq' => 'monthly', 'priority' => '0.3', 'lastmod' => $now],
