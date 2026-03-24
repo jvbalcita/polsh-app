@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import PublicLayout from '@/layouts/PublicLayout.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import SettingsLayout from '@/layouts/settings/Layout.vue';
 
 const props = defineProps<{
     ticket: {
@@ -21,12 +21,26 @@ const props = defineProps<{
     };
 }>();
 
-const isClosed = props.ticket.status === 'closed';
+const statusConfig: Record<string, { label: string; color: string }> = {
+    open: { label: 'Open', color: '#8a8a9a' },
+    in_progress: { label: 'In Progress', color: '#e0ff4f' },
+    resolved: { label: 'Resolved', color: '#4fff8a' },
+    closed: { label: 'Closed', color: '#4a4a5a' },
+};
 
+const typeLabels: Record<string, string> = {
+    bug_report: 'Bug Report',
+    feature_request: 'Feature Request',
+    assistance: 'Assistance',
+    refund_request: 'Refund Request',
+};
+
+const isClosed = props.ticket.status === 'closed';
 const form = useForm({ message: '' });
 
 function submitReply() {
     form.post(`/support/tickets/${props.ticket.id}/reply`, {
+        preserveScroll: true,
         onSuccess: () => form.reset(),
     });
 }
@@ -34,85 +48,127 @@ function submitReply() {
 
 <template>
     <Head :title="`${ticket.subject} — Support`" />
-    <PublicLayout>
-        <div class="show-page">
-            <!-- Ticket header -->
-            <div class="ticket-header">
-                <div class="ticket-meta">
-                    <span class="ticket-ref">#POLSH-{{ ticket.id }}</span>
-                    <span class="ticket-status" :class="`status--${ticket.status}`">
-                        {{ ticket.status.replace('_', ' ') }}
+    <SettingsLayout>
+        <div class="space-y-6">
+            <!-- Back + header -->
+            <div>
+                <Link href="/support/tickets" class="back-link">← All requests</Link>
+                <div class="flex items-center gap-3 mt-3 mb-1">
+                    <span class="font-mono text-xs text-[#e0ff4f]">#POLSH-{{ ticket.id }}</span>
+                    <span class="font-mono text-xs text-muted-foreground bg-muted/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                        {{ typeLabels[ticket.type] ?? ticket.type }}
+                    </span>
+                    <span
+                        class="ml-auto font-mono text-xs px-2 py-0.5 rounded border"
+                        :style="{ color: statusConfig[ticket.status]?.color, borderColor: statusConfig[ticket.status]?.color }"
+                    >
+                        {{ statusConfig[ticket.status]?.label ?? ticket.status }}
                     </span>
                 </div>
-                <h1 class="ticket-subject">{{ ticket.subject }}</h1>
-                <p class="ticket-desc">{{ ticket.description }}</p>
+                <h1 class="text-lg font-semibold tracking-tight">{{ ticket.subject }}</h1>
+                <p class="text-xs text-muted-foreground mt-1">
+                    Submitted {{ new Date(ticket.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) }}
+                </p>
+            </div>
+
+            <!-- Original description -->
+            <div class="rounded-lg border border-sidebar-border bg-sidebar p-4">
+                <p class="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3">Your request</p>
+                <p class="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{{ ticket.description }}</p>
             </div>
 
             <!-- Reply thread -->
-            <div v-if="ticket.replies.length > 0" class="reply-thread">
+            <div v-if="ticket.replies.length > 0" class="rounded-lg border border-sidebar-border overflow-hidden">
                 <div
                     v-for="reply in ticket.replies"
                     :key="reply.id"
-                    class="reply"
-                    :class="{ 'reply--staff': reply.is_staff_reply }"
+                    class="p-4 border-b border-sidebar-border last:border-0"
+                    :class="reply.is_staff_reply ? 'border-l-2 border-l-[rgba(224,255,79,0.4)] bg-[rgba(224,255,79,0.02)]' : 'bg-sidebar'"
                 >
-                    <div class="reply-header">
-                        <span class="reply-author">
-                            {{ reply.is_staff_reply ? 'Polsh Support' : (reply.author?.name ?? 'You') }}
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-mono text-xs font-medium">
+                            {{ reply.is_staff_reply ? 'Polsh Support' : 'You' }}
                         </span>
-                        <span class="reply-date">{{ new Date(reply.created_at).toLocaleDateString() }}</span>
+                        <span class="text-xs text-muted-foreground">
+                            {{ new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+                        </span>
                     </div>
-                    <p class="reply-message">{{ reply.message }}</p>
+                    <p class="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{{ reply.message }}</p>
                 </div>
             </div>
 
-            <!-- Reply form -->
-            <div class="reply-form-wrap">
-                <div v-if="isClosed" class="closed-note">
-                    This ticket is closed. Open a new request if you need further help.
-                </div>
-                <form v-else class="reply-form" @submit.prevent="submitReply">
-                    <textarea
-                        v-model="form.message"
-                        class="reply-textarea"
-                        rows="4"
-                        placeholder="Write a reply..."
-                        required
-                    />
-                    <p v-if="form.errors.message" class="field-error">{{ form.errors.message }}</p>
-                    <button type="submit" class="reply-btn" :disabled="form.processing">
-                        {{ form.processing ? 'Sending...' : 'Send reply' }}
+            <!-- Reply form / closed notice -->
+            <div v-if="isClosed" class="rounded-lg border border-sidebar-border bg-sidebar p-4 text-sm text-muted-foreground">
+                This ticket is closed. <Link href="/support" class="underline underline-offset-4 hover:text-foreground transition-colors">Open a new request</Link> if you need further help.
+            </div>
+            <div v-else class="space-y-3">
+                <p class="text-xs font-mono text-muted-foreground uppercase tracking-widest">Add a reply</p>
+                <textarea
+                    v-model="form.message"
+                    class="reply-textarea"
+                    rows="5"
+                    placeholder="Write a reply..."
+                />
+                <p v-if="form.errors.message" class="text-xs text-destructive">{{ form.errors.message }}</p>
+                <div>
+                    <button class="reply-btn" :disabled="form.processing" @click.prevent="submitReply">
+                        {{ form.processing ? 'Sending…' : 'Send reply' }}
                     </button>
-                </form>
+                </div>
             </div>
         </div>
-    </PublicLayout>
+    </SettingsLayout>
 </template>
 
 <style scoped>
-.show-page { max-width: 48rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; display: flex; flex-direction: column; gap: 2rem; }
-.ticket-header { border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.5rem; background: #111114; }
-.ticket-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.875rem; }
-.ticket-ref { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #e0ff4f; }
-.ticket-status { font-family: 'DM Mono', monospace; font-size: 0.75rem; text-transform: capitalize; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.05); color: #8a8a9a; }
-.status--open { color: #8a8a9a; }
-.status--in_progress { color: #e0ff4f; }
-.status--resolved { color: #4fff8a; }
-.status--closed { color: #4a4a5a; }
-.ticket-subject { font-family: 'DM Sans', sans-serif; font-size: 1.25rem; font-weight: 600; color: #f0f0f2; letter-spacing: -0.025em; margin: 0 0 0.75rem; }
-.ticket-desc { font-family: 'DM Sans', sans-serif; font-size: 0.9375rem; color: #8a8a9a; line-height: 1.65; margin: 0; white-space: pre-wrap; }
-.reply-thread { display: flex; flex-direction: column; gap: 1px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
-.reply { padding: 1.25rem 1.5rem; background: #111114; }
-.reply--staff { border-left: 3px solid rgba(224,255,79,0.4); background: rgba(224,255,79,0.02); }
-.reply-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.625rem; }
-.reply-author { font-family: 'DM Mono', monospace; font-size: 0.8125rem; color: #f0f0f2; }
-.reply-date { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #4a4a5a; }
-.reply-message { font-family: 'DM Sans', sans-serif; font-size: 0.9375rem; color: #8a8a9a; line-height: 1.65; margin: 0; white-space: pre-wrap; }
-.closed-note { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: #6a6a7a; padding: 1rem 1.25rem; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; background: #111114; }
-.reply-form { display: flex; flex-direction: column; gap: 0.75rem; }
-.reply-textarea { background: #111114; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem 1rem; color: #f0f0f2; font-family: 'DM Sans', sans-serif; font-size: 0.9375rem; outline: none; resize: vertical; width: 100%; box-sizing: border-box; }
-.reply-textarea:focus { border-color: rgba(224,255,79,0.4); }
-.field-error { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #ff6b6b; margin: 0; }
-.reply-btn { font-family: 'DM Mono', monospace; font-size: 0.8125rem; background: #e0ff4f; color: #0a0a0c; padding: 0.625rem 1.25rem; border-radius: 7px; border: none; cursor: pointer; align-self: flex-start; }
-.reply-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.back-link {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.back-link:hover {
+    color: var(--foreground);
+}
+
+.reply-textarea {
+    width: 100%;
+    background: var(--sidebar-background);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--foreground);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9375rem;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+}
+
+.reply-textarea:focus {
+    border-color: rgba(224, 255, 79, 0.4);
+}
+
+.reply-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
+    background: #e0ff4f;
+    color: #0a0a0c;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.reply-btn:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.reply-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 </style>

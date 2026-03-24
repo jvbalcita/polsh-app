@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import PublicLayout from '@/layouts/PublicLayout.vue';
+import SettingsLayout from '@/layouts/settings/Layout.vue';
 
 defineProps<{
     tickets: Array<{
@@ -12,67 +12,127 @@ defineProps<{
     }>;
 }>();
 
-const statusColors: Record<string, string> = {
-    open: '#6a6a7a',
-    in_progress: '#e0ff4f',
-    resolved: '#4fff8a',
-    closed: '#3a3a4a',
+const statusConfig: Record<string, { label: string; color: string }> = {
+    open: { label: 'Open', color: '#8a8a9a' },
+    in_progress: { label: 'In Progress', color: '#e0ff4f' },
+    resolved: { label: 'Resolved', color: '#4fff8a' },
+    closed: { label: 'Closed', color: '#4a4a5a' },
 };
 
 const typeLabels: Record<string, string> = {
     bug_report: 'Bug Report',
     feature_request: 'Feature Request',
     assistance: 'Assistance',
-    refund_request: 'Refund',
+    refund_request: 'Refund Request',
 };
 </script>
 
 <template>
-    <Head title="My Support Tickets" />
-    <PublicLayout>
-        <div class="tickets-page">
-            <div class="tickets-header">
-                <h1 class="tickets-title">My Support Tickets</h1>
-                <Link href="/support" class="new-ticket-btn">New request</Link>
+    <Head title="Support — Polsh" />
+    <SettingsLayout>
+        <div class="space-y-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-semibold tracking-tight">Support Requests</h1>
+                    <p class="text-sm text-muted-foreground mt-1">
+                        View your submitted requests. We typically respond within 1–2 business days.
+                    </p>
+                </div>
+                <Link href="/support" class="new-btn">New request</Link>
             </div>
 
+            <!-- Empty state -->
             <div v-if="tickets.length === 0" class="empty-state">
-                <p class="empty-text">No support requests yet.</p>
-                <Link href="/support" class="new-ticket-btn">Submit a request</Link>
+                <p class="text-sm text-muted-foreground">No support requests yet.</p>
+                <Link href="/support" class="new-btn mt-3">Submit a request</Link>
             </div>
 
-            <div v-else class="tickets-list">
-                <Link
-                    v-for="ticket in tickets"
-                    :key="ticket.id"
-                    :href="`/support/tickets/${ticket.id}`"
-                    class="ticket-row"
-                >
-                    <span class="ticket-type">{{ typeLabels[ticket.type] ?? ticket.type }}</span>
-                    <span class="ticket-subject">{{ ticket.subject }}</span>
-                    <span class="ticket-status" :style="{ color: statusColors[ticket.status] }">
-                        {{ ticket.status.replace('_', ' ') }}
-                    </span>
-                    <span class="ticket-date">{{ new Date(ticket.created_at).toLocaleDateString() }}</span>
-                </Link>
+            <!-- Ticket table -->
+            <div v-else class="rounded-lg border border-sidebar-border overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-sidebar-border bg-sidebar">
+                            <th class="th">Type</th>
+                            <th class="th">Subject</th>
+                            <th class="th">Status</th>
+                            <th class="th">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="ticket in tickets"
+                            :key="ticket.id"
+                            class="border-b border-sidebar-border last:border-0 transition-colors"
+                        >
+                            <td class="td text-muted-foreground font-mono text-xs uppercase tracking-wider">
+                                {{ typeLabels[ticket.type] ?? ticket.type }}
+                            </td>
+                            <td class="td">
+                                <Link
+                                    :href="`/support/tickets/${ticket.id}`"
+                                    class="font-medium hover:underline underline-offset-4"
+                                >
+                                    {{ ticket.subject }}
+                                </Link>
+                            </td>
+                            <td class="td">
+                                <span
+                                    class="inline-block font-mono text-xs px-2 py-0.5 rounded border"
+                                    :style="{ color: statusConfig[ticket.status]?.color, borderColor: statusConfig[ticket.status]?.color }"
+                                >
+                                    {{ statusConfig[ticket.status]?.label ?? ticket.status }}
+                                </span>
+                            </td>
+                            <td class="td text-muted-foreground text-xs">
+                                {{ new Date(ticket.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </PublicLayout>
+    </SettingsLayout>
 </template>
 
 <style scoped>
-.tickets-page { max-width: 56rem; margin: 0 auto; padding: 2rem 1.5rem; }
-.tickets-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
-.tickets-title { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 600; color: #f0f0f2; letter-spacing: -0.025em; margin: 0; }
-.new-ticket-btn { font-family: 'DM Mono', monospace; font-size: 0.8125rem; background: #e0ff4f; color: #0a0a0c; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; }
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 4rem 0; }
-.empty-text { font-family: 'DM Sans', sans-serif; color: #6a6a7a; margin: 0; }
-.tickets-list { display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
-.ticket-row { display: grid; grid-template-columns: 130px 1fr 110px 100px; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: #111114; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; transition: background 0.1s ease; }
-.ticket-row:last-child { border-bottom: none; }
-.ticket-row:hover { background: #141417; }
-.ticket-type { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: #6a6a7a; text-transform: uppercase; letter-spacing: 0.06em; }
-.ticket-subject { font-family: 'DM Sans', sans-serif; font-size: 0.9375rem; color: #f0f0f2; }
-.ticket-status { font-family: 'DM Mono', monospace; font-size: 0.75rem; text-transform: capitalize; text-align: right; }
-.ticket-date { font-family: 'DM Sans', sans-serif; font-size: 0.8125rem; color: #4a4a5a; text-align: right; }
+.th {
+    padding: 0.5rem 1rem;
+    text-align: left;
+    font-size: 0.6875rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+}
+
+.td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+.new-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8125rem;
+    background: #e0ff4f;
+    color: #0a0a0c;
+    padding: 0.4375rem 0.875rem;
+    border-radius: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 0.15s ease;
+    display: inline-block;
+}
+
+.new-btn:hover {
+    opacity: 0.88;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 0;
+}
 </style>

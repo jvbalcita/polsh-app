@@ -25,7 +25,7 @@ const sidebarNavItems: NavItem[] = [
     },
     {
         title: 'Support',
-        href: '/support',
+        href: '/support/tickets',
     },
 ];
 
