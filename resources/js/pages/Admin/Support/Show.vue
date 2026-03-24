@@ -188,12 +188,12 @@ function attachmentName(path: string) {
 
                     <div class="flex flex-col gap-1.5">
                         <label class="text-sm text-muted-foreground">Assigned to</label>
-                        <Select :model-value="statusForm.assigned_admin_id?.toString() ?? ''" @update:model-value="(v) => statusForm.assigned_admin_id = v ? parseInt(v) : null">
+                        <Select :model-value="statusForm.assigned_admin_id?.toString() ?? 'none'" @update:model-value="(v) => statusForm.assigned_admin_id = v !== 'none' ? parseInt(v) : null">
                             <SelectTrigger class="w-full">
                                 <SelectValue placeholder="Unassigned" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Unassigned</SelectItem>
+                                <SelectItem value="none">Unassigned</SelectItem>
                                 <SelectItem v-for="admin in admins" :key="admin.id" :value="admin.id.toString()">
                                     {{ admin.name }}
                                 </SelectItem>

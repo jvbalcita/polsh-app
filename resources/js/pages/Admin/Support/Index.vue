@@ -36,13 +36,13 @@ const props = defineProps<{
     filters: { status?: string; type?: string; assigned?: string };
 }>();
 
-const statusFilter = ref(props.filters.status ?? '');
-const typeFilter = ref(props.filters.type ?? '');
+const statusFilter = ref(props.filters.status ?? 'all');
+const typeFilter = ref(props.filters.type ?? 'all');
 
 function applyFilters() {
     router.get('/admin/support', {
-        status: statusFilter.value || undefined,
-        type: typeFilter.value || undefined,
+        status: statusFilter.value !== 'all' ? statusFilter.value : undefined,
+        type: typeFilter.value !== 'all' ? typeFilter.value : undefined,
     }, { preserveState: true, replace: true });
 }
 
@@ -77,7 +77,7 @@ const typeLabels: Record<string, string> = {
                             <SelectValue placeholder="All statuses" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All statuses</SelectItem>
+                            <SelectItem value="all">All statuses</SelectItem>
                             <SelectItem value="open">Open</SelectItem>
                             <SelectItem value="in_progress">In Progress</SelectItem>
                             <SelectItem value="resolved">Resolved</SelectItem>
@@ -90,7 +90,7 @@ const typeLabels: Record<string, string> = {
                             <SelectValue placeholder="All types" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All types</SelectItem>
+                            <SelectItem value="all">All types</SelectItem>
                             <SelectItem value="bug_report">Bug Report</SelectItem>
                             <SelectItem value="feature_request">Feature Request</SelectItem>
                             <SelectItem value="assistance">Assistance</SelectItem>

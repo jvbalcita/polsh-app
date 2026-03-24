@@ -159,7 +159,6 @@ function submitterName(ticket: typeof props.recentTickets[number]): string {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    max-width: 72rem;
 }
 
 .admin-header {
