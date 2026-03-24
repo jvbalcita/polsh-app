@@ -63,7 +63,9 @@ useFlashToast();
             </div>
         </footer>
     </div>
-    <Toaster rich-colors position="bottom-right" />
+    <Teleport to="body">
+        <Toaster rich-colors position="bottom-right" />
+    </Teleport>
 </template>
 
 <style scoped>

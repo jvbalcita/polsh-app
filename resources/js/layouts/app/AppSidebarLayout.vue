@@ -26,5 +26,7 @@ withDefaults(defineProps<Props>(), {
             <slot />
         </AppContent>
     </AppShell>
-    <Toaster rich-colors position="bottom-right" />
+    <Teleport to="body">
+        <Toaster rich-colors position="bottom-right" />
+    </Teleport>
 </template>

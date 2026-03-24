@@ -8,7 +8,11 @@ import { editor } from '@/routes';
 import { edit as editBilling } from '@/routes/billing';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { Toaster } from '@/components/ui/sonner';
+import { useFlashToast } from '@/composables/useFlashToast';
 import type { NavItem } from '@/types';
+
+useFlashToast();
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -127,4 +131,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
             </main>
         </div>
     </div>
+    <Teleport to="body">
+        <Toaster rich-colors position="bottom-right" />
+    </Teleport>
 </template>
