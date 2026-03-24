@@ -3,6 +3,7 @@
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\GithubAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EditorController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\LegalController;
@@ -44,8 +45,8 @@ Route::middleware('auth')->group(function () {
 // Export history page
 Route::get('history', HistoryController::class)->middleware('auth')->name('history');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('dashboard/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
     Route::post('dashboard/api-keys', [ApiKeyController::class, 'store'])->name('api-keys.store');

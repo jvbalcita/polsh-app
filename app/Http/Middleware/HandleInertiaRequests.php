@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
             'email' => $user->email,
             'avatar' => $user->avatar_url,
             'email_verified_at' => $user->email_verified_at?->toJSON(),
+            'isAdmin' => $user->hasRole('admin'),
         ] : null;
 
         return [
