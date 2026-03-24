@@ -24,6 +24,47 @@ const types = [
     { value: 'refund_request', label: 'Refund Request', icon: '💳', desc: 'Request a refund for your subscription' },
 ];
 
+const subjectTemplates: Record<string, string> = {
+    bug_report: 'Bug Report: [Brief description of the issue]',
+    feature_request: 'Feature Request: [Brief description of the feature]',
+    assistance: 'Help needed with [topic]',
+    refund_request: 'Refund Request – Pro Subscription',
+};
+
+const descriptionTemplates: Record<string, string> = {
+    bug_report: `**What happened?**
+[Describe what went wrong]
+
+**Steps to reproduce:**
+1.
+2.
+3.
+
+**Expected behavior:**
+[What did you expect to happen?]
+
+**Browser / device:**
+[e.g. Chrome on macOS]`,
+    feature_request: `**What would you like to see?**
+[Describe the feature or improvement]
+
+**Why would this be useful?**
+[Explain the problem it solves or the value it adds]
+
+**Any examples or references?**
+[Links, screenshots, or other tools that do something similar]`,
+    assistance: `**What do you need help with?**
+[Describe your question or situation]
+
+**What have you already tried?**
+[Optional — any steps you've taken so far]`,
+    refund_request: `**Reason for refund request:**
+[Explain why you are requesting a refund]
+
+**Additional context:**
+[Any other information that may be relevant]`,
+};
+
 const form = useForm({
     type: '' as string,
     subject: '',
@@ -36,14 +77,36 @@ const form = useForm({
 const submitted = ref(false);
 const ticketRef = ref('');
 const attachmentInput = ref<HTMLInputElement | null>(null);
+const subjectUserEdited = ref(false);
+const descriptionUserEdited = ref(false);
 
 const isRefund = computed(() => form.type === 'refund_request');
 
 function selectType(value: string) {
+    const previousTemplate = form.type ? subjectTemplates[form.type] : null;
     form.type = value;
-    if (value === 'refund_request' && !form.subject) {
-        form.subject = 'Refund Request – Pro Subscription';
+
+    // Apply subject template unless user has written custom content
+    if (!subjectUserEdited.value || form.subject === previousTemplate || !form.subject) {
+        form.subject = subjectTemplates[value] ?? '';
+        subjectUserEdited.value = false;
     }
+
+    // Apply description template unless user has written custom content
+    if (!descriptionUserEdited.value || form.description === (form.type ? descriptionTemplates[form.type] : null) || !form.description) {
+        form.description = descriptionTemplates[value] ?? '';
+        descriptionUserEdited.value = false;
+    }
+}
+
+function onSubjectInput() {
+    const currentTemplate = form.type ? subjectTemplates[form.type] : null;
+    subjectUserEdited.value = form.subject !== currentTemplate;
+}
+
+function onDescriptionInput() {
+    const currentTemplate = form.type ? descriptionTemplates[form.type] : null;
+    descriptionUserEdited.value = form.description !== currentTemplate;
 }
 
 function onFileChange(e: Event) {
@@ -182,6 +245,7 @@ function formatDate(iso: string) {
                             :class="['field-input', { 'field-input--error': form.errors.subject }]"
                             type="text"
                             placeholder="Brief summary of your request"
+                            @input="onSubjectInput"
                         />
                         <p v-if="form.errors.subject" class="field-error">{{ form.errors.subject }}</p>
                     </div>
@@ -193,8 +257,9 @@ function formatDate(iso: string) {
                             id="description"
                             v-model="form.description"
                             :class="['field-textarea', { 'field-input--error': form.errors.description }]"
-                            rows="6"
+                            rows="9"
                             placeholder="Please provide as much detail as possible..."
+                            @input="onDescriptionInput"
                         />
                         <p v-if="form.errors.description" class="field-error">{{ form.errors.description }}</p>
                     </div>

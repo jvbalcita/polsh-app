@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 
 defineProps<{
     tickets: Array<{
@@ -29,7 +29,7 @@ const typeLabels: Record<string, string> = {
 
 <template>
     <Head title="My Support Tickets" />
-    <AppLayout>
+    <PublicLayout>
         <div class="tickets-page">
             <div class="tickets-header">
                 <h1 class="tickets-title">My Support Tickets</h1>
@@ -57,7 +57,7 @@ const typeLabels: Record<string, string> = {
                 </Link>
             </div>
         </div>
-    </AppLayout>
+    </PublicLayout>
 </template>
 
 <style scoped>

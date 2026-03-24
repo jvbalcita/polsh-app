@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 
 const props = defineProps<{
     ticket: {
@@ -34,7 +34,7 @@ function submitReply() {
 
 <template>
     <Head :title="`${ticket.subject} — Support`" />
-    <AppLayout>
+    <PublicLayout>
         <div class="show-page">
             <!-- Ticket header -->
             <div class="ticket-header">
@@ -86,7 +86,7 @@ function submitReply() {
                 </form>
             </div>
         </div>
-    </AppLayout>
+    </PublicLayout>
 </template>
 
 <style scoped>

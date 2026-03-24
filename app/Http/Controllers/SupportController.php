@@ -57,7 +57,7 @@ class SupportController extends Controller
         User::role('admin')->each(fn (User $admin) => $admin->notify(new SupportTicketReceived($ticket)));
 
         if ($user) {
-            return redirect()->route('support.tickets.show', $ticket)
+            return redirect()->route('support.tickets.index')
                 ->with('success', "Request submitted — {$ticket->reference()}");
         }
 
