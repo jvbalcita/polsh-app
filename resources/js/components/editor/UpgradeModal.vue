@@ -34,35 +34,28 @@ watch(
     },
 );
 
-function checkout(plan: string) {
+async function checkout(plan: string): Promise<void> {
     checkoutLoading.value = true;
 
-    // Use a native form POST so the server's redirect to PayMongo is followed
-    // as a full page navigation. Inertia's XHR cannot follow cross-origin redirects.
-    // Read the plaintext CSRF token from the meta tag (not the XSRF-TOKEN cookie,
-    // which contains the encrypted token and is only valid via X-XSRF-TOKEN header).
-    const token =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? '';
+    try {
+        const token =
+            document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+                ?.content ?? '';
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = billing.checkout.url();
+        const response = await fetch(billing.checkout.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
+            body: JSON.stringify({ plan }),
+        });
 
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = '_token';
-    csrfInput.value = token;
-    form.appendChild(csrfInput);
-
-    const planInput = document.createElement('input');
-    planInput.type = 'hidden';
-    planInput.name = 'plan';
-    planInput.value = plan;
-    form.appendChild(planInput);
-
-    document.body.appendChild(form);
-    form.submit();
+        const { url } = await response.json();
+        (window as any).LemonSqueezy.Url.Open(url);
+    } finally {
+        checkoutLoading.value = false;
+    }
 }
 </script>
 
@@ -104,7 +97,7 @@ function checkout(plan: string) {
                     >
                         <p class="text-xs text-[#888]">Monthly</p>
                         <p class="mt-0.5 text-lg font-bold">
-                            ₱399<span class="text-xs font-normal text-[#888]"
+                            $5<span class="text-xs font-normal text-[#888]"
                                 >/mo</span
                             >
                         </p>
@@ -115,10 +108,10 @@ function checkout(plan: string) {
                         @click="checkout('pro_yearly')"
                     >
                         <p class="text-xs text-[#888]">
-                            Yearly <span class="text-[#e0ff4f]">-17%</span>
+                            Yearly <span class="text-[#e0ff4f]">-18%</span>
                         </p>
                         <p class="mt-0.5 text-lg font-bold">
-                            ₱3,990<span class="text-xs font-normal text-[#888]"
+                            $49<span class="text-xs font-normal text-[#888]"
                                 >/yr</span
                             >
                         </p>
@@ -126,7 +119,7 @@ function checkout(plan: string) {
                 </div>
 
                 <p class="text-center text-xs text-[#555]">
-                    GCash · Maya · Visa · Mastercard
+                    Visa · Mastercard · PayPal · Secure via Lemon Squeezy
                 </p>
             </div>
         </DialogContent>

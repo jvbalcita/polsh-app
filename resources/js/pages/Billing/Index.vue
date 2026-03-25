@@ -13,29 +13,30 @@ import { editor } from '@/routes';
 import billing from '@/routes/billing';
 
 interface Subscription {
-    id: number;
     plan: 'pro_monthly' | 'pro_yearly';
     status: string;
-    current_period_end: string;
-    cancelled_at: string | null;
+    renews_at: string | null;
+    ends_at: string | null;
+    on_grace_period: boolean;
 }
 
 const props = defineProps<{
     subscription: Subscription | null;
     isPro: boolean;
+    portalUrl: string | null;
 }>();
 
-// State A — free (no sub)  State B — active  State C — cancelled but paid  State D — expired (same as A)
+// State A — free (no sub)  State B — active  State C — cancelled (grace period)
 const billingState = computed<'free' | 'active' | 'cancelled'>(() => {
     if (!props.subscription) {
-return 'free';
-}
+        return 'free';
+    }
 
-    if (props.subscription.status === 'active') {
-return 'active';
-}
+    if (props.subscription.on_grace_period) {
+        return 'cancelled';
+    }
 
-    return 'cancelled';
+    return 'active';
 });
 
 const cycle = ref<'monthly' | 'yearly'>('yearly');
@@ -51,36 +52,29 @@ function trackEvent(name: string): void {
     }
 }
 
-function checkout(plan: string): void {
+async function checkout(plan: string): Promise<void> {
     trackEvent('billing_checkout_started');
     checkoutLoading.value = true;
 
-    // Use a native form POST so the server's redirect to PayMongo is followed
-    // as a full page navigation. Inertia's XHR cannot follow cross-origin redirects.
-    // Read the plaintext CSRF token from the meta tag (not the XSRF-TOKEN cookie,
-    // which contains the encrypted token and is only valid via X-XSRF-TOKEN header).
-    const token =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? '';
+    try {
+        const token =
+            document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+                ?.content ?? '';
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = billing.checkout.url();
+        const response = await fetch(billing.checkout.url(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
+            body: JSON.stringify({ plan }),
+        });
 
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = '_token';
-    csrfInput.value = token;
-    form.appendChild(csrfInput);
-
-    const planInput = document.createElement('input');
-    planInput.type = 'hidden';
-    planInput.name = 'plan';
-    planInput.value = plan;
-    form.appendChild(planInput);
-
-    document.body.appendChild(form);
-    form.submit();
+        const { url } = await response.json();
+        (window as any).LemonSqueezy.Url.Open(url);
+    } finally {
+        checkoutLoading.value = false;
+    }
 }
 
 function checkoutSelected(): void {
@@ -100,7 +94,7 @@ function confirmReactivate(): void {
 }
 
 function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('en-PH', {
+    return new Date(dateStr).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -157,18 +151,27 @@ const PRO_FEATURES = [
                         </p>
                         <p class="current-plan-renew">
                             Renews on
-                            {{ formatDate(props.subscription!.current_period_end) }}
+                            {{ formatDate(props.subscription!.renews_at!) }}
                         </p>
                     </div>
                     <span class="plan-active-badge">Active</span>
                 </div>
-                <button
-                    type="button"
-                    class="cancel-link"
-                    @click="showCancelDialog = true"
-                >
-                    Cancel subscription
-                </button>
+                <div class="subscription-actions">
+                    <a
+                        v-if="portalUrl"
+                        :href="portalUrl"
+                        class="manage-link"
+                        target="_blank"
+                        rel="noopener"
+                    >Manage billing →</a>
+                    <button
+                        type="button"
+                        class="cancel-link"
+                        @click="showCancelDialog = true"
+                    >
+                        Cancel subscription
+                    </button>
+                </div>
             </div>
 
             <!-- Switch to yearly — only for active monthly subscribers -->
@@ -181,9 +184,9 @@ const PRO_FEATURES = [
                         <p class="switch-yearly-eyebrow">Save more</p>
                         <p class="switch-yearly-title">Switch to Yearly</p>
                         <p class="switch-yearly-desc">
-                            ₱3,990/yr · save ₱798 vs monthly. Your current
-                            monthly plan continues until
-                            {{ formatDate(props.subscription!.current_period_end) }},
+                            $49/yr · save $11 vs monthly. Your current monthly
+                            plan continues until
+                            {{ formatDate(props.subscription!.renews_at!) }},
                             then your yearly plan takes over.
                         </p>
                     </div>
@@ -194,7 +197,7 @@ const PRO_FEATURES = [
                         @click="checkout('pro_yearly')"
                     >
                         {{
-                            checkoutLoading ? 'Redirecting…' : 'Switch — ₱3,990'
+                            checkoutLoading ? 'Loading…' : 'Switch — $49/yr'
                         }}
                     </button>
                 </div>
@@ -215,7 +218,7 @@ const PRO_FEATURES = [
                         </p>
                         <p class="current-plan-renew">
                             Pro access ends on
-                            {{ formatDate(props.subscription!.current_period_end) }}
+                            {{ formatDate(props.subscription!.ends_at!) }}
                         </p>
                     </div>
                     <span class="plan-active-badge plan-active-badge--cancelled"
@@ -252,7 +255,7 @@ const PRO_FEATURES = [
                         @click="cycle = 'yearly'"
                     >
                         Yearly
-                        <span class="save-pill">Save 17%</span>
+                        <span class="save-pill">Save 18%</span>
                     </button>
                 </div>
             </div>
@@ -263,7 +266,7 @@ const PRO_FEATURES = [
                 <div class="plan-card">
                     <div class="plan-tier">Free</div>
                     <div class="plan-price">
-                        <span class="price-currency">₱</span>
+                        <span class="price-currency">$</span>
                         <span class="price-amount">0</span>
                         <span class="price-period">/mo</span>
                     </div>
@@ -306,9 +309,9 @@ const PRO_FEATURES = [
                 <div class="plan-card plan-card--pro">
                     <div class="plan-tier">Pro</div>
                     <div class="plan-price">
-                        <span class="price-currency">₱</span>
+                        <span class="price-currency">$</span>
                         <span class="price-amount">{{
-                            cycle === 'monthly' ? '399' : '3,990'
+                            cycle === 'monthly' ? '5' : '49'
                         }}</span>
                         <span class="price-period">{{
                             cycle === 'monthly' ? '/mo' : '/yr'
@@ -318,7 +321,7 @@ const PRO_FEATURES = [
                         {{
                             cycle === 'monthly'
                                 ? 'Full access, billed monthly.'
-                                : '₱332/mo · best value, billed yearly.'
+                                : '$4.08/mo · best value, billed yearly.'
                         }}
                     </p>
 
@@ -341,7 +344,7 @@ const PRO_FEATURES = [
                             :disabled="checkoutLoading"
                             @click="checkoutSelected"
                         >
-                            {{ checkoutLoading ? 'Redirecting…' : 'Get Pro' }}
+                            {{ checkoutLoading ? 'Loading…' : 'Get Pro' }}
                         </button>
                         <div
                             v-else
@@ -358,9 +361,8 @@ const PRO_FEATURES = [
                 <span class="payment-label">Pay with</span>
                 <span class="payment-pill">Visa</span>
                 <span class="payment-pill">Mastercard</span>
-                <span class="payment-pill">GCash</span>
-                <span class="payment-pill">Maya</span>
-                <span class="payment-powered">· Secure payments</span>
+                <span class="payment-pill">PayPal</span>
+                <span class="payment-powered">· Secure payments via Lemon Squeezy</span>
             </div>
             <p class="trust-line">No contracts. Cancel anytime.</p>
         </div>
@@ -516,8 +518,27 @@ const PRO_FEATURES = [
     border-color: rgba(255, 79, 79, 0.2);
 }
 
-.cancel-link {
+.subscription-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
     margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.manage-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #8a8a9a;
+    text-decoration: none;
+    transition: color 150ms ease;
+}
+
+.manage-link:hover {
+    color: #f0f0f2;
+}
+
+.cancel-link {
     background: transparent;
     border: none;
     font-family: 'DM Sans', sans-serif;

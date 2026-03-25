@@ -4,10 +4,10 @@
 
 @section('content')
     <h1 class="title">Payment failed</h1>
-    <p class="text">Hi {{ $subscription->user->name }},</p>
+    <p class="text">Hi {{ $user->name }},</p>
     <p class="text">
         We were unable to process your payment for
-        <span class="highlight">Polsh Pro {{ $subscription->plan === 'pro_yearly' ? 'Yearly' : 'Monthly' }}</span>.
+        <span class="highlight">Polsh Pro</span>.
         Your subscription has been paused.
     </p>
     <p class="text">

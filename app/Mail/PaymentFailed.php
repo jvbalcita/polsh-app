@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -13,7 +13,7 @@ class PaymentFailed extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public readonly Subscription $subscription) {}
+    public function __construct(public readonly User $user) {}
 
     public function envelope(): Envelope
     {
