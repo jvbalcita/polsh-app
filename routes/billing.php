@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/billing', [BillingController::class, 'portal'])->name('billing.portal');
     Route::post('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
-    Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('/billing/portal', [BillingController::class, 'redirectPortal'])->name('billing.redirect-portal');
     Route::post('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
     Route::post('/billing/reactivate', [BillingController::class, 'reactivate'])->name('billing.reactivate');
 });
 
-// Webhook — signature verified in controller; CSRF excluded in bootstrap/app.php
-Route::post('/paymongo/webhook', [BillingController::class, 'webhook'])->name('paymongo.webhook');
+// Webhook — signature verified by the package; CSRF excluded in bootstrap/app.php
+// The package auto-registers POST /lemon-squeezy/webhook via LemonSqueezyServiceProvider

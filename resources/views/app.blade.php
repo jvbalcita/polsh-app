@@ -44,6 +44,9 @@
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
 
+        {{-- Lemon Squeezy checkout overlay --}}
+        <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
+
         {{-- Analytics --}}
         <script defer data-domain="polsh.work" src="https://plausible.io/js/script.tagged-events.js"></script>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4EHL40Q38"></script>

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use LemonSqueezy\Laravel\Billable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
@@ -18,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, InteractsWithMedia, Notifiable, TwoFactorAuthenticatable;
+    use Billable, HasFactory, HasRoles, InteractsWithMedia, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that should be hidden for serialization.
@@ -52,16 +53,6 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(Preset::class);
     }
 
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(Subscription::class);
-    }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class);
-    }
-
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class)
@@ -84,32 +75,20 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             return true;
         }
 
-        return $this->subscriptions()
-            ->whereIn('status', ['active', 'cancelled'])
-            ->where('current_period_end', '>', now())
-            ->exists();
+        return $this->subscription()?->valid() ?? false;
     }
 
-    public function subscriptionEndsAt(): ?Carbon
+    public function subscriptionEndsAt(): ?CarbonInterface
     {
-        return $this->subscriptions()
-            ->whereIn('status', ['active', 'cancelled'])
-            ->where('current_period_end', '>', now())
-            ->value('current_period_end');
-    }
+        $subscription = $this->subscription();
 
-    public function cancelSubscription(): void
-    {
-        $this->subscriptions()->where('status', 'active')
-            ->update(['cancelled_at' => now(), 'status' => 'cancelled']);
-    }
+        if (! $subscription) {
+            return null;
+        }
 
-    public function reactivateSubscription(): void
-    {
-        $this->subscriptions()
-            ->where('status', 'cancelled')
-            ->where('current_period_end', '>', now())
-            ->update(['status' => 'active', 'cancelled_at' => null]);
+        return $subscription->onGracePeriod()
+            ? $subscription->ends_at
+            : $subscription->renews_at;
     }
 
     public function exportSessions(): HasMany

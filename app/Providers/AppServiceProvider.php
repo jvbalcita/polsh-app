@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Listeners\SendWelcomeEmail;
+use App\Listeners\SyncUserPlan;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use LemonSqueezy\Laravel\Events\WebhookReceived;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
     protected function registerEventListeners(): void
     {
         Event::listen(Registered::class, SendWelcomeEmail::class);
+        Event::listen(WebhookReceived::class, SyncUserPlan::class);
     }
 
     /**

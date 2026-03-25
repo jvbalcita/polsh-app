@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->validateCsrfTokens(except: ['/paymongo/webhook']);
+        $middleware->validateCsrfTokens(except: ['/lemon-squeezy/webhook']);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
