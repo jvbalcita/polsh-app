@@ -11,9 +11,9 @@ import type { StyleConfig } from '@/types/style';
 
 // ── SEO ───────────────────────────────────────────────────────────────────────
 const { fullTitle, description, ogImage, twitterCard } = useSeo({
-    title: 'Polish Your Screenshots',
+    title: 'Style your code screenshots',
     description:
-        'Drop in a screenshot, pick from 18 hand-crafted styles, and export a stunning PNG, WebP, or SVG — no Figma plugins, no install required. Free forever, no watermarks.',
+        'Style your code screenshots in seconds. No Figma, no plugins. Drop in a screenshot, pick a style, and export PNG, WebP, or SVG.',
     type: 'website',
 });
 

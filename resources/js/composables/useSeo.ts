@@ -24,8 +24,8 @@ export function useSeo(options: SeoOptions = {}) {
 
         return shared ?? {
             siteName: 'Polsh',
-            description: 'Polish your screenshots. Drop in a screenshot, pick a style, export a stunning PNG, WebP, or SVG.',
-            ogImage: '/images/og-polsh.svg',
+            description: 'Style your code screenshots in seconds. No Figma, no plugins. Drop in a screenshot, pick a style, and export PNG, WebP, or SVG.',
+            ogImage: '/images/og-polsh.png',
             twitterCard: 'summary_large_image',
         };
     });
