@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { BookOpen, CreditCard, History, LogOut, Settings, Sparkles } from 'lucide-vue-next';
+import { BookOpen, CreditCard, History, LogOut, Settings, Sparkles, Users } from 'lucide-vue-next';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -11,6 +11,7 @@ import UserInfo from '@/components/UserInfo.vue';
 import { editor, history, logout } from '@/routes';
 import { portal as billingPortal } from '@/routes/billing';
 import { api as docsApi } from '@/routes/docs';
+import { settings as teamsSettings } from '@/routes/teams';
 import { edit } from '@/routes/profile';
 import type { Auth, User } from '@/types';
 
@@ -59,6 +60,12 @@ withDefaults(defineProps<Props>(), {
             <Link class="block w-full cursor-pointer" :href="history()">
                 <History class="mr-2 h-4 w-4" />
                 Export History
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <Link class="block w-full cursor-pointer" :href="teamsSettings()">
+                <Users class="mr-2 h-4 w-4" />
+                My Team
             </Link>
         </DropdownMenuItem>
         <DropdownMenuItem :as-child="true">
