@@ -1,75 +1,181 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <!-- Background -->
-  <rect width="1200" height="630" fill="#0a0a0c"/>
 
-  <!-- Subtle grid texture -->
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
     </pattern>
-    <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1a1a3e" stop-opacity="1" />
-      <stop offset="100%" stop-color="#0d1a2e" stop-opacity="1" />
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="110%" y2="110%">
+      <stop offset="0%" stop-color="#16163a" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0c1828" stop-opacity="1"/>
     </linearGradient>
-    <linearGradient id="cardBg2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1f1f1f" stop-opacity="1" />
-      <stop offset="100%" stop-color="#141414" stop-opacity="1" />
-    </linearGradient>
+    <radialGradient id="limeglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e0ff4f" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#e0ff4f" stop-opacity="0"/>
+    </radialGradient>
   </defs>
+
+  <!-- Background + grid -->
+  <rect width="1200" height="630" fill="#0a0a0c"/>
   <rect width="1200" height="630" fill="url(#grid)"/>
 
-  <!-- Top border accent line -->
+  <!-- Top lime accent bar -->
   <rect width="1200" height="3" fill="#e0ff4f"/>
 
-  <!-- Wordmark — prominent, top-left -->
-  <text x="80" y="80" font-family="monospace" font-size="26" font-weight="600" fill="#ffffff" letter-spacing="-1">polsh</text>
-  <text x="150" y="80" font-family="monospace" font-size="26" font-weight="400" fill="#e0ff4f" letter-spacing="-1">.work</text>
+  <!-- ─── LEFT COLUMN (x=60..570) ─────────────────────────── -->
 
-  <!-- Main headline -->
-  <text x="80" y="230" font-family="sans-serif" font-size="76" font-weight="700" fill="#f0f0f2" letter-spacing="-3">Style your code</text>
-  <text x="80" y="320" font-family="sans-serif" font-size="76" font-weight="700" fill="#e0ff4f" letter-spacing="-3">screenshots in seconds.</text>
+  <!-- Wordmark -->
+  <text x="60" y="68" font-family="monospace" font-size="22" font-weight="700" fill="#ffffff">polsh</text>
+  <text x="112" y="68" font-family="monospace" font-size="22" font-weight="400" fill="#e0ff4f">.work</text>
+
+  <!-- Headline: 3 lines at 58px — each ~450px wide, fits in 510px column -->
+  <text x="60" y="214" font-family="sans-serif" font-size="58" font-weight="700" fill="#f0f0f2"   letter-spacing="-1.5">Style your code</text>
+  <text x="60" y="284" font-family="sans-serif" font-size="58" font-weight="700" fill="#e0ff4f"   letter-spacing="-1.5">screenshots in</text>
+  <text x="60" y="354" font-family="sans-serif" font-size="58" font-weight="700" fill="#e0ff4f"   letter-spacing="-1.5">seconds.</text>
 
   <!-- Tagline -->
-  <text x="80" y="376" font-family="sans-serif" font-size="22" fill="#8a8a9a">No Figma. No plugins. Just drop, pick a style, and export.</text>
+  <text x="60" y="396" font-family="sans-serif" font-size="17" fill="#5a5a6a">No Figma. No plugins. Drop a screenshot, pick a style, export.</text>
 
   <!-- Stat pills -->
-  <rect x="80" y="415" width="110" height="34" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="135" y="437" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">18 styles</text>
+  <rect x="60"  y="424" width="102" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <text x="111" y="444" font-family="monospace" font-size="12" fill="#6a6a7a" text-anchor="middle">18 styles</text>
 
-  <rect x="206" y="415" width="148" height="34" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="280" y="437" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">No watermarks</text>
+  <rect x="174" y="424" width="132" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <text x="240" y="444" font-family="monospace" font-size="12" fill="#6a6a7a" text-anchor="middle">No watermarks</text>
 
-  <rect x="368" y="415" width="136" height="34" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  <text x="436" y="437" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">Free forever</text>
+  <rect x="318" y="424" width="122" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <text x="379" y="444" font-family="monospace" font-size="12" fill="#6a6a7a" text-anchor="middle">Free forever</text>
 
-  <!-- Right side: screenshot mockup cards -->
-  <g transform="translate(680, 80)">
-    <!-- Card 1: Gradient bg -->
-    <rect x="0" y="0" width="420" height="270" rx="18" fill="url(#cardBg)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-    <rect x="24" y="24" width="372" height="222" rx="10" fill="rgba(255,255,255,0.06)"/>
-    <rect x="24" y="24" width="372" height="28" rx="10" fill="rgba(255,255,255,0.04)"/>
-    <circle cx="44" cy="38" r="5" fill="#ff5f57" opacity="0.7"/>
-    <circle cx="60" cy="38" r="5" fill="#febc2e" opacity="0.7"/>
-    <circle cx="76" cy="38" r="5" fill="#28c840" opacity="0.7"/>
-    <rect x="40" y="66" width="120" height="8" rx="4" fill="rgba(255,255,255,0.12)"/>
-    <rect x="40" y="82" width="200" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
-    <rect x="40" y="98" width="160" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
-    <rect x="40" y="122" width="120" height="8" rx="4" fill="#e0ff4f" opacity="0.3"/>
-    <rect x="40" y="138" width="180" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
-    <rect x="40" y="154" width="140" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
-    <rect x="40" y="178" width="80" height="8" rx="4" fill="#e0ff4f" opacity="0.5"/>
-    <rect x="40" y="194" width="200" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+  <!-- ─── RIGHT COLUMN: single editor card (x=618..1148) ───── -->
 
-    <!-- Card 2: Dark bg, offset -->
-    <rect x="60" y="296" width="400" height="254" rx="18" fill="url(#cardBg2)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-    <rect x="84" y="320" width="352" height="206" rx="10" fill="rgba(255,255,255,0.04)"/>
-    <rect x="84" y="320" width="352" height="26" rx="10" fill="rgba(255,255,255,0.03)"/>
-    <rect x="100" y="360" width="100" height="7" rx="3" fill="rgba(255,255,255,0.1)"/>
-    <rect x="100" y="376" width="180" height="7" rx="3" fill="rgba(255,255,255,0.07)"/>
-    <rect x="100" y="392" width="140" height="7" rx="3" fill="rgba(255,255,255,0.07)"/>
-    <rect x="100" y="416" width="60" height="7" rx="3" fill="#e0ff4f" opacity="0.6"/>
-    <rect x="100" y="432" width="160" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
-    <rect x="100" y="456" width="80" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
-    <rect x="100" y="472" width="120" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
-  </g>
+  <!-- Glow halo -->
+  <ellipse cx="883" cy="318" rx="265" ry="285" fill="url(#limeglow)"/>
+
+  <!-- Card shadow -->
+  <rect x="630" y="52" width="510" height="534" rx="20" fill="rgba(0,0,0,0.55)"/>
+
+  <!-- Card body: x=618, y=40, w=510, h=534 → right=1128, bottom=574 -->
+  <rect x="618" y="40" width="510" height="534" rx="20" fill="url(#cardBg)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+
+  <!-- Window chrome -->
+  <rect x="618" y="40" width="510" height="38" rx="20" fill="rgba(255,255,255,0.04)"/>
+  <rect x="618" y="58"  width="510" height="20" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="644" cy="59" r="5.5" fill="#ff5f57" opacity="0.85"/>
+  <circle cx="664" cy="59" r="5.5" fill="#febc2e" opacity="0.85"/>
+  <circle cx="684" cy="59" r="5.5" fill="#28c840" opacity="0.85"/>
+  <!-- Fake tab bar -->
+  <rect x="806" y="52" width="110" height="14" rx="4" fill="rgba(255,255,255,0.06)"/>
+
+  <!-- Style badge (top-right) -->
+  <rect x="1040" y="52" width="78" height="22" rx="5" fill="rgba(224,255,79,0.12)" stroke="rgba(224,255,79,0.28)" stroke-width="1"/>
+  <text x="1079" y="67" font-family="monospace" font-size="10" fill="#e0ff4f" text-anchor="middle">neon-halo</text>
+
+  <!-- Inner screenshot pane -->
+  <rect x="636" y="90" width="474" height="466" rx="10" fill="rgba(0,0,0,0.28)"/>
+
+  <!-- Left gutter lime accent -->
+  <rect x="636" y="90" width="3" height="466" fill="rgba(224,255,79,0.18)" rx="1"/>
+
+  <!-- Line number column -->
+  <rect x="648" y="112" width="22" height="7" rx="2" fill="rgba(255,255,255,0.08)"/>
+  <rect x="648" y="130" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="148" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="166" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="184" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="202" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="220" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="238" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="256" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="274" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="292" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="310" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="328" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="346" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="364" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="382" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="400" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="418" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="436" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="454" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="472" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="490" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="648" y="508" width="22" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="648" y="526" width="22" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <!-- Code content tokens -->
+  <rect x="682" y="112" width="52" height="7" rx="2" fill="#e0ff4f" opacity="0.75"/>
+  <rect x="742" y="112" width="90" height="7" rx="2" fill="rgba(255,255,255,0.18)"/>
+  <rect x="840" y="112" width="58" height="7" rx="2" fill="rgba(255,255,255,0.1)"/>
+  <rect x="906" y="112" width="80" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+
+  <rect x="682" y="130" width="38" height="7" rx="2" fill="rgba(255,180,80,0.7)"/>
+  <rect x="728" y="130" width="126" height="7" rx="2" fill="rgba(255,255,255,0.14)"/>
+  <rect x="862" y="130" width="52" height="7" rx="2" fill="rgba(255,255,255,0.08)"/>
+
+  <rect x="700" y="148" width="76" height="7" rx="2" fill="rgba(255,255,255,0.1)"/>
+  <rect x="784" y="148" width="44" height="7" rx="2" fill="#e0ff4f" opacity="0.5"/>
+  <rect x="836" y="148" width="68" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+
+  <rect x="700" y="166" width="156" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+
+  <rect x="682" y="184" width="38" height="7" rx="2" fill="rgba(255,180,80,0.65)"/>
+  <rect x="728" y="184" width="104" height="7" rx="2" fill="rgba(255,255,255,0.13)"/>
+  <rect x="840" y="184" width="76" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+
+  <rect x="700" y="202" width="66" height="7" rx="2" fill="rgba(255,255,255,0.09)"/>
+  <rect x="774" y="202" width="50" height="7" rx="2" fill="#e0ff4f" opacity="0.45)"/>
+  <rect x="832" y="202" width="80" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+
+  <rect x="700" y="220" width="136" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="844" y="220" width="50" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <rect x="700" y="238" width="100" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+
+  <rect x="682" y="256" width="52" height="7" rx="2" fill="#e0ff4f" opacity="0.65"/>
+  <rect x="742" y="256" width="78" height="7" rx="2" fill="rgba(255,255,255,0.14)"/>
+  <rect x="828" y="256" width="58" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+
+  <rect x="700" y="274" width="88" height="7" rx="2" fill="rgba(255,255,255,0.08)"/>
+  <rect x="796" y="274" width="106" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <rect x="700" y="292" width="54" height="7" rx="2" fill="rgba(255,180,80,0.55)"/>
+  <rect x="762" y="292" width="96" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+
+  <rect x="700" y="310" width="174" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+
+  <rect x="682" y="328" width="52" height="7" rx="2" fill="#e0ff4f" opacity="0.55"/>
+  <rect x="742" y="328" width="68" height="7" rx="2" fill="rgba(255,255,255,0.11)"/>
+  <rect x="818" y="328" width="86" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+
+  <rect x="700" y="346" width="116" height="7" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="824" y="346" width="58" height="7" rx="2" fill="rgba(255,255,255,0.04)"/>
+
+  <rect x="700" y="364" width="78" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="786" y="364" width="96" height="7" rx="2" fill="rgba(255,255,255,0.04)"/>
+
+  <rect x="700" y="382" width="136" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <rect x="682" y="400" width="52" height="7" rx="2" fill="#e0ff4f" opacity="0.45"/>
+  <rect x="742" y="400" width="88" height="7" rx="2" fill="rgba(255,255,255,0.1)"/>
+  <rect x="838" y="400" width="68" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+
+  <rect x="700" y="418" width="76" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="784" y="418" width="100" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <rect x="700" y="436" width="50" height="7" rx="2" fill="rgba(255,180,80,0.5)"/>
+  <rect x="758" y="436" width="92" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+
+  <rect x="700" y="454" width="160" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <rect x="682" y="472" width="52" height="7" rx="2" fill="#e0ff4f" opacity="0.4"/>
+  <rect x="742" y="472" width="74" height="7" rx="2" fill="rgba(255,255,255,0.08)"/>
+  <rect x="824" y="472" width="86" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+
+  <rect x="700" y="490" width="118" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="826" y="490" width="56" height="7" rx="2" fill="rgba(255,255,255,0.04)"/>
+
+  <rect x="700" y="508" width="74" height="7" rx="2" fill="rgba(255,255,255,0.05)"/>
+  <rect x="782" y="508" width="96" height="7" rx="2" fill="rgba(255,255,255,0.04)"/>
+
+  <rect x="700" y="526" width="136" height="7" rx="2" fill="rgba(255,255,255,0.04)"/>
+
 </svg>
