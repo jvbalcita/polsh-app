@@ -1,3 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Background -->
   <rect width="1200" height="630" fill="#0a0a0c"/>
+
+  <!-- Subtle grid texture -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a3e" stop-opacity="1" />
+      <stop offset="100%" stop-color="#0d1a2e" stop-opacity="1" />
+    </linearGradient>
+    <linearGradient id="cardBg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f1f1f" stop-opacity="1" />
+      <stop offset="100%" stop-color="#141414" stop-opacity="1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Top border accent line -->
+  <rect width="1200" height="3" fill="#e0ff4f"/>
+
+  <!-- Wordmark — prominent, top-left -->
+  <text x="80" y="80" font-family="monospace" font-size="26" font-weight="600" fill="#ffffff" letter-spacing="-1">polsh</text>
+  <text x="150" y="80" font-family="monospace" font-size="26" font-weight="400" fill="#e0ff4f" letter-spacing="-1">.work</text>
+
+  <!-- Main headline -->
+  <text x="80" y="230" font-family="sans-serif" font-size="76" font-weight="700" fill="#f0f0f2" letter-spacing="-3">Style your code</text>
+  <text x="80" y="320" font-family="sans-serif" font-size="76" font-weight="700" fill="#e0ff4f" letter-spacing="-3">screenshots in seconds.</text>
+
+  <!-- Tagline -->
+  <text x="80" y="376" font-family="sans-serif" font-size="22" fill="#8a8a9a">No Figma. No plugins. Just drop, pick a style, and export.</text>
+
+  <!-- Stat pills -->
+  <rect x="80" y="415" width="110" height="34" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="135" y="437" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">18 styles</text>
+
+  <rect x="206" y="415" width="148" height="34" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="280" y="437" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">No watermarks</text>
+
+  <rect x="368" y="415" width="136" height="34" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="436" y="437" font-family="monospace" font-size="13" fill="#8a8a9a" text-anchor="middle">Free forever</text>
+
+  <!-- Right side: screenshot mockup cards -->
+  <g transform="translate(680, 80)">
+    <!-- Card 1: Gradient bg -->
+    <rect x="0" y="0" width="420" height="270" rx="18" fill="url(#cardBg)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <rect x="24" y="24" width="372" height="222" rx="10" fill="rgba(255,255,255,0.06)"/>
+    <rect x="24" y="24" width="372" height="28" rx="10" fill="rgba(255,255,255,0.04)"/>
+    <circle cx="44" cy="38" r="5" fill="#ff5f57" opacity="0.7"/>
+    <circle cx="60" cy="38" r="5" fill="#febc2e" opacity="0.7"/>
+    <circle cx="76" cy="38" r="5" fill="#28c840" opacity="0.7"/>
+    <rect x="40" y="66" width="120" height="8" rx="4" fill="rgba(255,255,255,0.12)"/>
+    <rect x="40" y="82" width="200" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
+    <rect x="40" y="98" width="160" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
+    <rect x="40" y="122" width="120" height="8" rx="4" fill="#e0ff4f" opacity="0.3"/>
+    <rect x="40" y="138" width="180" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+    <rect x="40" y="154" width="140" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+    <rect x="40" y="178" width="80" height="8" rx="4" fill="#e0ff4f" opacity="0.5"/>
+    <rect x="40" y="194" width="200" height="8" rx="4" fill="rgba(255,255,255,0.06)"/>
+
+    <!-- Card 2: Dark bg, offset -->
+    <rect x="60" y="296" width="400" height="254" rx="18" fill="url(#cardBg2)" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+    <rect x="84" y="320" width="352" height="206" rx="10" fill="rgba(255,255,255,0.04)"/>
+    <rect x="84" y="320" width="352" height="26" rx="10" fill="rgba(255,255,255,0.03)"/>
+    <rect x="100" y="360" width="100" height="7" rx="3" fill="rgba(255,255,255,0.1)"/>
+    <rect x="100" y="376" width="180" height="7" rx="3" fill="rgba(255,255,255,0.07)"/>
+    <rect x="100" y="392" width="140" height="7" rx="3" fill="rgba(255,255,255,0.07)"/>
+    <rect x="100" y="416" width="60" height="7" rx="3" fill="#e0ff4f" opacity="0.6"/>
+    <rect x="100" y="432" width="160" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
+    <rect x="100" y="456" width="80" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
+    <rect x="100" y="472" width="120" height="7" rx="3" fill="rgba(255,255,255,0.05)"/>
+  </g>
 </svg>
