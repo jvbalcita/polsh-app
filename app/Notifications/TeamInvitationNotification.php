@@ -7,6 +7,7 @@ use App\Models\Team;
 use App\Models\TeamInvitation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Notification;
 
 class TeamInvitationNotification extends Notification implements ShouldQueue
@@ -28,6 +29,12 @@ class TeamInvitationNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): TeamInvitationMail
     {
-        return new TeamInvitationMail($this->team, $this->invitation);
+        $mail = new TeamInvitationMail($this->team, $this->invitation);
+
+        if ($notifiable instanceof AnonymousNotifiable) {
+            return $mail->to($notifiable->routeNotificationFor('mail'));
+        }
+
+        return $mail->to($this->invitation->email);
     }
 }

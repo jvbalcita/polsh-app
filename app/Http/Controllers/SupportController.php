@@ -19,15 +19,31 @@ class SupportController extends Controller
         $subscription = null;
 
         if ($user = auth()->user()) {
-            $subscription = $user->subscriptions()
-                ->active()
-                ->latest()
-                ->first(['plan', 'status', 'paymongo_subscription_id', 'current_period_start', 'current_period_end']);
+            $ls = $user->subscription();
+
+            if ($ls && $ls->valid()) {
+                $subscription = [
+                    'plan' => $this->variantToPlan($ls->variant_id),
+                    'lemon_squeezy_id' => $ls->lemon_squeezy_id,
+                    'status' => $ls->status,
+                    'renews_at' => $ls->renews_at?->toDateString(),
+                    'ends_at' => $ls->ends_at?->toDateString(),
+                    'on_grace_period' => $ls->onGracePeriod(),
+                ];
+            }
         }
 
         return Inertia::render('Support/Create', [
             'subscription' => $subscription,
         ]);
+    }
+
+    private function variantToPlan(string $variantId): string
+    {
+        return match ($variantId) {
+            (string) config('services.lemon_squeezy.variant_pro_yearly') => 'pro_yearly',
+            default => 'pro_monthly',
+        };
     }
 
     public function store(StoreSupportTicketRequest $request): RedirectResponse

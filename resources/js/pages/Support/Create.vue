@@ -10,10 +10,11 @@ const user = page.props.auth?.user as { name: string; email: string } | null;
 defineProps<{
     subscription?: {
         plan: string;
+        lemon_squeezy_id: string;
         status: string;
-        paymongo_subscription_id: string;
-        current_period_start: string;
-        current_period_end: string;
+        renews_at: string | null;
+        ends_at: string | null;
+        on_grace_period: boolean;
     } | null;
 }>();
 
@@ -187,11 +188,11 @@ function formatDate(iso: string) {
                         <dl class="sub-card-details">
                             <div class="sub-detail">
                                 <dt>Subscription ID</dt>
-                                <dd>{{ subscription.paymongo_subscription_id }}</dd>
+                                <dd>{{ subscription.lemon_squeezy_id }}</dd>
                             </div>
                             <div class="sub-detail">
-                                <dt>Billing period</dt>
-                                <dd>{{ formatDate(subscription.current_period_start) }} – {{ formatDate(subscription.current_period_end) }}</dd>
+                                <dt>{{ subscription.on_grace_period ? 'Ends on' : 'Next billing' }}</dt>
+                                <dd>{{ formatDate(subscription.on_grace_period ? subscription.ends_at! : subscription.renews_at!) }}</dd>
                             </div>
                             <div class="sub-detail">
                                 <dt>Status</dt>

@@ -5,6 +5,8 @@ use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Notifications\TeamInvitationNotification;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -18,7 +20,21 @@ test('settings page shows null team state for users without a current team', fun
             ->component('Teams/Settings')
             ->where('team', null)
             ->has('members', 0)
-            ->has('teamPresets', 0),
+            ->has('teamPresets', 0)
+            ->where('pendingInvitations', []),
+        );
+});
+
+test('settings page includes empty pending invitations for existing team members', function () {
+    $owner = User::factory()->create(['plan' => 'pro']);
+    createManagedTeam($owner);
+
+    $this->actingAs($owner)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Teams/Settings')
+            ->where('pendingInvitations', []),
         );
 });
 
@@ -83,6 +99,7 @@ test('settings page shows team members and team presets for current team members
             'id' => $preset->id,
             'name' => 'Warm Editorial',
             'style_slug' => 'warm-editorial',
+            'user_name' => $owner->name,
             'customizations' => [
                 'temperature' => 12,
                 'grain' => 4,
@@ -158,6 +175,142 @@ test('team owners can invite by email and a notification is dispatched', functio
                 && $notification->invitation->is($invitation);
         }
     );
+});
+
+test('team invitation notification addresses the invitee when rendered as mail', function () {
+    Mail::fake();
+
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner, ['name' => 'Invite Team']);
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => 'invitee@example.com',
+        'token' => 'recipient-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $notifiable = (new AnonymousNotifiable)->route('mail', $invitation->email);
+    $mail = new TeamInvitationNotification($team, $invitation)->toMail($notifiable);
+
+    expect($mail->hasTo($invitation->email))->toBeTrue();
+});
+
+test('settings page returns pending invitations for matching email addresses', function () {
+    $user = User::factory()->create(['email' => 'invitee@example.com', 'plan' => 'pro']);
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner, ['name' => 'Invite Team']);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => 'invitee@example.com',
+        'token' => 'in-app-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Teams/Settings')
+            ->has('pendingInvitations', 1)
+            ->where('pendingInvitations.0.token', $invitation->token)
+            ->where('pendingInvitations.0.team.name', 'Invite Team'),
+        );
+});
+
+test('settings page matches pending invitations case-insensitively by email', function () {
+    $user = User::factory()->create(['email' => 'Invitee@Example.com', 'plan' => 'pro']);
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => 'invitee@example.com',
+        'token' => 'case-insensitive-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('pendingInvitations.0.token', $invitation->token),
+        );
+});
+
+test('settings page hides expired invitations', function () {
+    $user = User::factory()->create(['email' => 'invitee@example.com', 'plan' => 'pro']);
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner);
+
+    TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $user->email,
+        'token' => 'expired-token',
+        'expires_at' => now()->subMinute(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('pendingInvitations', []));
+});
+
+test('settings page hides accepted invitations', function () {
+    $user = User::factory()->create(['email' => 'invitee@example.com', 'plan' => 'pro']);
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner);
+
+    TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $user->email,
+        'token' => 'accepted-token',
+        'expires_at' => now()->addDay(),
+        'accepted_at' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('pendingInvitations', []));
+});
+
+test('settings page hides invitations for other email addresses', function () {
+    $user = User::factory()->create(['email' => 'invitee@example.com', 'plan' => 'pro']);
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner);
+
+    TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => 'someone-else@example.com',
+        'token' => 'other-email-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('pendingInvitations', []));
+});
+
+test('settings page returns pending invitations for invited free users', function () {
+    $user = User::factory()->create(['email' => 'invitee@example.com', 'plan' => 'free']);
+    $owner = User::factory()->create();
+    $team = createManagedTeam($owner, ['name' => 'Invite Team']);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $user->email,
+        'token' => 'free-user-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('teams.settings'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('pendingInvitations.0.token', $invitation->token),
+        );
 });
 
 test('non owners cannot invite', function () {
@@ -243,6 +396,78 @@ test('mismatched authenticated email is rejected and does not accept the invitat
 
     expect($team->fresh()->users()->whereKey($invitee)->exists())->toBeFalse()
         ->and($invitation->fresh()->accepted_at)->toBeNull();
+});
+
+test('expired invitations return gone when joining directly', function () {
+    $owner = User::factory()->create();
+    $invitee = User::factory()->create(['email' => 'invitee@example.com']);
+    $team = createManagedTeam($owner);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $invitee->email,
+        'token' => 'expired-join-token',
+        'expires_at' => now()->subMinute(),
+    ]);
+
+    $this->actingAs($invitee)
+        ->get(route('teams.join', $invitation->token))
+        ->assertStatus(410);
+});
+
+test('accepted invitations return gone when joining directly', function () {
+    $owner = User::factory()->create();
+    $invitee = User::factory()->create(['email' => 'invitee@example.com']);
+    $team = createManagedTeam($owner);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $invitee->email,
+        'token' => 'accepted-join-token',
+        'expires_at' => now()->addDay(),
+        'accepted_at' => now(),
+    ]);
+
+    $this->actingAs($invitee)
+        ->get(route('teams.join', $invitation->token))
+        ->assertStatus(410);
+});
+
+test('mismatched authenticated email remains forbidden when joining directly', function () {
+    $owner = User::factory()->create();
+    $invitee = User::factory()->create(['email' => 'other-user@example.com']);
+    $team = createManagedTeam($owner);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => 'invitee@example.com',
+        'token' => 'mismatch-join-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($invitee)
+        ->get(route('teams.join', $invitation->token))
+        ->assertForbidden();
+});
+
+test('accepting a surfaced invitation through the join route attaches the member and records acceptance', function () {
+    $owner = User::factory()->create();
+    $invitee = User::factory()->create(['email' => 'invitee@example.com']);
+    $team = createManagedTeam($owner);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $invitee->email,
+        'token' => 'surfaced-token',
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($invitee)
+        ->get(route('teams.join', $invitation->token))
+        ->assertRedirect(route('teams.settings'));
+
+    expect($team->fresh()->users()->whereKey($invitee)->exists())->toBeTrue()
+        ->and($invitation->fresh()->accepted_at)->not->toBeNull();
 });
 
 test('non owners can leave a team they belong to', function () {

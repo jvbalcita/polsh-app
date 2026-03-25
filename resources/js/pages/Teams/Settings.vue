@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import ProductPageHeader from '@/components/ProductPageHeader.vue';
 import ProductUpgradeCard from '@/components/ProductUpgradeCard.vue';
 import { editor } from '@/routes';
 import { portal as billingPortal } from '@/routes/billing';
-import { invite as inviteTeam, leave as leaveTeamRoute, store as storeTeam } from '@/routes/teams';
+import {
+    invite as inviteTeam,
+    join as joinTeam,
+    leave as leaveTeamRoute,
+    store as storeTeam,
+} from '@/routes/teams';
 
 interface Member {
     id: number;
@@ -20,6 +25,7 @@ interface TeamPreset {
     id: number;
     name: string;
     style_slug: string;
+    user_name?: string | null;
 }
 
 interface Team {
@@ -29,15 +35,31 @@ interface Team {
     owner_id: number;
 }
 
+interface PendingInvitation {
+    id: number;
+    token: string;
+    expires_at: string;
+    team: {
+        id: number;
+        name: string;
+        slug: string;
+        owner_name: string | null;
+    };
+}
+
 const props = defineProps<{
     team: Team | null;
     members: Member[];
     teamPresets: TeamPreset[];
+    pendingInvitations: PendingInvitation[];
 }>();
 
 const page = usePage();
 const isPro = page.props.isPro as boolean;
 const currentUserId = (page.props.auth?.user as { id: number } | null)?.id;
+const hasPendingInvitations = computed(
+    () => props.pendingInvitations.length > 0,
+);
 
 // Create team form
 const createForm = useForm({ name: '' });
@@ -54,8 +76,8 @@ const inviteSuccess = ref(false);
 
 function submitInvite(): void {
     if (!props.team) {
-return;
-}
+        return;
+    }
 
     inviteForm.post(inviteTeam.url(props.team.id), {
         onSuccess: () => {
@@ -71,12 +93,12 @@ const leaveForm = useForm({});
 
 function leaveTeam(): void {
     if (!props.team) {
-return;
-}
+        return;
+    }
 
     if (!confirm('Are you sure you want to leave this team?')) {
-return;
-}
+        return;
+    }
 
     leaveForm.post(leaveTeamRoute.url(props.team.id));
 }
@@ -84,15 +106,19 @@ return;
 function isOwner(member: Member): boolean {
     return member.role === 'owner';
 }
+
+function invitationExpiry(invitation: PendingInvitation): string {
+    return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(new Date(invitation.expires_at));
+}
 </script>
 
 <template>
     <Head title="Team Settings" />
 
-    <div
-        class="min-h-screen"
-        style="background: #080808"
-    >
+    <div class="min-h-screen" style="background: #080808">
         <ProductPageHeader
             context="/ team"
             :home-href="editor()"
@@ -101,75 +127,29 @@ function isOwner(member: Member): boolean {
         />
 
         <div class="mx-auto max-w-2xl px-6 py-10">
-            <ProductUpgradeCard
-                v-if="!isPro"
-                title="Teams is a Pro feature"
-                description="Upgrade to Pro to create a team and share presets with your teammates."
-                :cta-href="billingPortal()"
-                cta-label="Upgrade to Pro →"
-            >
-                <template #icon>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" class="mx-auto mb-4 text-[#e0ff4f]/50">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </template>
-            </ProductUpgradeCard>
-
-            <!-- No team: create form -->
-            <template v-else-if="!team">
-                <div class="mb-8">
-                    <h1 class="text-xl font-semibold text-white/85">Create a Team</h1>
-                    <p class="mt-1 text-sm text-white/35">
-                        Share presets with your teammates by creating a team workspace.
-                    </p>
-                </div>
-
-                <form
-                    class="polsh-panel rounded-xl border border-white/8 p-6"
-                    @submit.prevent="submitCreate"
-                >
-                    <label class="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/30">
-                        Team name
-                    </label>
-                    <input
-                        v-model="createForm.name"
-                        type="text"
-                        maxlength="60"
-                        placeholder="e.g. Acme Design"
-                        class="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                        style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #e0e0e0"
-                        required
-                    />
-                    <p v-if="createForm.errors.name" class="mt-1 text-[11px] text-red-400">
-                        {{ createForm.errors.name }}
-                    </p>
-                    <button
-                        type="submit"
-                        :disabled="createForm.processing"
-                        class="mt-4 rounded-md px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
-                        style="background: #e0ff4f; color: #080808"
-                    >
-                        {{ createForm.processing ? 'Creating…' : 'Create team' }}
-                    </button>
-                </form>
-            </template>
-
             <!-- Has team: management view -->
-            <template v-else>
+            <template v-if="team">
                 <div class="mb-8 flex items-start justify-between">
                     <div>
-                        <h1 class="text-xl font-semibold text-white/85">{{ team.name }}</h1>
-                        <p class="mt-0.5 text-xs text-white/30">{{ team.slug }}</p>
+                        <h1 class="text-xl font-semibold text-white/85">
+                            {{ team.name }}
+                        </h1>
+                        <p class="mt-0.5 text-xs text-white/30">
+                            {{ team.slug }}
+                        </p>
                     </div>
                 </div>
 
                 <!-- Members section -->
-                <section class="polsh-panel mb-6 rounded-xl border border-white/8 overflow-hidden">
+                <section
+                    class="polsh-panel mb-6 overflow-hidden rounded-xl border border-white/8"
+                >
                     <div class="border-b border-white/8 px-5 py-3">
-                        <h2 class="text-[11px] font-semibold uppercase tracking-widest text-white/35">Members</h2>
+                        <h2
+                            class="text-[11px] font-semibold tracking-widest text-white/35 uppercase"
+                        >
+                            Members
+                        </h2>
                     </div>
                     <div class="divide-y divide-white/5">
                         <div
@@ -187,18 +167,31 @@ function isOwner(member: Member): boolean {
                                 <div
                                     v-else
                                     class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold"
-                                    style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5)"
+                                    style="
+                                        background: rgba(255, 255, 255, 0.08);
+                                        color: rgba(255, 255, 255, 0.5);
+                                    "
                                 >
                                     {{ member.name.charAt(0).toUpperCase() }}
                                 </div>
                                 <div>
-                                    <p class="text-[12px] font-medium text-white/75">{{ member.name }}</p>
-                                    <p class="text-[10px] text-white/30">{{ member.email }}</p>
+                                    <p
+                                        class="text-[12px] font-medium text-white/75"
+                                    >
+                                        {{ member.name }}
+                                    </p>
+                                    <p class="text-[10px] text-white/30">
+                                        {{ member.email }}
+                                    </p>
                                 </div>
                             </div>
                             <span
-                                class="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider"
-                                :class="isOwner(member) ? 'bg-[#e0ff4f]/15 text-[#e0ff4f]/80' : 'bg-white/6 text-white/35'"
+                                class="rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase"
+                                :class="
+                                    isOwner(member)
+                                        ? 'bg-[#e0ff4f]/15 text-[#e0ff4f]/80'
+                                        : 'bg-white/6 text-white/35'
+                                "
                             >
                                 {{ member.role }}
                             </span>
@@ -211,7 +204,11 @@ function isOwner(member: Member): boolean {
                     v-if="currentUserId === team.owner_id"
                     class="polsh-panel mb-6 rounded-xl border border-white/8 p-5"
                 >
-                    <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-widest text-white/35">Invite by email</h2>
+                    <h2
+                        class="mb-3 text-[11px] font-semibold tracking-widest text-white/35 uppercase"
+                    >
+                        Invite by email
+                    </h2>
 
                     <div
                         v-if="inviteSuccess"
@@ -226,19 +223,29 @@ function isOwner(member: Member): boolean {
                             type="email"
                             placeholder="teammate@example.com"
                             class="min-w-0 flex-1 rounded-md border px-3 py-1.5 text-[12px] outline-none"
-                            style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #e0e0e0"
+                            style="
+                                background: rgba(255, 255, 255, 0.05);
+                                border-color: rgba(255, 255, 255, 0.12);
+                                color: #e0e0e0;
+                            "
                             required
                         />
                         <button
                             type="submit"
                             :disabled="inviteForm.processing"
                             class="shrink-0 rounded-md border px-3 py-1.5 text-[11px] font-semibold transition-colors hover:opacity-80 disabled:opacity-40"
-                            style="border-color: rgba(224,255,79,0.25); color: rgba(224,255,79,0.8)"
+                            style="
+                                border-color: rgba(224, 255, 79, 0.25);
+                                color: rgba(224, 255, 79, 0.8);
+                            "
                         >
                             {{ inviteForm.processing ? '…' : 'Send invite' }}
                         </button>
                     </form>
-                    <p v-if="inviteForm.errors.email" class="mt-1 text-[11px] text-red-400">
+                    <p
+                        v-if="inviteForm.errors.email"
+                        class="mt-1 text-[11px] text-red-400"
+                    >
                         {{ inviteForm.errors.email }}
                     </p>
                 </section>
@@ -246,10 +253,14 @@ function isOwner(member: Member): boolean {
                 <!-- Shared presets -->
                 <section
                     v-if="teamPresets.length > 0"
-                    class="polsh-panel mb-6 rounded-xl border border-white/8 overflow-hidden"
+                    class="polsh-panel mb-6 overflow-hidden rounded-xl border border-white/8"
                 >
                     <div class="border-b border-white/8 px-5 py-3">
-                        <h2 class="text-[11px] font-semibold uppercase tracking-widest text-white/35">Shared presets</h2>
+                        <h2
+                            class="text-[11px] font-semibold tracking-widest text-white/35 uppercase"
+                        >
+                            Shared presets
+                        </h2>
                     </div>
                     <div class="divide-y divide-white/5">
                         <div
@@ -258,18 +269,37 @@ function isOwner(member: Member): boolean {
                             class="flex items-center justify-between px-5 py-2.5"
                         >
                             <div>
-                                <p class="text-[12px] text-white/70">{{ preset.name }}</p>
-                                <p class="text-[10px] text-white/30">{{ preset.style_slug }}</p>
+                                <p class="text-[12px] text-white/70">
+                                    {{ preset.name }}
+                                </p>
+                                <p class="text-[10px] text-white/30">
+                                    {{ preset.style_slug }}
+                                </p>
+                                <p
+                                    v-if="preset.user_name"
+                                    class="text-[10px] text-white/40"
+                                >
+                                    Shared by {{ preset.user_name }}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Leave team (non-owners only) -->
-                <div v-if="currentUserId !== team.owner_id" class="rounded-xl border border-red-500/15 p-5" style="background: rgba(239,68,68,0.04)">
-                    <h2 class="mb-2 text-[11px] font-semibold uppercase tracking-widest text-red-400/60">Danger zone</h2>
+                <div
+                    v-if="currentUserId !== team.owner_id"
+                    class="rounded-xl border border-red-500/15 p-5"
+                    style="background: rgba(239, 68, 68, 0.04)"
+                >
+                    <h2
+                        class="mb-2 text-[11px] font-semibold tracking-widest text-red-400/60 uppercase"
+                    >
+                        Danger zone
+                    </h2>
                     <p class="mb-3 text-[12px] text-white/35">
-                        Leaving the team will remove your access to all shared presets.
+                        Leaving the team will remove your access to all shared
+                        presets.
                     </p>
                     <button
                         type="button"
@@ -280,6 +310,146 @@ function isOwner(member: Member): boolean {
                         Leave team
                     </button>
                 </div>
+            </template>
+
+            <template v-else-if="hasPendingInvitations">
+                <div class="mb-8">
+                    <h1 class="text-xl font-semibold text-white/85">
+                        You have been invited
+                    </h1>
+                    <p class="mt-1 text-sm text-white/35">
+                        Accept a team invitation to join a shared workspace and
+                        access shared presets.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <section
+                        v-for="invitation in pendingInvitations"
+                        :key="invitation.id"
+                        class="polsh-panel rounded-xl border border-white/8 p-5"
+                    >
+                        <div
+                            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+                        >
+                            <div>
+                                <p
+                                    class="text-[11px] font-semibold tracking-widest text-[#e0ff4f]/70 uppercase"
+                                >
+                                    Pending invitation
+                                </p>
+                                <h2
+                                    class="mt-2 text-lg font-semibold text-white/85"
+                                >
+                                    {{ invitation.team.name }}
+                                </h2>
+                                <p class="mt-1 text-xs text-white/30">
+                                    {{ invitation.team.slug }}
+                                </p>
+                                <p
+                                    v-if="invitation.team.owner_name"
+                                    class="mt-3 text-[12px] text-white/45"
+                                >
+                                    Invited by {{ invitation.team.owner_name }}
+                                </p>
+                                <p class="mt-1 text-[12px] text-white/45">
+                                    Expires {{ invitationExpiry(invitation) }}
+                                </p>
+                            </div>
+
+                            <Link
+                                :href="joinTeam(invitation.token)"
+                                class="inline-flex shrink-0 items-center justify-center rounded-md border px-4 py-2 text-[12px] font-semibold transition-opacity hover:opacity-80"
+                                style="
+                                    border-color: rgba(224, 255, 79, 0.25);
+                                    background: rgba(224, 255, 79, 0.12);
+                                    color: rgba(224, 255, 79, 0.9);
+                                "
+                            >
+                                Accept invitation
+                            </Link>
+                        </div>
+                    </section>
+                </div>
+            </template>
+
+            <ProductUpgradeCard
+                v-else-if="!isPro"
+                title="Teams is a Pro feature"
+                description="Upgrade to Pro to create a team and share presets with your teammates."
+                :cta-href="billingPortal()"
+                cta-label="Upgrade to Pro →"
+            >
+                <template #icon>
+                    <svg
+                        width="32"
+                        height="32"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1"
+                        stroke-linecap="round"
+                        class="mx-auto mb-4 text-[#e0ff4f]/50"
+                    >
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                </template>
+            </ProductUpgradeCard>
+
+            <!-- No team: create form -->
+            <template v-else>
+                <div class="mb-8">
+                    <h1 class="text-xl font-semibold text-white/85">
+                        Create a Team
+                    </h1>
+                    <p class="mt-1 text-sm text-white/35">
+                        Share presets with your teammates by creating a team
+                        workspace.
+                    </p>
+                </div>
+
+                <form
+                    class="polsh-panel rounded-xl border border-white/8 p-6"
+                    @submit.prevent="submitCreate"
+                >
+                    <label
+                        class="mb-1.5 block text-[11px] font-semibold tracking-widest text-white/30 uppercase"
+                    >
+                        Team name
+                    </label>
+                    <input
+                        v-model="createForm.name"
+                        type="text"
+                        maxlength="60"
+                        placeholder="e.g. Acme Design"
+                        class="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                        style="
+                            background: rgba(255, 255, 255, 0.05);
+                            border-color: rgba(255, 255, 255, 0.12);
+                            color: #e0e0e0;
+                        "
+                        required
+                    />
+                    <p
+                        v-if="createForm.errors.name"
+                        class="mt-1 text-[11px] text-red-400"
+                    >
+                        {{ createForm.errors.name }}
+                    </p>
+                    <button
+                        type="submit"
+                        :disabled="createForm.processing"
+                        class="mt-4 rounded-md px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+                        style="background: #e0ff4f; color: #080808"
+                    >
+                        {{
+                            createForm.processing ? 'Creating…' : 'Create team'
+                        }}
+                    </button>
+                </form>
             </template>
         </div>
     </div>

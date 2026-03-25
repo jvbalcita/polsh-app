@@ -23,14 +23,32 @@ class TeamController extends Controller
         $team = $user->currentTeam();
 
         if (! $team) {
+            $pendingInvitations = TeamInvitation::query()
+                ->pendingForEmail($user->email)
+                ->with(['team.owner'])
+                ->get()
+                ->map(fn (TeamInvitation $invitation) => [
+                    'id' => $invitation->id,
+                    'token' => $invitation->token,
+                    'expires_at' => $invitation->expires_at,
+                    'team' => [
+                        'id' => $invitation->team->id,
+                        'name' => $invitation->team->name,
+                        'slug' => $invitation->team->slug,
+                        'owner_name' => $invitation->team->owner?->name,
+                    ],
+                ])
+                ->values();
+
             return Inertia::render('Teams/Settings', [
                 'team' => null,
                 'members' => [],
                 'teamPresets' => [],
+                'pendingInvitations' => $pendingInvitations,
             ]);
         }
 
-        $team->load(['users', 'presets']);
+        $team->load(['users', 'presets.user']);
 
         $members = $team->users->map(fn ($member) => [
             'id' => $member->id,
@@ -44,7 +62,14 @@ class TeamController extends Controller
         return Inertia::render('Teams/Settings', [
             'team' => $team->only(['id', 'name', 'slug', 'owner_id']),
             'members' => $members,
-            'teamPresets' => $team->presets->map->only(['id', 'name', 'style_slug', 'customizations']),
+            'teamPresets' => $team->presets->map(fn ($preset) => [
+                'id' => $preset->id,
+                'name' => $preset->name,
+                'style_slug' => $preset->style_slug,
+                'user_name' => $preset->user?->name,
+                'customizations' => $preset->customizations,
+            ]),
+            'pendingInvitations' => [],
         ]);
     }
 

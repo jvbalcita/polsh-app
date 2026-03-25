@@ -6,6 +6,7 @@ import ControlPanel from '@/components/editor/ControlPanel.vue';
 import ExportPanel from '@/components/editor/ExportPanel.vue';
 import ImageStrip from '@/components/editor/ImageStrip.vue';
 import StylePicker from '@/components/editor/StylePicker.vue';
+import { Toaster } from '@/components/ui/sonner';
 import UserMenu from '@/components/UserMenu.vue';
 import { CANVAS_SIZES } from '@/composables/useCanvas';
 import { useHistory } from '@/composables/useHistory';
@@ -24,9 +25,17 @@ const hasImages = computed(() => store.images.length > 0);
 
 // ── Canvas size bar ─────────────────────────────────────────────────────────
 // Quick-access pills shown above the canvas
-const QUICK_SIZES = ['twitter-landscape', 'linkedin', 'og-image', 'stories', 'twitter-square'] as const;
+const QUICK_SIZES = [
+    'twitter-landscape',
+    'linkedin',
+    'og-image',
+    'stories',
+    'twitter-square',
+] as const;
 
-const activeCanvasSize = computed(() => store.activeSettings?.canvasSize ?? 'twitter-landscape');
+const activeCanvasSize = computed(
+    () => store.activeSettings?.canvasSize ?? 'twitter-landscape',
+);
 
 function selectSize(key: string): void {
     store.updateSetting('canvasSize', key);
@@ -54,8 +63,8 @@ onMounted(() => {
     const sessionData = page.props.sessionData as { style_slug: string } | null;
 
     if (!sessionData) {
-return;
-}
+        return;
+    }
 
     const style = allStyles.find((s) => s.slug === sessionData.style_slug);
 
@@ -73,7 +82,7 @@ return;
         Three-column layout: StylePicker | CanvasStage | ControlPanel
     -->
     <div
-        class="flex h-screen w-screen select-none flex-col overflow-hidden"
+        class="flex h-screen w-screen flex-col overflow-hidden select-none"
         style="background: #080808"
     >
         <!-- Topbar: 3-column grid (wordmark | style name | user menu) -->
@@ -117,7 +126,9 @@ return;
                         :key="key"
                         type="button"
                         class="csb-pill"
-                        :class="{ 'csb-pill--active': activeCanvasSize === key }"
+                        :class="{
+                            'csb-pill--active': activeCanvasSize === key,
+                        }"
                         @click="selectSize(key)"
                     >
                         {{ CANVAS_SIZES[key].label }}
@@ -128,25 +139,40 @@ return;
                         <button
                             type="button"
                             class="csb-pill"
-                            :class="{ 'csb-pill--active': !QUICK_SIZES.includes(activeCanvasSize as any) }"
+                            :class="{
+                                'csb-pill--active': !QUICK_SIZES.includes(
+                                    activeCanvasSize as any,
+                                ),
+                            }"
                             @click="showSizePopover = !showSizePopover"
                         >
                             ···
                         </button>
 
                         <!-- Popover -->
-                        <div v-if="showSizePopover" class="csb-popover" @click.stop>
+                        <div
+                            v-if="showSizePopover"
+                            class="csb-popover"
+                            @click.stop
+                        >
                             <p class="csb-popover-label">All sizes</p>
                             <button
                                 v-for="(meta, key) in CANVAS_SIZES"
                                 :key="key"
                                 type="button"
                                 class="csb-popover-row"
-                                :class="{ 'csb-popover-row--active': activeCanvasSize === key }"
+                                :class="{
+                                    'csb-popover-row--active':
+                                        activeCanvasSize === key,
+                                }"
                                 @click="selectSize(key)"
                             >
-                                <span class="csb-popover-name">{{ meta.label }}</span>
-                                <span class="csb-popover-dim">{{ meta.w }}×{{ meta.h }}</span>
+                                <span class="csb-popover-name">{{
+                                    meta.label
+                                }}</span>
+                                <span class="csb-popover-dim"
+                                    >{{ meta.w }}×{{ meta.h }}</span
+                                >
                             </button>
 
                             <div class="csb-popover-divider"></div>
@@ -170,14 +196,23 @@ return;
                                     placeholder="H"
                                 />
                                 <span class="csb-custom-unit">px</span>
-                                <button type="button" class="csb-custom-apply" @click="applyCustomSize">Apply</button>
+                                <button
+                                    type="button"
+                                    class="csb-custom-apply"
+                                    @click="applyCustomSize"
+                                >
+                                    Apply
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Canvas stage (fills remaining height minus strip) -->
-                <div class="canvas-workspace min-h-0 flex-1" @click.self="showSizePopover = false">
+                <div
+                    class="canvas-workspace min-h-0 flex-1"
+                    @click.self="showSizePopover = false"
+                >
                     <CanvasStage @click="showSizePopover = false" />
                 </div>
                 <!-- Image strip (auto-hides when empty) -->
@@ -195,6 +230,10 @@ return;
             </aside>
         </div>
     </div>
+
+    <Teleport to="body">
+        <Toaster rich-colors theme="dark" position="bottom-right" />
+    </Teleport>
 </template>
 
 <style scoped>
@@ -253,7 +292,10 @@ return;
     font-size: 10px;
     color: #8a8a9a;
     cursor: pointer;
-    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+    transition:
+        border-color 120ms ease,
+        color 120ms ease,
+        background 120ms ease;
     white-space: nowrap;
 }
 
@@ -308,9 +350,13 @@ return;
     transition: background 100ms ease;
 }
 
-.csb-popover-row:hover { background: rgba(255, 255, 255, 0.05); }
+.csb-popover-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
 
-.csb-popover-row--active .csb-popover-name { color: #e0ff4f; }
+.csb-popover-row--active .csb-popover-name {
+    color: #e0ff4f;
+}
 
 .csb-popover-name {
     font-family: 'DM Sans', sans-serif;
@@ -350,7 +396,9 @@ return;
     text-align: center;
 }
 
-.csb-custom-input:focus { border-color: rgba(224, 255, 79, 0.4); }
+.csb-custom-input:focus {
+    border-color: rgba(224, 255, 79, 0.4);
+}
 
 .csb-custom-sep,
 .csb-custom-unit {
@@ -372,7 +420,9 @@ return;
     transition: background 120ms ease;
 }
 
-.csb-custom-apply:hover { background: rgba(224, 255, 79, 0.18); }
+.csb-custom-apply:hover {
+    background: rgba(224, 255, 79, 0.18);
+}
 
 /* ── Canvas workspace grid background ── */
 /* Applied via :deep to canvas-stage-container so it sits behind the transparent
@@ -382,7 +432,15 @@ return;
         linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    mask-image: radial-gradient(
+        ellipse 80% 80% at 50% 50%,
+        black 40%,
+        transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+        ellipse 80% 80% at 50% 50%,
+        black 40%,
+        transparent 100%
+    );
 }
 </style>

@@ -130,11 +130,17 @@ async function confirmSavePreset(): Promise<void> {
     isSaving.value = true;
     const teamId =
         shareWithTeam.value && userTeamId.value ? userTeamId.value : null;
-    await store.savePreset(presetName.value.trim(), teamId);
-    isSaving.value = false;
-    showNameInput.value = false;
-    presetName.value = '';
-    shareWithTeam.value = false;
+
+    try {
+        await store.savePreset(presetName.value.trim(), teamId);
+
+        showNameInput.value = false;
+        presetName.value = '';
+        shareWithTeam.value = false;
+    } catch {
+    } finally {
+        isSaving.value = false;
+    }
 }
 
 function cancelSavePreset(): void {
