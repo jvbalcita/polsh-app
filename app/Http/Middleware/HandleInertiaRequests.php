@@ -60,8 +60,8 @@ class HandleInertiaRequests extends Middleware
             'teamId' => $user?->currentTeam()?->id,
             'seo' => [
                 'siteName' => 'Polsh',
-                'description' => 'Polish your screenshots. Drop in a screenshot, pick a style, export a stunning PNG, WebP, or SVG — no Figma plugins, no subscriptions.',
-                'ogImage' => asset('images/og-polsh.svg'),
+                'description' => 'Style your code screenshots in seconds. No Figma, no plugins. Drop in a screenshot, pick a style, and export PNG, WebP, or SVG.',
+                'ogImage' => asset('images/og-polsh.png'),
                 'twitterCard' => 'summary_large_image',
             ],
         ];

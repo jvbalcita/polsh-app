@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+    </pattern>
+
+    <!-- Polsh export card gradient (neon-halo style) -->
+    <linearGradient id="polshBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#22124e" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0d1e3a" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- Subtle lime glow behind export card -->
+    <radialGradient id="limeglow" cx="50%" cy="30%" r="60%">
+      <stop offset="0%"   stop-color="#e0ff4f" stop-opacity="0.13"/>
+      <stop offset="100%" stop-color="#e0ff4f" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Single clip that rounds only the outer card corners -->
+    <clipPath id="card">
+      <rect x="552" y="50" width="596" height="496" rx="18"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Canvas background ── -->
+  <rect width="1200" height="630" fill="#0a0a0c"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="3"   fill="#e0ff4f"/>
+
+  <!-- ════════════════════════════════════════════
+       LEFT COLUMN  (x=60 → ~530)
+       ════════════════════════════════════════════ -->
+
+  <!-- Wordmark: single <text> + tspan so the two colours sit flush -->
+  <text x="60" y="68" font-family="monospace" font-size="22">
+    <tspan font-weight="700" fill="#ffffff">polsh</tspan><tspan font-weight="400" fill="#e0ff4f">.work</tspan>
+  </text>
+
+  <!-- Headline — 3 lines at 62 px, letter-spacing keeps each under ~440 px -->
+  <text x="60" y="178" font-family="sans-serif" font-size="62" font-weight="700" fill="#f0f0f2" letter-spacing="-1.5">Style your</text>
+  <text x="60" y="252" font-family="sans-serif" font-size="62" font-weight="700" fill="#e0ff4f" letter-spacing="-1.5">screenshots</text>
+  <text x="60" y="326" font-family="sans-serif" font-size="62" font-weight="700" fill="#e0ff4f" letter-spacing="-1.5">in seconds.</text>
+
+  <!-- Tagline -->
+  <text x="60" y="367" font-family="sans-serif" font-size="17" fill="#55556a">Drop any screenshot. Pick a style. Share anywhere.</text>
+
+  <!-- Stat pills -->
+  <rect x="60"  y="394" width="102" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <text x="111" y="414" font-family="monospace" font-size="12" fill="#66667a" text-anchor="middle">18 styles</text>
+
+  <rect x="174" y="394" width="132" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <text x="240" y="414" font-family="monospace" font-size="12" fill="#66667a" text-anchor="middle">No watermarks</text>
+
+  <rect x="318" y="394" width="122" height="30" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+  <text x="379" y="414" font-family="monospace" font-size="12" fill="#66667a" text-anchor="middle">Free forever</text>
+
+  <!-- ════════════════════════════════════════════
+       RIGHT COLUMN — BEFORE / AFTER CARD
+       Card: x=552..1148, y=50..546  (all inside 1200×630)
+       Divider at x=848 → left=296 px, right=300 px
+       ════════════════════════════════════════════ -->
+
+  <!-- Card drop-shadow -->
+  <rect x="558" y="57" width="596" height="496" rx="18" fill="rgba(0,0,0,0.5)"/>
+
+  <!-- Lime glow behind AFTER side (drawn before clip so it bleeds correctly) -->
+  <ellipse cx="1000" cy="296" rx="260" ry="270" fill="url(#limeglow)"/>
+
+  <!-- ── All card content is clipped to rounded rect ── -->
+  <g clip-path="url(#card)">
+
+    <!-- ══ BEFORE HALF  x=552..848  (w=296) ══
+         Raw screenshot: flat, no wrapper, no personality -->
+    <rect x="552" y="50" width="296" height="496" fill="#f1f1f5"/>
+
+    <!-- Flat grey chrome — grey dots, no colour -->
+    <rect x="552" y="50" width="296" height="34" fill="#e0e0e4"/>
+    <circle cx="572" cy="67" r="5" fill="#bebec4"/>
+    <circle cx="588" cy="67" r="5" fill="#bebec4"/>
+    <circle cx="604" cy="67" r="5" fill="#bebec4"/>
+    <!-- BEFORE badge -->
+    <rect x="618" y="58" width="52" height="18" rx="4" fill="#cecece"/>
+    <text x="644" y="71" font-family="monospace" font-size="9" font-weight="700"
+          fill="#888" text-anchor="middle" letter-spacing="0.8">BEFORE</text>
+
+    <!-- Plain URL bar -->
+    <rect x="562" y="92" width="276" height="21" rx="4" fill="#f9f9fb" stroke="#d4d4d8" stroke-width="1"/>
+    <circle cx="573" cy="102" r="4" fill="#cacacf"/>
+    <rect x="582" y="99" width="112" height="7" rx="3" fill="#c4c4ca"/>
+
+    <!-- Raw screenshot content — starts immediately, no wrapper, no padding -->
+    <rect x="562" y="121" width="276" height="373" rx="0" fill="#ffffff"/>
+
+    <!-- Profile row (plain circles + grey lines) -->
+    <circle cx="588" cy="155" r="18" fill="#d8d8de"/>
+    <rect x="615" y="145" width="84" height="9" rx="3" fill="#c6c6cc"/>
+    <rect x="615" y="161" width="58" height="7" rx="3" fill="#d4d4d8"/>
+
+    <!-- Body text lines -->
+    <rect x="572" y="188" width="244" height="7" rx="3" fill="#d2d2d8"/>
+    <rect x="572" y="203" width="258" height="7" rx="3" fill="#d2d2d8"/>
+    <rect x="572" y="218" width="196" height="7" rx="3" fill="#dadade"/>
+
+    <!-- Content block (flat grey) -->
+    <rect x="572" y="238" width="258" height="90" rx="0" fill="#eeeef3"/>
+    <rect x="580" y="248" width="96"  height="8" rx="3" fill="#c6c6cc"/>
+    <rect x="580" y="264" width="210" height="7" rx="3" fill="#cecece"/>
+    <rect x="580" y="279" width="168" height="7" rx="3" fill="#d4d4d8"/>
+    <rect x="580" y="294" width="120" height="7" rx="3" fill="#d8d8de"/>
+    <rect x="580" y="309" width="78"  height="7" rx="3" fill="#dcdcdf"/>
+
+    <!-- Separator -->
+    <rect x="572" y="342" width="258" height="1" fill="#e6e6ea"/>
+
+    <!-- Action row (flat grey buttons) -->
+    <rect x="572" y="352" width="62" height="20" rx="4" fill="#ebebf0"/>
+    <rect x="644" y="352" width="62" height="20" rx="4" fill="#ebebf0"/>
+    <rect x="716" y="352" width="62" height="20" rx="4" fill="#ebebf0"/>
+
+    <!-- ══ AFTER HALF  x=848..1148  (w=300) ══
+         Dark Polsh canvas — the screenshot now floats inside a styled export card -->
+
+    <!-- Dark canvas background -->
+    <rect x="848" y="50" width="300" height="496" fill="#090909"/>
+
+    <!-- AFTER badge in canvas (top-left of dark area) -->
+    <rect x="860" y="58" width="44" height="18" rx="4"
+          fill="rgba(224,255,79,0.14)" stroke="rgba(224,255,79,0.35)" stroke-width="1"/>
+    <text x="882" y="71" font-family="monospace" font-size="9" font-weight="700"
+          fill="#e0ff4f" text-anchor="middle" letter-spacing="0.8">AFTER</text>
+
+    <!-- ── Polsh export wrapper card ──
+         This IS the Polsh output: the screenshot wrapped in a beautiful styled canvas -->
+    <!-- Wrapper glow / bloom -->
+    <rect x="858" y="80" width="278" height="452" rx="14"
+          fill="rgba(224,255,79,0.04)"/>
+    <!-- Main wrapper card -->
+    <rect x="856" y="78" width="278" height="452" rx="14"
+          fill="url(#polshBg)" stroke="rgba(224,255,79,0.22)" stroke-width="1"/>
+
+    <!-- Wrapper header bar (Polsh chrome) -->
+    <rect x="856" y="78" width="278" height="34" rx="14" fill="rgba(255,255,255,0.04)"/>
+    <rect x="856" y="96"  width="278" height="16" fill="rgba(255,255,255,0.04)"/>
+    <!-- Coloured traffic lights -->
+    <circle cx="874" cy="95" r="5" fill="#ff5f57" opacity="0.9"/>
+    <circle cx="890" cy="95" r="5" fill="#febc2e" opacity="0.9"/>
+    <circle cx="906" cy="95" r="5" fill="#28c840" opacity="0.9"/>
+    <!-- Style chip in header -->
+    <rect x="960" y="86" width="120" height="18" rx="5"
+          fill="rgba(224,255,79,0.12)" stroke="rgba(224,255,79,0.28)" stroke-width="1"/>
+    <text x="1020" y="99" font-family="monospace" font-size="9" fill="#e0ff4f"
+          text-anchor="middle">polsh ✦ neon-halo</text>
+
+    <!-- Screenshot floating inside wrapper (same content, now beautifully framed) -->
+    <!-- Drop shadow -->
+    <rect x="868" y="118" width="254" height="308" rx="8" fill="rgba(0,0,0,0.5)"/>
+    <!-- White screenshot card -->
+    <rect x="864" y="114" width="254" height="308" rx="8" fill="#ffffff"/>
+
+    <!-- Profile row (same content as BEFORE) -->
+    <circle cx="888" cy="144" r="16" fill="#d8d8de"/>
+    <rect x="912" y="135" width="76" height="8"  rx="3" fill="#c6c6cc"/>
+    <rect x="912" y="150" width="52" height="7"  rx="3" fill="#d4d4d8"/>
+
+    <!-- Body text lines -->
+    <rect x="874" y="174" width="226" height="7" rx="3" fill="#d2d2d8"/>
+    <rect x="874" y="188" width="238" height="7" rx="3" fill="#d2d2d8"/>
+    <rect x="874" y="202" width="180" height="7" rx="3" fill="#dadade"/>
+
+    <!-- Content block (same) -->
+    <rect x="874" y="220" width="238" height="80" rx="4" fill="#eeeef3"/>
+    <rect x="882" y="230" width="88"  height="7" rx="3" fill="#c6c6cc"/>
+    <rect x="882" y="244" width="194" height="7" rx="3" fill="#cecece"/>
+    <rect x="882" y="258" width="154" height="7" rx="3" fill="#d4d4d8"/>
+    <rect x="882" y="272" width="112" height="7" rx="3" fill="#d8d8de"/>
+    <rect x="882" y="286" width="72"  height="7" rx="3" fill="#dcdcdf"/>
+
+    <!-- Separator -->
+    <rect x="874" y="310" width="238" height="1" fill="#e6e6ea"/>
+
+    <!-- Action row (same) -->
+    <rect x="874" y="320" width="58" height="18" rx="4" fill="#ebebf0"/>
+    <rect x="942" y="320" width="58" height="18" rx="4" fill="#ebebf0"/>
+    <rect x="1010" y="320" width="58" height="18" rx="4" fill="#ebebf0"/>
+
+    <!-- Bottom of wrapper: style tag + lime accent -->
+    <rect x="876" y="454" width="156" height="22" rx="6"
+          fill="rgba(224,255,79,0.1)" stroke="rgba(224,255,79,0.28)" stroke-width="1"/>
+    <text x="954" y="469" font-family="monospace" font-size="10" fill="#e0ff4f" text-anchor="middle">exported with polsh</text>
+    <rect x="856" y="516" width="278" height="2" rx="1" fill="rgba(224,255,79,0.4)"/>
+
+  </g>
+
+  <!-- ── Divider line (sits on top of clipped content) ── -->
+  <line x1="848" y1="50" x2="848" y2="546" stroke="#e0ff4f" stroke-width="2" opacity="0.9"/>
+
+  <!-- ── Drag handle ── -->
+  <circle cx="848" cy="298" r="18" fill="#0a0a0c" stroke="#e0ff4f" stroke-width="1.5"/>
+  <text x="848" y="304" font-family="sans-serif" font-size="12" fill="#e0ff4f" text-anchor="middle">◄►</text>
+
+  <!-- Card outer border -->
+  <rect x="552" y="50" width="596" height="496" rx="18"
+        fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+
+</svg>

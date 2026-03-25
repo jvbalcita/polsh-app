@@ -138,6 +138,19 @@ test('users can store a personal preset without a team id', function () {
     expect($preset->team_id)->toBeNull();
 });
 
+test('invalid preset saves return json validation errors for editor requests', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('presets.store'), [
+            'name' => 'Broken preset',
+            'style_slug' => '',
+            'customizations' => ['clarity' => 6],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['style_slug']);
+});
+
 test('users cannot store a preset for a team they do not belong to', function () {
     $owner = User::factory()->create();
     $intruder = User::factory()->create();
