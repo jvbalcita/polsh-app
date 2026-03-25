@@ -15,7 +15,7 @@ class UserController extends Controller
     public function index(Request $request): Response
     {
         $query = User::query()
-            ->with(['roles', 'media', 'subscriptions' => fn ($q) => $q->latest()->limit(1)])
+            ->with(['roles', 'media'])
             ->withCount(['presets', 'supportTickets']);
 
         if ($search = $request->string('q')->trim()->value()) {
@@ -31,9 +31,9 @@ class UserController extends Controller
 
         if ($plan = $request->string('plan')->trim()->value()) {
             if ($plan === 'pro') {
-                $query->whereHas('subscriptions', fn ($q) => $q->active());
+                $query->where('plan', 'pro');
             } elseif ($plan === 'free') {
-                $query->whereDoesntHave('subscriptions', fn ($q) => $q->active());
+                $query->where('plan', 'free');
             }
         }
 
@@ -50,8 +50,6 @@ class UserController extends Controller
         $user->load([
             'roles',
             'media',
-            'subscriptions.payments',
-            'payments' => fn ($q) => $q->latest()->limit(50),
             'presets' => fn ($q) => $q->latest()->limit(50),
             'exportSessions' => fn ($q) => $q->latest()->limit(30),
             'supportTickets' => fn ($q) => $q->latest()->limit(30),

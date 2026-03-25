@@ -26,10 +26,9 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
-    'paymongo' => [
-        'public_key' => env('PAYMONGO_PUBLIC_KEY'),
-        'secret_key' => env('PAYMONGO_SECRET_KEY'),
-        'webhook_secret' => env('PAYMONGO_WEBHOOK_SIG'),
+    'lemon_squeezy' => [
+        'variant_pro_monthly' => env('LEMON_SQUEEZY_VARIANT_PRO_MONTHLY'),
+        'variant_pro_yearly' => env('LEMON_SQUEEZY_VARIANT_PRO_YEARLY'),
     ],
 
     'postmark' => [

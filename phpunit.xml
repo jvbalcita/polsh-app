@@ -32,5 +32,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="LEMON_SQUEEZY_STORE" value="test-store"/>
+        <env name="LEMON_SQUEEZY_API_KEY" value="test-key"/>
     </php>
 </phpunit>
