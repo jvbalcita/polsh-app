@@ -328,6 +328,10 @@ export const useEditorStore = defineStore('editor', () => {
                             toast.success(
                                 'Style from your previous session applied',
                             );
+                        } else {
+                            toast.warning(
+                                'Could not restore style from previous session',
+                            );
                         }
 
                         pendingStyleSlug.value = null;
@@ -369,7 +373,6 @@ export const useEditorStore = defineStore('editor', () => {
         activeStyle,
         allStyles,
         exportSettings,
-        pendingStyleSlug,
         setPendingStyleFromSession,
         presets,
         teamPresets,
