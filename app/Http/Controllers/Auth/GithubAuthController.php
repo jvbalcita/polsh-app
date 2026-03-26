@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\OauthAccount;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,31 +20,36 @@ class GithubAuthController extends Controller
     {
         $githubUser = Socialite::driver('github')->user();
 
-        // Match by github_id first, then fall back to email so existing
-        // email-registered accounts can link their GitHub without creating a duplicate.
-        $user = User::where('github_id', $githubUser->getId())
-            ->orWhere('email', $githubUser->getEmail())
+        $oauthAccount = OauthAccount::query()
+            ->where('provider', 'github')
+            ->where('provider_user_id', $githubUser->getId())
             ->first();
 
-        if ($user) {
-            $user->update([
-                'github_id' => $githubUser->getId(),
-                'github_token' => $githubUser->token,
-                'avatar' => $githubUser->getAvatar(),
-            ]);
-        } else {
+        $user = $oauthAccount?->user
+            ?? User::query()->where('email', $githubUser->getEmail())->first();
+
+        if (! $user) {
             $user = User::create([
                 'name' => $githubUser->getName() ?? $githubUser->getNickname() ?? 'GitHub User',
                 'email' => $githubUser->getEmail(),
-                'github_id' => $githubUser->getId(),
-                'github_token' => $githubUser->token,
                 'avatar' => $githubUser->getAvatar(),
-                // Email is pre-verified by GitHub — mark it immediately.
                 'email_verified_at' => now(),
-                // No password — this account uses GitHub OAuth only.
                 'password' => null,
             ]);
+        } else {
+            $user->update(['avatar' => $githubUser->getAvatar()]);
         }
+
+        OauthAccount::updateOrCreate(
+            ['provider' => 'github', 'provider_user_id' => $githubUser->getId()],
+            [
+                'user_id' => $user->id,
+                'token' => $githubUser->token,
+                'name' => $githubUser->getName() ?? $githubUser->getNickname(),
+                'email' => $githubUser->getEmail(),
+                'avatar' => $githubUser->getAvatar(),
+            ]
+        );
 
         Auth::login($user, remember: true);
 

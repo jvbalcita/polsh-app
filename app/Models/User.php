@@ -31,7 +31,6 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
-        'github_token',
     ];
 
     /**
@@ -46,6 +45,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function oauthAccounts(): HasMany
+    {
+        return $this->hasMany(OauthAccount::class);
     }
 
     public function presets(): HasMany
