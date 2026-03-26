@@ -69,7 +69,7 @@ onMounted(() => {
     const style = allStyles.find((s) => s.slug === sessionData.style_slug);
 
     if (style) {
-        store.applyStyle(style);
+        store.setPendingStyleFromSession(style.slug);
     }
 });
 </script>
