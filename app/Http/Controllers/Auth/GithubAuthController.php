@@ -20,6 +20,12 @@ class GithubAuthController extends Controller
     {
         $githubUser = Socialite::driver('github')->user();
 
+        if (! $githubUser->getEmail()) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Your GitHub account does not have a public email address. Please make your GitHub email public and try again.',
+            ]);
+        }
+
         $oauthAccount = OauthAccount::query()
             ->where('provider', 'github')
             ->where('provider_user_id', $githubUser->getId())

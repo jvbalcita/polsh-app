@@ -20,6 +20,12 @@ class GoogleAuthController extends Controller
     {
         $googleUser = Socialite::driver('google')->user();
 
+        if (! $googleUser->getEmail()) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Could not retrieve your email from Google. Please try again.',
+            ]);
+        }
+
         $oauthAccount = OauthAccount::query()
             ->where('provider', 'google')
             ->where('provider_user_id', $googleUser->getId())

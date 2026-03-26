@@ -9,6 +9,7 @@ function makeSocialiteUser(array $attributes = []): SocialiteUser
 {
     $socialiteUser = Mockery::mock(SocialiteUser::class);
     $socialiteUser->token = $attributes['token'] ?? 'github-token-123';
+    $socialiteUser->refreshToken = $attributes['refresh_token'] ?? null;
     $socialiteUser->shouldReceive('getId')->andReturn($attributes['id'] ?? '12345');
     $socialiteUser->shouldReceive('getName')->andReturn($attributes['name'] ?? 'Jane Dev');
     $socialiteUser->shouldReceive('getNickname')->andReturn($attributes['nickname'] ?? 'janedev');
@@ -19,7 +20,7 @@ function makeSocialiteUser(array $attributes = []): SocialiteUser
 }
 
 test('github creates new user and oauth account on first login', function () {
-    $socialiteUser = makeSocialiteUser();
+    $socialiteUser = makeSocialiteUser(['refresh_token' => 'github-refresh-token-abc']);
 
     Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
 
@@ -41,7 +42,20 @@ test('github creates new user and oauth account on first login', function () {
     expect($oauthAccount)->not->toBeNull();
     expect($oauthAccount->user_id)->toBe($user->id);
     expect($oauthAccount->token)->toBe('github-token-123');
+    expect($oauthAccount->refresh_token)->toBe('github-refresh-token-abc');
     expect($oauthAccount->email)->toBe('jane@example.com');
+});
+
+test('github callback redirects with error when email is not public', function () {
+    $socialiteUser = makeSocialiteUser(['email' => null]);
+
+    Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
+
+    $response = $this->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('login'));
+    $this->assertGuest();
+    expect(User::query()->count())->toBe(0);
 });
 
 test('github links existing email-registered user instead of creating duplicate', function () {
