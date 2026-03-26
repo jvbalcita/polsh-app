@@ -63,6 +63,37 @@ function extFromFormat(format: string): string {
     return format === 'jpeg' ? 'jpg' : format;
 }
 
+function withSquareCardCorners<T>(stage: Konva.Stage, callback: () => T): T {
+    type KonvaRect = { cornerRadius: (r?: number) => number | void };
+    type KonvaGroup = { clipFunc: (fn?: (() => void) | null) => (() => void) | void };
+
+    const shadow = stage.findOne('.card-shadow') as KonvaRect | undefined;
+    const group = stage.findOne('.card-clip-group') as KonvaGroup | undefined;
+    const border = stage.findOne('.card-border') as KonvaRect | undefined;
+
+    const origShadowRadius = shadow?.cornerRadius();
+    const origClipFunc = group?.clipFunc();
+    const origBorderRadius = border?.cornerRadius();
+
+    shadow?.cornerRadius(0);
+    group?.clipFunc(null);
+    border?.cornerRadius(0);
+
+    try {
+        return callback();
+    } finally {
+        if (origShadowRadius !== undefined) {
+            shadow?.cornerRadius(origShadowRadius as number);
+        }
+
+        group?.clipFunc(origClipFunc as () => void);
+
+        if (origBorderRadius !== undefined) {
+            border?.cornerRadius(origBorderRadius as number);
+        }
+    }
+}
+
 function waitFrame(): Promise<void> {
     return new Promise((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
@@ -637,7 +668,9 @@ export function useExport() {
         const ext = extFromFormat(format);
 
         const dataUrl = withWorkspaceBackgroundHidden(stage, () =>
-            stage.toDataURL(rasterExportConfig(format, scale)),
+            withSquareCardCorners(stage, () =>
+                stage.toDataURL(rasterExportConfig(format, scale)),
+            ),
         );
 
         triggerDownload(dataUrl, `polsh-${slug}-01.${ext}`);
@@ -665,10 +698,12 @@ export function useExport() {
                 await waitFrame();
 
                 const dataUrl = withWorkspaceBackgroundHidden(stage, () =>
-                    stage.toDataURL(
-                        rasterExportConfig(
-                            format as 'png' | 'webp' | 'jpeg',
-                            scale,
+                    withSquareCardCorners(stage, () =>
+                        stage.toDataURL(
+                            rasterExportConfig(
+                                format as 'png' | 'webp' | 'jpeg',
+                                scale,
+                            ),
                         ),
                     ),
                 );
