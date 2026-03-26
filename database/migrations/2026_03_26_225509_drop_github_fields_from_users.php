@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropIndex('users_github_id_unique');
+            $table->dropUnique(['github_id']);
         });
 
         Schema::table('users', function (Blueprint $table) {

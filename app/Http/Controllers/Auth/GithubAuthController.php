@@ -45,6 +45,7 @@ class GithubAuthController extends Controller
             [
                 'user_id' => $user->id,
                 'token' => $githubUser->token,
+                'refresh_token' => $githubUser->refreshToken,
                 'name' => $githubUser->getName() ?? $githubUser->getNickname(),
                 'email' => $githubUser->getEmail(),
                 'avatar' => $githubUser->getAvatar(),

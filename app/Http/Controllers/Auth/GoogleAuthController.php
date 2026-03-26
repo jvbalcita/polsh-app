@@ -45,6 +45,7 @@ class GoogleAuthController extends Controller
             [
                 'user_id' => $user->id,
                 'token' => $googleUser->token,
+                'refresh_token' => $googleUser->refreshToken,
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
