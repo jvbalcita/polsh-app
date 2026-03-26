@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted, ref } from 'vue';
 import CanvasStage from '@/components/editor/CanvasStage.vue';
@@ -13,6 +13,7 @@ import { CANVAS_SIZES } from '@/composables/useCanvas';
 import { useHistory } from '@/composables/useHistory';
 import { useKeyboard } from '@/composables/useKeyboard';
 import { useEditorStore } from '@/stores/editor';
+import { home } from '@/routes';
 import allStyles from '@/styles';
 // Initialize history tracking and global keyboard shortcuts for this page
 useHistory();
@@ -248,7 +249,7 @@ onMounted(() => {
                     The Polsh editor requires a larger screen. Open it on a
                     desktop or laptop to get started.
                 </p>
-                <a href="/" class="mobile-overlay-cta">Back to home</a>
+                <Link :href="home()" class="mobile-overlay-cta">Back to home</Link>
             </div>
         </div>
     </Teleport>
