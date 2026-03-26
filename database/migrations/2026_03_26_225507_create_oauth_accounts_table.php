@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('provider');
             $table->string('provider_user_id');
-            $table->string('token')->nullable();
-            $table->string('refresh_token')->nullable();
+            $table->text('token')->nullable();
+            $table->text('refresh_token')->nullable();
             $table->timestamp('token_expiry')->nullable();
             $table->string('name')->nullable();
             $table->string('email')->nullable();

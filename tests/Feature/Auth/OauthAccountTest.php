@@ -108,6 +108,18 @@ test('github second login updates token without creating duplicate records', fun
     expect($oauthAccount->token)->toBe('new-token-456');
 });
 
+test('google callback redirects with error when email is not available', function () {
+    $socialiteUser = makeSocialiteUser(['email' => null]);
+
+    Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
+
+    $response = $this->get(route('auth.google.callback'));
+
+    $response->assertRedirect(route('login'));
+    $this->assertGuest();
+    expect(User::query()->count())->toBe(0);
+});
+
 test('google creates new user and oauth account on first login', function () {
     $socialiteUser = makeSocialiteUser([
         'id' => 'google-id-789',
