@@ -678,6 +678,7 @@ export function useCanvas(
             : cardBounds.value;
 
         return {
+            name: 'card-shadow',
             x: bounds.x,
             y: bounds.y,
             width: bounds.width,
@@ -693,6 +694,7 @@ export function useCanvas(
     });
 
     const cardGroupConfig = computed(() => ({
+        name: 'card-clip-group',
         x: cardX.value,
         y: cardY.value,
         clipFunc: (ctx: CanvasRenderingContext2D) => {
@@ -1006,6 +1008,7 @@ export function useCanvas(
             style.border.type === 'neon' || style.border.type === 'glow';
 
         return {
+            name: 'card-border',
             x: bounds.x + bw / 2,
             y: bounds.y + bw / 2,
             width: bounds.width - bw,
