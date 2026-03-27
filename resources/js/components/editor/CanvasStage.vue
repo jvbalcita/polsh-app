@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core';
 import type Konva from 'konva';
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import type { VueKonvaRef } from 'vue-konva';
 import { useCanvas, createNoiseCanvas } from '@/composables/useCanvas';
 import { registerStage } from '@/composables/useExport';
@@ -22,8 +22,10 @@ const noiseCanvas = ref<HTMLCanvasElement | null>(null);
 watch(
     () => store.activeSettings?.noiseGrain,
     (grain) => {
-        noiseCanvas.value =
-            grain && grain > 0 ? createNoiseCanvas(grain) : null;
+        nextTick(() => {
+            noiseCanvas.value =
+                grain && grain > 0 ? createNoiseCanvas(grain) : null;
+        });
     },
     { immediate: true },
 );

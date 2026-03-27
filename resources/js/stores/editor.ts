@@ -105,6 +105,13 @@ export const useEditorStore = defineStore('editor', () => {
         return slug ? (allStyles.find((s) => s.slug === slug) ?? null) : null;
     });
 
+    /** Slug stored when a session is restored before any image exists; applied on first addImage */
+    const pendingStyleSlug = ref<string | null>(null);
+
+    function setPendingStyleFromSession(slug: string): void {
+        pendingStyleSlug.value = slug;
+    }
+
     // Presets (loaded on demand when user is authenticated)
     const presets = ref<SavedPreset[]>([]);
     const teamPresets = ref<SavedPreset[]>([]);
@@ -307,6 +314,29 @@ export const useEditorStore = defineStore('editor', () => {
                         settings: { ...currentSettings },
                     });
                     activeIndex.value = images.value.length - 1;
+
+                    if (pendingStyleSlug.value) {
+                        const pendingStyle = allStyles.find(
+                            (s) => s.slug === pendingStyleSlug.value,
+                        );
+
+                        if (pendingStyle) {
+                            images.value[activeIndex.value].settings = {
+                                ...images.value[activeIndex.value].settings,
+                                ...settingsFromStyle(pendingStyle),
+                            };
+                            toast.success(
+                                'Style from your previous session applied',
+                            );
+                        } else {
+                            toast.warning(
+                                'Could not restore style from previous session',
+                            );
+                        }
+
+                        pendingStyleSlug.value = null;
+                    }
+
                     resolve();
                 };
                 img.onerror = reject;
@@ -343,6 +373,7 @@ export const useEditorStore = defineStore('editor', () => {
         activeStyle,
         allStyles,
         exportSettings,
+        setPendingStyleFromSession,
         presets,
         teamPresets,
         presetsLoaded,

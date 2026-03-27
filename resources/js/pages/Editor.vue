@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted, ref } from 'vue';
 import CanvasStage from '@/components/editor/CanvasStage.vue';
 import ControlPanel from '@/components/editor/ControlPanel.vue';
@@ -12,6 +13,7 @@ import { CANVAS_SIZES } from '@/composables/useCanvas';
 import { useHistory } from '@/composables/useHistory';
 import { useKeyboard } from '@/composables/useKeyboard';
 import { useEditorStore } from '@/stores/editor';
+import { home } from '@/routes';
 import allStyles from '@/styles';
 // Initialize history tracking and global keyboard shortcuts for this page
 useHistory();
@@ -19,6 +21,9 @@ useKeyboard();
 
 const page = usePage();
 const store = useEditorStore();
+
+const { width } = useWindowSize();
+const isMobile = computed(() => width.value < 768);
 
 const activeStyleName = computed(() => store.activeStyle?.name ?? '');
 const hasImages = computed(() => store.images.length > 0);
@@ -69,7 +74,7 @@ onMounted(() => {
     const style = allStyles.find((s) => s.slug === sessionData.style_slug);
 
     if (style) {
-        store.applyStyle(style);
+        store.setPendingStyleFromSession(style.slug);
     }
 });
 </script>
@@ -233,6 +238,20 @@ onMounted(() => {
 
     <Teleport to="body">
         <Toaster rich-colors theme="dark" position="bottom-right" />
+    </Teleport>
+
+    <Teleport to="body">
+        <div v-if="isMobile" class="mobile-overlay">
+            <div class="mobile-overlay-content">
+                <span class="mobile-overlay-wordmark">polsh</span>
+                <h1 class="mobile-overlay-heading">Designed for desktop</h1>
+                <p class="mobile-overlay-body">
+                    The Polsh editor requires a larger screen. Open it on a
+                    desktop or laptop to get started.
+                </p>
+                <Link :href="home()" class="mobile-overlay-cta">Back to home</Link>
+            </div>
+        </div>
     </Teleport>
 </template>
 
@@ -422,6 +441,67 @@ onMounted(() => {
 
 .csb-custom-apply:hover {
     background: rgba(224, 255, 79, 0.18);
+}
+
+/* ── Mobile overlay ── */
+.mobile-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+    background: #080808;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.mobile-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    max-width: 320px;
+}
+
+.mobile-overlay-wordmark {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: #f0f0f2;
+    margin-bottom: 8px;
+}
+
+.mobile-overlay-heading {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+
+.mobile-overlay-body {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.mobile-overlay-cta {
+    margin-top: 8px;
+    display: inline-block;
+    padding: 10px 20px;
+    background: #e0ff4f;
+    color: #0a0a0c;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: opacity 120ms ease;
+}
+
+.mobile-overlay-cta:hover {
+    opacity: 0.85;
 }
 
 /* ── Canvas workspace grid background ── */

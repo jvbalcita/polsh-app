@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\OauthAccount;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,23 +20,43 @@ class GoogleAuthController extends Controller
     {
         $googleUser = Socialite::driver('google')->user();
 
-        $user = User::where('email', $googleUser->getEmail())->first();
-
-        if ($user) {
-            $user->update([
-                'avatar' => $googleUser->getAvatar(),
+        if (! $googleUser->getEmail()) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Could not retrieve your email from Google. Please try again.',
             ]);
-        } else {
+        }
+
+        $oauthAccount = OauthAccount::query()
+            ->where('provider', 'google')
+            ->where('provider_user_id', $googleUser->getId())
+            ->first();
+
+        $user = $oauthAccount?->user
+            ?? User::query()->where('email', $googleUser->getEmail())->first();
+
+        if (! $user) {
             $user = User::create([
                 'name' => $googleUser->getName() ?? 'Google User',
                 'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
-                // Email is pre-verified by Google — mark it immediately.
                 'email_verified_at' => now(),
-                // No password — this account uses Google OAuth only.
                 'password' => null,
             ]);
+        } else {
+            $user->update(['avatar' => $googleUser->getAvatar()]);
         }
+
+        OauthAccount::updateOrCreate(
+            ['provider' => 'google', 'provider_user_id' => $googleUser->getId()],
+            [
+                'user_id' => $user->id,
+                'token' => $googleUser->token,
+                'refresh_token' => $googleUser->refreshToken,
+                'name' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
+                'avatar' => $googleUser->getAvatar(),
+            ]
+        );
 
         Auth::login($user, remember: true);
 
