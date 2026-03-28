@@ -677,6 +677,15 @@ export function useCanvas(
             ? frameAbsoluteBounds.value
             : cardBounds.value;
 
+        // Fill must be opaque for Konva to cast a shadow (canvas draws shadow from
+        // rendered pixels; transparent fill produces no pixels → no shadow).
+        // For transparent-background + no-frame, the fill would show through the
+        // card padding, so fall back to transparent and accept no shadow there.
+        const fill =
+            hasFrameOverlay.value || s?.backgroundType !== 'transparent'
+                ? '#000000'
+                : 'transparent';
+
         return {
             name: 'card-shadow',
             x: bounds.x,
@@ -684,7 +693,7 @@ export function useCanvas(
             width: bounds.width,
             height: bounds.height,
             cornerRadius: artifactRadius.value,
-            fill: 'transparent',
+            fill,
             shadowColor: s?.shadowColor ?? '#000000',
             shadowBlur: s?.shadowBlur ?? 40,
             shadowOpacity: (s?.shadow ?? 50) / 100,
@@ -884,8 +893,10 @@ export function useCanvas(
         const radius = Math.max(0, (store.activeSettings?.radius ?? 12) - 2);
         const ft = store.activeSettings?.frameType;
 
-        let topRadius: number;
-        let bottomRadius: number;
+        let topLeft: number;
+        let topRight: number;
+        let bottomRight: number;
+        let bottomLeft: number;
 
         if (ft === 'iphone-15' || ft === 'ipad-pro') {
             const { width: fw, height: fh } = frameBounds.value;
@@ -893,44 +904,44 @@ export function useCanvas(
                 Math.round(Math.min(fw, fh) * DEVICE_FRAME_RADIUS_FACTOR) - 10,
                 4,
             );
-            topRadius = screenR;
-            bottomRadius = screenR;
+            topLeft = topRight = bottomRight = bottomLeft = screenR;
         } else if (ft === 'iphone_15_pro') {
             // screen rx=46 at BASE_W=417
             const screenR = Math.max(
                 Math.round((frameBounds.value.width / 417) * 46),
                 4,
             );
-            topRadius = screenR;
-            bottomRadius = screenR;
+            topLeft = topRight = bottomRight = bottomLeft = screenR;
         } else if (ft === 'iphone_17_pro') {
             // screen rx=48 at BASE_W=424
             const screenR = Math.max(
                 Math.round((frameBounds.value.width / 424) * 48),
                 4,
             );
-            topRadius = screenR;
-            bottomRadius = screenR;
+            topLeft = topRight = bottomRight = bottomLeft = screenR;
         } else if (ft === 'ipad_pro') {
             // rx=14 proportional to frame width (base 1024, BEZEL_V=16, BEZEL_H=20)
             const screenR = Math.max(
                 Math.round((frameBounds.value.width / 1024) * 14),
                 2,
             );
-            topRadius = screenR;
-            bottomRadius = screenR;
+            topLeft = topRight = bottomRight = bottomLeft = screenR;
         } else if (ft === 'ipad_pro_m5') {
             // rx=16 proportional to frame width (base 1024, BEZEL_V=14, BEZEL_H=18)
             const screenR = Math.max(
                 Math.round((frameBounds.value.width / 1024) * 16),
                 2,
             );
-            topRadius = screenR;
-            bottomRadius = screenR;
+            topLeft = topRight = bottomRight = bottomLeft = screenR;
         } else {
-            topRadius = frameOverlayBounds.value.topInset > 0 ? 0 : radius;
-            bottomRadius =
-                frameOverlayBounds.value.bottomInset > 0 ? 0 : radius;
+            const hasTop    = frameOverlayBounds.value.topInset > 0;
+            const hasBottom = frameOverlayBounds.value.bottomInset > 0;
+            const hasLeft   = frameOverlayBounds.value.leftInset > 0;
+            const hasRight  = frameOverlayBounds.value.rightInset > 0;
+            topLeft     = hasTop    || hasLeft  ? 0 : radius;
+            topRight    = hasTop    || hasRight ? 0 : radius;
+            bottomRight = hasBottom || hasRight ? 0 : radius;
+            bottomLeft  = hasBottom || hasLeft  ? 0 : radius;
         }
 
         return {
@@ -939,10 +950,10 @@ export function useCanvas(
             width,
             height,
             cornerRadii: {
-                topLeft: topRadius,
-                topRight: topRadius,
-                bottomRight: bottomRadius,
-                bottomLeft: bottomRadius,
+                topLeft,
+                topRight,
+                bottomRight,
+                bottomLeft,
             },
         };
     });

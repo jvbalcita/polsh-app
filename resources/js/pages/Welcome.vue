@@ -185,10 +185,12 @@ function renderStyleFrame(
     canvas: HTMLCanvasElement,
     style: StyleConfig,
     img: HTMLImageElement | null,
+    preW?: number,
+    preH?: number,
 ): void {
     const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
-    const cssW = canvas.offsetWidth || 200;
-    const cssH = canvas.offsetHeight || 130;
+    const cssW = preW ?? (canvas.offsetWidth || 200);
+    const cssH = preH ?? (canvas.offsetHeight || 130);
     canvas.width = cssW * dpr;
     canvas.height = cssH * dpr;
 
@@ -302,17 +304,25 @@ function renderStyleFrame(
 const heroSectionRef = ref<HTMLElement | null>(null);
 const heroMx = ref('50%');
 const heroMy = ref('50%');
+let heroRafId: number | null = null;
 
 function onHeroMouseMove(e: MouseEvent): void {
-    const el = heroSectionRef.value;
-
-    if (!el) {
+    if (heroRafId !== null) {
         return;
     }
 
-    const rect = el.getBoundingClientRect();
-    heroMx.value = `${((e.clientX - rect.left) / rect.width) * 100}%`;
-    heroMy.value = `${((e.clientY - rect.top) / rect.height) * 100}%`;
+    heroRafId = requestAnimationFrame(() => {
+        heroRafId = null;
+        const el = heroSectionRef.value;
+
+        if (!el) {
+            return;
+        }
+
+        const rect = el.getBoundingClientRect();
+        heroMx.value = `${((e.clientX - rect.left) / rect.width) * 100}%`;
+        heroMy.value = `${((e.clientY - rect.top) / rect.height) * 100}%`;
+    });
 }
 
 // ── Hero cycling ──────────────────────────────────────────────────────────────
@@ -364,39 +374,57 @@ const baBeforeCanvas = ref<HTMLCanvasElement | null>(null);
 const baAfterCanvas = ref<HTMLCanvasElement | null>(null);
 const baDivPct = ref<number>(50);
 let baIsDragging = false;
+// Cache the container rect for the duration of a drag — it doesn't change while
+// dragging, so re-reading it on every mousemove (getBoundingClientRect forces
+// synchronous layout) is wasteful and causes forced-reflow violations.
+let baCachedRect: DOMRect | null = null;
+let baDragRafId: number | null = null;
 
 function baMoveAt(clientX: number): void {
-    const container = baContainerRef.value;
-
-    if (!container) {
+    if (!baCachedRect) {
         return;
     }
 
-    const rect = container.getBoundingClientRect();
     baDivPct.value = Math.min(
-        Math.max(((clientX - rect.left) / rect.width) * 100, 0),
+        Math.max(((clientX - baCachedRect.left) / baCachedRect.width) * 100, 0),
         100,
     );
 }
 
 function onBaMouseDown(e: MouseEvent): void {
+    // Read rect once at drag start — layout is stable here.
+    baCachedRect = baContainerRef.value?.getBoundingClientRect() ?? null;
     baIsDragging = true;
     baMoveAt(e.clientX);
 }
 
 function onWindowMouseMove(e: MouseEvent): void {
-    if (baIsDragging) {
-        baMoveAt(e.clientX);
+    if (!baIsDragging || baDragRafId !== null) {
+        return;
     }
+
+    baDragRafId = requestAnimationFrame(() => {
+        baDragRafId = null;
+        baMoveAt(e.clientX);
+    });
 }
 
 function onWindowMouseUp(): void {
     baIsDragging = false;
+    baCachedRect = null;
+    if (baDragRafId !== null) {
+        cancelAnimationFrame(baDragRafId);
+        baDragRafId = null;
+    }
 }
 
 function onBaTouchMove(e: TouchEvent): void {
     if (e.cancelable) {
         e.preventDefault();
+    }
+
+    if (!baCachedRect) {
+        baCachedRect = baContainerRef.value?.getBoundingClientRect() ?? null;
     }
 
     baMoveAt(e.touches[0].clientX);
@@ -410,7 +438,7 @@ function onBaKeyDown(e: KeyboardEvent): void {
     }
 }
 
-function renderBefore(img: HTMLImageElement): void {
+function renderBefore(img: HTMLImageElement, preW?: number, preH?: number): void {
     const canvas = baBeforeCanvas.value;
 
     if (!canvas) {
@@ -418,8 +446,8 @@ function renderBefore(img: HTMLImageElement): void {
     }
 
     const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
-    const cssW = canvas.offsetWidth || 760;
-    const cssH = canvas.offsetHeight || 420;
+    const cssW = preW ?? (canvas.offsetWidth || 760);
+    const cssH = preH ?? (canvas.offsetHeight || 420);
     canvas.width = cssW * dpr;
     canvas.height = cssH * dpr;
     const ctx = canvas.getContext('2d');
@@ -504,6 +532,17 @@ const compRows = [
 onMounted(async () => {
     const img = await loadDemoImage();
 
+    // Batch all offsetWidth/offsetHeight reads before any canvas writes to avoid
+    // interleaved read→write→read layout thrashing (forced reflow violation).
+    const gallerySizes = galleryRefs.value.map((canvas) => ({
+        w: canvas?.offsetWidth || 200,
+        h: canvas?.offsetHeight || 130,
+    }));
+    const baBeforeW = baBeforeCanvas.value?.offsetWidth || 760;
+    const baBeforeH = baBeforeCanvas.value?.offsetHeight || 420;
+    const baAfterW = baAfterCanvas.value?.offsetWidth || 200;
+    const baAfterH = baAfterCanvas.value?.offsetHeight || 130;
+
     // Hero
     await renderHero(HERO_SLUGS[heroIdx]);
     startHeroCycle();
@@ -511,18 +550,19 @@ onMounted(async () => {
     // Style gallery
     styles.forEach((style, i) => {
         const canvas = galleryRefs.value[i];
+        const size = gallerySizes[i];
 
         if (canvas) {
-            renderStyleFrame(canvas, style, img);
+            renderStyleFrame(canvas, style, img, size.w, size.h);
         }
     });
 
     // Before canvas (raw, greyed by CSS filter)
-    renderBefore(img);
+    renderBefore(img, baBeforeW, baBeforeH);
 
     // After canvas (obsidian-glass styled)
     if (baAfterCanvas.value) {
-        renderStyleFrame(baAfterCanvas.value, styles[0], img);
+        renderStyleFrame(baAfterCanvas.value, styles[0], img, baAfterW, baAfterH);
     }
 
     window.addEventListener('mousemove', onWindowMouseMove);
@@ -532,6 +572,10 @@ onMounted(async () => {
 onUnmounted(() => {
     if (heroCycleTimer) {
         clearInterval(heroCycleTimer);
+    }
+
+    if (heroRafId !== null) {
+        cancelAnimationFrame(heroRafId);
     }
 
     window.removeEventListener('mousemove', onWindowMouseMove);

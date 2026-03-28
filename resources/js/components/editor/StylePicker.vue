@@ -5,6 +5,7 @@ import UpgradeModal from '@/components/editor/UpgradeModal.vue';
 import { loadDemoImage, renderStyleFrame } from '@/composables/useStyleCanvas';
 import { useEditorStore  } from '@/stores/editor';
 import type {SavedPreset} from '@/stores/editor';
+import { toast } from 'vue-sonner';
 import type { StyleConfig } from '@/types/style';
 
 const store = useEditorStore();
@@ -31,6 +32,7 @@ function select(style: StyleConfig): void {
 
 function applyToAll(): void {
     store.applyToAll();
+    toast.success('Style applied to all images');
 }
 
 function loadPreset(preset: SavedPreset): void {
