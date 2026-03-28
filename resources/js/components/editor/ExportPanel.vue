@@ -12,12 +12,12 @@ const page = usePage();
 const isPro = computed(() => page.props.isPro as boolean);
 const showUpgrade = ref(false);
 
-const FORMATS = [
+const FORMATS: { key: string; label: string; pro?: boolean }[] = [
     { key: 'png', label: 'PNG' },
     { key: 'webp', label: 'WEBP' },
     { key: 'jpeg', label: 'JPEG' },
-    { key: 'svg', label: 'SVG' },
-] as const;
+    { key: 'svg', label: 'SVG', pro: true },
+];
 
 const RESOLUTIONS = [
     { label: '1×', value: 1 },
@@ -65,7 +65,7 @@ return;
                 v-for="fmt in FORMATS"
                 :key="fmt.key"
                 type="button"
-                class="rounded border py-1 text-[10px] font-semibold transition-colors"
+                class="relative rounded border py-1 text-[10px] font-semibold transition-colors"
                 :class="[
                     store.exportSettings.exportFormat === fmt.key
                         ? 'border-[#e0ff4f]/40 bg-[#e0ff4f]/10 text-[#e0ff4f]'
@@ -74,6 +74,10 @@ return;
                 @click="fmt.key === 'svg' && !isPro ? (showUpgrade = true) : (store.exportSettings.exportFormat = fmt.key)"
             >
                 {{ fmt.label }}
+                <span
+                    v-if="fmt.pro"
+                    class="absolute -right-1 -top-1.5 rounded-sm bg-[#e0ff4f]/90 px-[3px] py-px text-[7px] font-bold leading-none text-black"
+                >PRO</span>
             </button>
         </div>
 
