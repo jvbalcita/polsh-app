@@ -2,6 +2,14 @@
 
 ## Tasks
 
+- [x] Define the landing redesign visual thesis, content plan, and interaction thesis for two distinct SaaS-facing variants
+- [x] Replace the current home page with a lightweight switcher that can present landing v1 and landing v2 without changing the route contract
+- [x] Build landing v1 around a calm, premium SaaS composition using the provided editor sample as the dominant hero proof
+- [x] Build landing v2 as a sharper, more product-led alternative with the same accent system and a realistic before/after story
+- [x] Add regression coverage for the landing version switcher and route-level call to action copy
+- [ ] Run targeted tests, lint, and type checks for the landing redesign
+- [x] Record the landing redesign review notes and verification results in the review section
+
 - [x] Mount the shared toaster on the standalone editor page so preset error toasts can render
 - [x] Add regression coverage proving the editor page mounts the toaster
 - [x] Record the standalone editor toaster verification results in the review section
@@ -53,6 +61,18 @@
 
 ## Review
 
+- Landing redesign visual thesis: premium product-marketing surface with dark glass materials, restrained copy, and the editor sample image acting as the proof anchor instead of an abstract mock.
+- Landing redesign content plan: hero with editor proof, product-value support band, realistic before/after transformation section, workflow depth, and a strong final conversion CTA.
+- Landing redesign interaction thesis: subtle hero entrance sequencing, sticky/parallax feel around product proof, and a lightweight v1/v2 transition that makes the alternatives feel intentional instead of stacked.
+- `resources/js/pages/Welcome.vue` is now a thin landing switcher that keeps `/` on a single Inertia component while exposing two redesign directions via `?view=v2`.
+- Added `resources/js/components/landing/LandingVersionOne.vue` and `resources/js/components/landing/LandingVersionTwo.vue` so each redesign has its own composition, copy hierarchy, and realistic use of `public/images/polsh-sample-editor.png`.
+- Updated `resources/css/app.css` to load `Space Grotesk` for the new landing typography and `resources/js/app.ts` to load JetBrains Mono so the redesign does not fall back to the old DM-only type treatment.
+- Added `resources/js/pages/Welcome.test.ts` for the landing switcher behavior and `tests/Feature/Pages/WelcomePageRenderTest.php` for the home-route Inertia contract, while extending `tests/Feature/Pages/WelcomePageCallToActionTest.php` to guard the new v1/v2 switch points.
+- Verification passed: `vendor/bin/sail artisan test --compact tests/Feature/Pages/WelcomePageRenderTest.php tests/Feature/Pages/WelcomePageCallToActionTest.php`, `vendor/bin/sail npm exec eslint resources/js/pages/Welcome.vue resources/js/pages/Welcome.test.ts resources/js/components/landing/LandingVersionOne.vue resources/js/components/landing/LandingVersionTwo.vue resources/js/app.ts`, and `vendor/bin/sail bin pint --dirty --format agent`.
+- Verification blocked: `vendor/bin/sail npm run test:unit -- resources/js/pages/Welcome.test.ts --environment jsdom` fails in the Sail container because Rollup's optional package `@rollup/rollup-linux-arm64-gnu` is missing from `/var/www/html/node_modules`, which is an environment issue rather than a page-code assertion failure.
+- The landing page was then finalized around the stronger v2 direction: `resources/js/pages/Welcome.vue` now renders a single landing experience, `resources/js/components/landing/LandingVersionOne.vue` was removed, and the remaining v2 copy no longer refers to version studies.
+- Added `public/images/polsh-landing-sample-ui.svg` and `public/images/polsh-landing-sample-ui-framed.svg` so the hero keeps the real editor screenshot while the support/before-after sections use dedicated realistic SaaS sample artwork, with the after state gaining explicit macOS chrome and square top content edges.
+- Final verification after consolidating to one landing page passed for `vendor/bin/sail artisan test --compact tests/Feature/Pages/WelcomePageRenderTest.php tests/Feature/Pages/WelcomePageCallToActionTest.php`, `vendor/bin/sail npm exec eslint resources/js/pages/Welcome.vue resources/js/pages/Welcome.test.ts resources/js/components/landing/LandingVersionTwo.vue`, and `vendor/bin/sail bin pint --dirty --format agent`.
 - `config/session.php` uses the `database` session driver and defaults to the `sessions` table.
 - Laravel is connected to MySQL database `polsh-db-dev`, but the live schema currently has no `migrations` table and no `sessions` table.
 - This points to an environment/database reset or an empty MySQL volume rather than an application code regression.

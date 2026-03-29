@@ -5,5 +5,7 @@ test('welcome page no longer shows the github save presets hero cta', function (
 
     expect($welcomePage)
         ->not->toContain('Save presets with GitHub')
-        ->not->toContain('githubRoute.url()');
+        ->not->toContain('githubRoute.url()')
+        ->not->toContain('data-version-switch=')
+        ->toContain('LandingPage');
 });

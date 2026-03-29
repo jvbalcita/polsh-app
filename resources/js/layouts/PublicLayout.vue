@@ -103,7 +103,7 @@ useFlashToast();
 }
 
 .pub-nav-inner {
-    max-width: 72rem;
+    max-width: 84rem;
     margin: 0 auto;
     padding: 0 1.5rem;
     height: 3.5rem;
@@ -177,7 +177,7 @@ main {
 }
 
 .pub-footer-inner {
-    max-width: 72rem;
+    max-width: 84rem;
     margin: 0 auto;
     padding: 3rem 1.5rem 2.5rem;
     display: grid;
@@ -263,13 +263,64 @@ main {
 }
 
 @media (max-width: 768px) {
+    .pub-nav-inner {
+        padding: 0 1rem;
+        gap: 0.75rem;
+    }
+
+    .pub-nav-right {
+        gap: 0.5rem;
+    }
+
+    .pub-btn-cta {
+        padding: 0.45rem 0.8rem;
+        font-size: 0.75rem;
+    }
+
     .pub-footer-inner {
         grid-template-columns: 1fr;
         gap: 2rem;
+        padding: 2.5rem 1rem 2rem;
     }
 
     .pub-footer-cols {
-        gap: 2.5rem;
+        order: 2;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+
+    .pub-footer-brand {
+        order: 1;
+    }
+
+    .pub-footer-copy {
+        order: 3;
+    }
+}
+
+@media (max-width: 480px) {
+    .pub-nav-inner {
+        height: 3.25rem;
+    }
+
+    .pub-wordmark {
+        font-size: 0.95rem;
+    }
+
+    .pub-btn-cta {
+        padding: 0.42rem 0.72rem;
+        font-size: 0.72rem;
+    }
+
+    .pub-footer-cols {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .pub-footer-ph-badge img {
+        width: min(100%, 250px);
+        height: auto;
     }
 }
 </style>
