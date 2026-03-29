@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/vue3';
+import '@fontsource-variable/jetbrains-mono';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
 import type { DefineComponent } from 'vue';
