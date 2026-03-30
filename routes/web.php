@@ -63,7 +63,15 @@ Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('legal.
 Route::get('/refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
 
 // Sitemap
-Route::get('/sitemap.xml', static fn () => response()->file(public_path('sitemap.xml')))->name('sitemap');
+Route::get('/sitemap.xml', static function () {
+    $path = public_path('sitemap.xml');
+
+    abort_unless(is_file($path), 404);
+
+    return response()->file($path, [
+        'Content-Type' => 'application/xml; charset=UTF-8',
+    ]);
+})->name('sitemap');
 
 require __DIR__.'/admin.php';
 require __DIR__.'/billing.php';

@@ -94,7 +94,7 @@ const codeExamples: Record<string, string> = {
 </script>
 
 <template>
-    <Head title="API Docs — Polsh" />
+    <Head title="API Docs">
 
     <div class="min-h-screen" style="background: #080808">
         <ProductPageHeader

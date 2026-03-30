@@ -5,7 +5,7 @@ import { editor, home } from '@/routes';
 </script>
 
 <template>
-    <Head title="Changelog — Polsh">
+    <Head title="Changelog">
         <meta name="description" content="What's new in Polsh — version history and release notes." />
         <meta property="og:title" content="Changelog — Polsh" />
         <meta property="og:description" content="What's new in Polsh — version history and release notes." />
