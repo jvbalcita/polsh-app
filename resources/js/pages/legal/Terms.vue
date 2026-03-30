@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { useSeo } from '@/composables/useSeo';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 
-const { fullTitle, description, ogImage, twitterCard } = useSeo({
+const { pageTitle, metaTitle, description, ogImage, twitterCard } = useSeo({
     title: 'Terms of Service',
     description: 'Read the Polsh Terms of Service. Learn about your rights and responsibilities when using Polsh.',
     type: 'website',
@@ -12,9 +12,9 @@ const { fullTitle, description, ogImage, twitterCard } = useSeo({
 
 <template>
     <Head>
-        <title>{{ fullTitle }}</title>
+        <title>{{ pageTitle }}</title>
         <meta name="description" :content="description" />
-        <meta property="og:title" :content="fullTitle" />
+        <meta property="og:title" :content="metaTitle" />
         <meta property="og:description" :content="description" />
         <meta property="og:image" :content="ogImage" />
         <meta property="og:type" content="website" />

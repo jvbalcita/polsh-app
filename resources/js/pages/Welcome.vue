@@ -13,7 +13,7 @@ const props = withDefaults(
     },
 );
 
-const { fullTitle, description, ogImage, twitterCard } = useSeo({
+const { pageTitle, metaTitle, description, ogImage, twitterCard } = useSeo({
     title: 'Product visuals for launches, docs, and product marketing',
     description:
         'Turn raw product screenshots into polished launch assets, docs visuals, changelog covers, and social-ready exports from one browser-based editor.',
@@ -39,15 +39,15 @@ const jsonLd = JSON.stringify({
 
 <template>
     <Head>
-        <title>{{ fullTitle }}</title>
+        <title>{{ pageTitle }}</title>
         <meta name="description" :content="description" />
-        <meta property="og:title" :content="fullTitle" />
+        <meta property="og:title" :content="metaTitle" />
         <meta property="og:description" :content="description" />
         <meta property="og:image" :content="ogImage" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://polsh.work/" />
         <meta name="twitter:card" :content="twitterCard" />
-        <meta name="twitter:title" :content="fullTitle" />
+        <meta name="twitter:title" :content="metaTitle" />
         <meta name="twitter:description" :content="description" />
         <meta name="twitter:image" :content="ogImage" />
         <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component -->

@@ -30,7 +30,9 @@ export function useSeo(options: SeoOptions = {}) {
         };
     });
 
-    const fullTitle = computed(() =>
+    const pageTitle = computed(() => options.title ?? seo.value.siteName);
+
+    const metaTitle = computed(() =>
         options.title
             ? `${options.title} — ${seo.value.siteName}`
             : seo.value.siteName,
@@ -42,5 +44,14 @@ export function useSeo(options: SeoOptions = {}) {
     const canonical = computed(() => options.canonical ?? '');
     const type = computed(() => options.type ?? 'website');
 
-    return { fullTitle, description, ogImage, twitterCard, canonical, type, seo };
+    return {
+        pageTitle,
+        metaTitle,
+        description,
+        ogImage,
+        twitterCard,
+        canonical,
+        type,
+        seo,
+    };
 }
