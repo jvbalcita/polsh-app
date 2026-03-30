@@ -69,3 +69,11 @@ Recommended sequence for future Polsh worktrees:
 2. symlink `vendor` and `node_modules` if needed
 3. use direct frontend verification if Sail ports conflict
 4. merge/carry commits back to the long-lived feature branch before deleting the worktree
+
+## Verify production runtime toggles before attributing resource usage
+
+When investigating production infrastructure behavior, do not infer that optional runtime features are enabled just because the codebase supports them.
+
+- Confirm whether platform toggles like Octane, Inertia SSR, hibernation, scheduler, and queue workers are actually enabled in the live environment before treating them as active causes.
+- Treat repository config as capability, not proof of production state.
+- If the user corrects a runtime assumption, update the diagnosis around the confirmed live settings instead of carrying the old theory forward.
