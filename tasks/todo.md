@@ -2,6 +2,21 @@
 
 ## Tasks
 
+- [x] Register daily sitemap generation in the Laravel scheduler
+- [x] Add regression coverage for sitemap scheduler registration
+- [x] Record scheduler verification results in the review section
+
+- [x] Trace the production sitemap 500 to the exact missing-file route behavior
+- [x] Return a safe response when `public/sitemap.xml` is absent
+- [x] Add regression coverage for present and missing sitemap files
+- [x] Record sitemap verification results in the review section
+
+- [x] Trace the duplicate `Polsh` suffix on public-page SEO titles
+- [x] Keep the global Inertia app-name suffix as the sole browser-title appender
+- [x] Preserve single-brand OG/Twitter titles for public pages
+- [x] Add targeted regression coverage for the SEO title helper
+- [x] Record the SEO title verification results in the review section
+
 - [x] Define the landing redesign visual thesis, content plan, and interaction thesis for two distinct SaaS-facing variants
 - [x] Replace the current home page with a lightweight switcher that can present landing v1 and landing v2 without changing the route contract
 - [x] Build landing v1 around a calm, premium SaaS composition using the provided editor sample as the dominant hero proof
@@ -60,6 +75,22 @@
 - [x] Add curated background presets and branded color picker styling
 
 ## Review
+
+- Registered `sitemap:generate` in `routes/console.php` so Laravel's scheduler runs it daily without overlapping previous runs.
+- Added `tests/Feature/Console/SchedulerTest.php` to assert the schedule listing includes the sitemap generation command.
+- Verification passed: `vendor/bin/sail artisan test --compact tests/Feature/Console/SchedulerTest.php tests/Feature/SitemapTest.php` and `vendor/bin/sail bin pint --dirty --format agent`.
+
+- The sitemap 500 came from `routes/web.php` serving `response()->file(public_path('sitemap.xml'))` directly. When the deployment has not generated `public/sitemap.xml` yet, Symfony throws `FileNotFoundException`, which bubbles into a 500 instead of a user-safe response.
+- The fix changes the sitemap route to explicitly return `404` when `public/sitemap.xml` is missing and only stream the file when it exists.
+- Added `tests/Feature/SitemapTest.php` to cover both the missing-file case and a generated-file case, including cleanup/restoration of the public sitemap artifact during the test.
+- Verification passed: `vendor/bin/sail artisan test --compact tests/Feature/SitemapTest.php` and `vendor/bin/sail bin pint --dirty --format agent`.
+
+- The duplicate public-page browser titles came from two layers appending the brand: `resources/js/app.ts` / `resources/js/ssr.ts` add ` - Polsh` globally, while `resources/js/composables/useSeo.ts` and a couple of hardcoded public pages were already including `Polsh` in the page title payload.
+- The fix keeps the global Inertia title callback as the single browser-title owner and changes public-page SEO to split page titles from branded meta titles: browser titles now pass only the page-specific segment, while OG/Twitter titles still use a single `— Polsh` suffix.
+- `resources/js/pages/Changelog.vue` and `resources/js/pages/Docs/Api.vue` now stop hardcoding `Polsh` in their `<Head title>` values while retaining branded `og:title` metadata.
+- Added `resources/js/composables/useSeo.test.ts` to prove the helper returns an unbranded browser title and a once-branded metadata title for public pages.
+- Verification passed: `vendor/bin/sail npm exec eslint resources/js/composables/useSeo.ts resources/js/composables/useSeo.test.ts resources/js/pages/Welcome.vue resources/js/pages/legal/Privacy.vue resources/js/pages/legal/Refund.vue resources/js/pages/legal/Terms.vue resources/js/pages/Changelog.vue resources/js/pages/Docs/Api.vue`.
+- Verification blocked: `vendor/bin/sail npm run test:unit -- resources/js/composables/useSeo.test.ts --environment jsdom` fails in the Sail container because Rollup's optional package `@rollup/rollup-linux-arm64-gnu` is missing from `/var/www/html/node_modules`, which is the same environment-level Vitest issue seen elsewhere in this repo.
 
 - Landing redesign visual thesis: premium product-marketing surface with dark glass materials, restrained copy, and the editor sample image acting as the proof anchor instead of an abstract mock.
 - Landing redesign content plan: hero with editor proof, product-value support band, realistic before/after transformation section, workflow depth, and a strong final conversion CTA.
