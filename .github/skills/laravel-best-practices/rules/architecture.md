@@ -9,7 +9,7 @@ class CreateOrderAction
 {
     public function __construct(private InventoryService $inventory) {}
 
-    public function execute(array $data): Order
+    public function handle(array $data): Order
     {
         $order = Order::create($data);
         $this->inventory->reserve($order);
@@ -82,7 +82,7 @@ $this->app->bind(PaymentGateway::class, StripeGateway::class);
 
 ## Default Sort by Descending
 
-When no explicit order is specified, sort by `id` or `created_at` descending. Explicit ordering prevents cross-database inconsistencies between MySQL and Postgres.
+When no explicit order is specified, sort by `id` or `created_at` descending. Without an explicit `ORDER BY`, row order is undefined.
 
 Incorrect:
 ```php
@@ -103,8 +103,12 @@ Cache::lock('order-processing-'.$order->id, 10)->block(5, function () use ($orde
     $order->process();
 });
 
-// Or at query level
-$product = Product::where('id', $id)->lockForUpdate()->first();
+// Or at query level, inside a transaction
+DB::transaction(function () use ($id) {
+    $product = Product::where('id', $id)->lockForUpdate()->first();
+
+    // Read and update the product while the lock is held...
+});
 ```
 
 ## Use `mb_*` String Functions

@@ -401,10 +401,10 @@ function buildSVG(
     const frameY = hasFrame ? frameLayout!.frame.y : 0;
     const frameWidth = hasFrame ? frameLayout!.frame.width : cardWidth;
     const frameHeight = hasFrame ? frameLayout!.frame.height : cardHeight;
-    const visualX = hasFrame ? frameX : 0;
-    const visualY = hasFrame ? frameY : 0;
-    const visualWidth = hasFrame ? frameWidth : cardWidth;
-    const visualHeight = hasFrame ? frameHeight : cardHeight;
+    const visualX = hasFrame ? frameX : pad;
+    const visualY = hasFrame ? frameY : pad;
+    const visualWidth = hasFrame ? frameWidth : Math.max(0, cardWidth - pad * 2);
+    const visualHeight = hasFrame ? frameHeight : Math.max(0, cardHeight - pad * 2);
     const viewportX = hasFrame ? frameLayout!.viewport.x : pad;
     const viewportY = hasFrame ? frameLayout!.viewport.y : pad;
     const viewportWidth = hasFrame

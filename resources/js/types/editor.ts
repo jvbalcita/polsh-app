@@ -19,6 +19,7 @@ export interface ImageSettings {
     shadow: number; // 0–100 percent
     shadowBlur: number;
     shadowColor: string;
+    shadowOffsetY: number;
     border: number;
     borderColor: string;
     noiseGrain: number; // 0–0.3 decimal fraction
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: ImageSettings = {
     shadow: 50,
     shadowBlur: 40,
     shadowColor: '#000000',
+    shadowOffsetY: 4,
     border: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     noiseGrain: 0.03,

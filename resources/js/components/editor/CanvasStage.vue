@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core';
 import type Konva from 'konva';
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import type { VueKonvaRef } from 'vue-konva';
 import { useCanvas, createNoiseCanvas } from '@/composables/useCanvas';
 import { registerStage } from '@/composables/useExport';
@@ -70,25 +70,44 @@ watch(
 );
 
 // Drag-and-drop / click-to-upload
-const isDragOver = ref(false);
+const dragCounter = ref(0);
+const isDragOver = computed(() => dragCounter.value > 0);
 
 function onDrop(e: DragEvent): void {
     e.preventDefault();
-    isDragOver.value = false;
+    dragCounter.value = 0;
     const files = Array.from(e.dataTransfer?.files ?? []).filter((f) =>
         f.type.startsWith('image/'),
     );
     files.forEach((f) => store.addImage(f).catch(() => {}));
 }
 
+function onDragEnter(e: DragEvent): void {
+    e.preventDefault();
+    dragCounter.value++;
+}
+
 function onDragOver(e: DragEvent): void {
     e.preventDefault();
-    isDragOver.value = true;
 }
 
 function onDragLeave(): void {
-    isDragOver.value = false;
+    dragCounter.value = Math.max(0, dragCounter.value - 1);
 }
+
+function preventGlobalDrop(e: DragEvent): void {
+    e.preventDefault();
+}
+
+onMounted(() => {
+    window.addEventListener('dragover', preventGlobalDrop);
+    window.addEventListener('drop', preventGlobalDrop);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('dragover', preventGlobalDrop);
+    window.removeEventListener('drop', preventGlobalDrop);
+});
 
 function onClickUpload(): void {
     const input = document.createElement('input');
@@ -109,6 +128,7 @@ function onClickUpload(): void {
         ref="containerRef"
         class="canvas-stage-container relative h-full w-full overflow-hidden"
         @drop="onDrop"
+        @dragenter="onDragEnter"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
     >
@@ -122,19 +142,17 @@ function onClickUpload(): void {
                 <!-- Canvas background -->
                 <v-rect :config="canvas.canvasBgConfig.value" />
 
-                <!-- Shadow rect (outside clip group so shadow renders fully) -->
-                <v-rect
-                    v-if="store.images.length > 0"
-                    :config="canvas.shadowRectConfig.value"
-                />
-
-                <!-- Card group — clipped to rounded rect -->
+                <!-- Card group -->
                 <v-group
                     v-if="store.images.length > 0"
                     :config="canvas.cardGroupConfig.value"
                 >
                     <!-- Card background (gradient or solid) -->
                     <v-rect :config="canvas.cardBgConfig.value" />
+
+                    <!-- Shadow rect (behind frame/image so the glow falls on the
+                         card background and the black fill is covered by content) -->
+                    <v-rect :config="canvas.shadowRectConfig.value" />
 
                     <v-group :config="canvas.frameGroupConfig.value">
                         <!-- Device body (phone/tablet bezel — drawn before image) -->

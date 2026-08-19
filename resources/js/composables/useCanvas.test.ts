@@ -50,12 +50,14 @@ describe('useCanvas', () => {
             height: canvas.frameBounds.value.height - 72,
         });
         expect(canvas.frameBounds.value.width).toBeLessThan(1200 - 96);
+        // Shadow is rendered inside the card group → relative bounds
         expect(canvas.shadowRectConfig.value).toMatchObject({
-            x: canvas.frameAbsoluteBounds.value.x,
-            y: canvas.frameAbsoluteBounds.value.y,
-            width: canvas.frameAbsoluteBounds.value.width,
-            height: canvas.frameAbsoluteBounds.value.height,
+            x: canvas.frameBounds.value.x,
+            y: canvas.frameBounds.value.y,
+            width: canvas.frameBounds.value.width,
+            height: canvas.frameBounds.value.height,
         });
+        // Border stays outside the card group → absolute bounds
         expect(canvas.borderConfig.value).toMatchObject({
             x: canvas.frameAbsoluteBounds.value.x + 0.5,
             y: canvas.frameAbsoluteBounds.value.y + 0.5,
@@ -114,6 +116,48 @@ describe('useCanvas', () => {
                 bottomRight: 10,
                 bottomLeft: 10,
             },
+        });
+    });
+
+    it('targets shadow and border to image bounds when no frame is selected', () => {
+        const store = useEditorStore();
+        store.images = [
+            {
+                id: 'image-no-frame',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'none',
+                    canvasSize: 'twitter-landscape',
+                    radius: 16,
+                },
+            },
+        ];
+
+        const canvas = useCanvas(ref(1400), ref(900)) as Record<string, any>;
+
+        expect(canvas.cardGroupConfig.value.clipFunc).toBeUndefined();
+        // Shadow is rendered inside the card group → relative bounds
+        expect(canvas.shadowRectConfig.value).toMatchObject({
+            x: canvas.imageBounds.value.x,
+            y: canvas.imageBounds.value.y,
+            width: canvas.imageBounds.value.width,
+            height: canvas.imageBounds.value.height,
+        });
+        // Border stays outside the card group → absolute bounds
+        expect(canvas.borderConfig.value).toMatchObject({
+            x: canvas.imageAbsoluteBounds.value.x + 0.5,
+            y: canvas.imageAbsoluteBounds.value.y + 0.5,
+        });
+        expect(canvas.imageClipConfig.value.cornerRadii).toEqual({
+            topLeft: 16,
+            topRight: 16,
+            bottomRight: 16,
+            bottomLeft: 16,
         });
     });
 

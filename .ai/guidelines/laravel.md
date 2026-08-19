@@ -18,7 +18,7 @@
 - Don't add new base folders or architecture layers unless the codebase already uses them.
 - Keep controllers thin: input/auth → coordination → response. Nothing else.
 - Use **Actions/Services** when: the operation has real domain meaning, is reused across multiple controllers/jobs, or is complex enough to deserve its own tests. Don't create them just to slim controllers.
-- **CRUDDY design is fine**: resourceful controllers, clear verbs, predictable routes. Use custom action routes for non-CRUD domain verbs (approve, publish, archive, sync).
+- **Keep controllers CRUDDY and resourceful**: Prefer default Laravel resource actions (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`) with clear, predictable routes. Avoid adding domain-specific verbs like `approve`, `publish`, `archive`, or `sync` directly to controllers. When a workflow does not fit standard CRUD, model it as a resource state change through `store`, `update`, or `destroy`, and move the business behavior into actions, services, jobs, events, or policies as needed.
 
 ### Query Scopes
 

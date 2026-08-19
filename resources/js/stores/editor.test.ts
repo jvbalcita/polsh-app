@@ -58,6 +58,55 @@ describe('editor store', () => {
         expect(store.activeSettings?.radius).toBe(0);
     });
 
+    it('sets radius to 0 when selecting a desktop frame from none', () => {
+        const store = useEditorStore();
+
+        store.images = [
+            {
+                id: 'image-2a',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'none',
+                    radius: 16,
+                },
+            },
+        ];
+
+        store.updateSetting('frameType', 'browser');
+
+        expect(store.activeSettings?.radius).toBe(0);
+    });
+
+    it('restores style radius when deselecting a frame', () => {
+        const store = useEditorStore();
+
+        store.images = [
+            {
+                id: 'image-2b',
+                src: 'data:image/png;base64,test',
+                element: {} as HTMLImageElement,
+                naturalWidth: 1600,
+                naturalHeight: 900,
+                locked: false,
+                settings: {
+                    ...DEFAULT_SETTINGS,
+                    frameType: 'browser',
+                    radius: 0,
+                    styleSlug: 'obsidian-glass',
+                },
+            },
+        ];
+
+        store.updateSetting('frameType', 'none');
+
+        expect(store.activeSettings?.radius).toBe(16);
+    });
+
     it('does not force zero radius for non-desktop frames when switching platform', () => {
         const store = useEditorStore();
 

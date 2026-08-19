@@ -67,6 +67,18 @@ const isPro = computed(() => page.props.isPro as boolean);
 const showUpgrade = ref(false);
 
 const hasFrame = computed(() => s.value?.frameType !== 'none');
+const isDeviceFrame = computed(() => {
+    const ft = s.value?.frameType;
+
+    return (
+        ft === 'iphone-15' ||
+        ft === 'ipad-pro' ||
+        ft === 'iphone_15_pro' ||
+        ft === 'iphone_17_pro' ||
+        ft === 'ipad_pro' ||
+        ft === 'ipad_pro_m5'
+    );
+});
 const isBrowserFrame = computed(
     () =>
         s.value?.frameType === 'browser' ||
@@ -825,7 +837,7 @@ function cancelSavePreset(): void {
                     />
                 </div>
 
-                <div class="control-row">
+                <div v-if="!isDeviceFrame" class="control-row">
                     <div class="control-header">
                         <label class="control-label" for="cp-radius"
                             >Radius</label

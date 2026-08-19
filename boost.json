@@ -5,24 +5,26 @@
         "opencode",
         "copilot"
     ],
+    "cloud": false,
     "guidelines": true,
     "herd_mcp": false,
     "mcp": true,
     "nightwatch_mcp": false,
     "packages": [
-        "laravel/fortify",
         "spatie/laravel-medialibrary",
         "spatie/laravel-permission"
     ],
     "sail": true,
     "skills": [
+        "infer-conventions",
+        "fortify-development",
         "laravel-best-practices",
+        "octane-development",
         "socialite-development",
         "wayfinder-development",
         "pest-testing",
         "inertia-vue-development",
         "tailwindcss-development",
-        "fortify-development",
         "medialibrary-development",
         "laravel-permission-development"
     ]
