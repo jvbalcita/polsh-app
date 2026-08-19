@@ -7,7 +7,7 @@
 [![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Tests](https://github.com/jvbalcita/shipped/actions/workflows/tests.yml/badge.svg)](https://github.com/jvbalcita/shipped/actions/workflows/tests.yml)
 
-[![Shipped](https://larashipped.laravel.cloud/badges/logbytes.svg)](https://larashipped.laravel.cloud/@jvbalcita/logbytes)
+[![Shipped](https://larashipped.laravel.cloud/badges/polsh.svg)](https://larashipped.laravel.cloud/@jvbalcita/polsh)
 
 > Screenshot styling tool for developers. Drop in a screenshot, pick a style, export a polished PNG/WebP/SVG frame — in seconds.
 
