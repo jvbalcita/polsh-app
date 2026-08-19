@@ -1,5 +1,14 @@
 # Polsh
 
+[![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP 8.4.1+](https://img.shields.io/badge/PHP-8.4.1%2B-777BB4?logo=php&logoColor=white)](https://www.php.net)
+[![Inertia v3](https://img.shields.io/badge/Inertia-v3-9553E9?logo=inertia&logoColor=white)](https://inertiajs.com)
+[![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Tests](https://github.com/jvbalcita/shipped/actions/workflows/tests.yml/badge.svg)](https://github.com/jvbalcita/shipped/actions/workflows/tests.yml)
+
+[![Shipped](https://larashipped.laravel.cloud/badges/logbytes.svg)](https://larashipped.laravel.cloud/@jvbalcita/logbytes)
+
 > Screenshot styling tool for developers. Drop in a screenshot, pick a style, export a polished PNG/WebP/SVG frame — in seconds.
 
 **Live:** [polsh.work](https://polsh.work)

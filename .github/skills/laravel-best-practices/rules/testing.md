@@ -2,7 +2,7 @@
 
 ## Use `LazilyRefreshDatabase` Over `RefreshDatabase`
 
-`RefreshDatabase` runs all migrations every test run even when the schema hasn't changed. `LazilyRefreshDatabase` only migrates when needed, significantly speeding up large suites.
+`RefreshDatabase` migrates once per process and wraps each test in a rolled-back transaction. `LazilyRefreshDatabase` behaves the same, except it defers that work until a test actually touches the database, so tests that never query it skip the migration entirely.
 
 ## Use Model Assertions Over Raw Database Assertions
 

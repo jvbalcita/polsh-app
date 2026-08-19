@@ -35,7 +35,7 @@ External APIs have transient failures. Use `retry()` with increasing delays.
 
 Incorrect:
 ```php
-$response = Http::post('https://api.stripe.com/v1/charges', $data);
+$response = Http::post('https://api.example.com/v1/charges', $data);
 
 if ($response->failed()) {
     throw new PaymentFailedException('Charge failed');
@@ -46,13 +46,13 @@ Correct:
 ```php
 $response = Http::retry([100, 500, 1000])
     ->timeout(10)
-    ->post('https://api.stripe.com/v1/charges', $data);
+    ->post('https://api.example.com/v1/charges', $data);
 ```
 
 Only retry on specific errors:
 
 ```php
-$response = Http::retry(3, 100, function (Exception $exception, PendingRequest $request) {
+$response = Http::retry(3, 100, function (Throwable $exception, PendingRequest $request) {
     return $exception instanceof ConnectionException
         || ($exception instanceof RequestException && $exception->response->serverError());
 })->post('https://api.example.com/data');

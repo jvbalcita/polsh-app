@@ -455,13 +455,9 @@ export function useCanvas(
             return Math.min(fw, fh) * DEVICE_FRAME_RADIUS_FACTOR;
         }
 
-        if (hasFrameOverlay.value) {
-            return (
-                store.activeStyle?.radius ?? store.activeSettings?.radius ?? 12
-            );
-        }
-
-        return store.activeSettings?.radius ?? 12;
+        // User-adjusted radius always wins over the style default so the
+        // Adjust panel stays authoritative.
+        return store.activeSettings?.radius ?? store.activeStyle?.radius ?? 12;
     });
 
     const cardDimensions = computed<{ w: number; h: number }>(() => {
@@ -562,6 +558,13 @@ export function useCanvas(
         y: cardBounds.value.y + frameBounds.value.y,
         width: frameBounds.value.width,
         height: frameBounds.value.height,
+    }));
+
+    const imageAbsoluteBounds = computed(() => ({
+        x: cardBounds.value.x + imageBounds.value.x,
+        y: cardBounds.value.y + imageBounds.value.y,
+        width: imageBounds.value.width,
+        height: imageBounds.value.height,
     }));
 
     const frameOverlayBounds = computed(() => {
@@ -673,18 +676,12 @@ export function useCanvas(
 
     const shadowRectConfig = computed(() => {
         const s = store.activeSettings;
+        // Shadow is rendered INSIDE the card group so the glow falls on the
+        // card background (visible) and the black fill is covered by the
+        // frame/image drawn on top of it.
         const bounds = hasFrameOverlay.value
-            ? frameAbsoluteBounds.value
-            : cardBounds.value;
-
-        // Fill must be opaque for Konva to cast a shadow (canvas draws shadow from
-        // rendered pixels; transparent fill produces no pixels → no shadow).
-        // For transparent-background + no-frame, the fill would show through the
-        // card padding, so fall back to transparent and accept no shadow there.
-        const fill =
-            hasFrameOverlay.value || s?.backgroundType !== 'transparent'
-                ? '#000000'
-                : 'transparent';
+            ? frameBounds.value
+            : imageBounds.value;
 
         return {
             name: 'card-shadow',
@@ -693,11 +690,11 @@ export function useCanvas(
             width: bounds.width,
             height: bounds.height,
             cornerRadius: artifactRadius.value,
-            fill,
+            fill: '#000000',
             shadowColor: s?.shadowColor ?? '#000000',
             shadowBlur: s?.shadowBlur ?? 40,
             shadowOpacity: (s?.shadow ?? 50) / 100,
-            shadowOffsetY: 4,
+            shadowOffsetY: s?.shadowOffsetY ?? 4,
             listening: false,
         };
     });
@@ -706,22 +703,11 @@ export function useCanvas(
         name: 'card-clip-group',
         x: cardX.value,
         y: cardY.value,
-        clipFunc: (ctx: CanvasRenderingContext2D) => {
-            const r = artifactRadius.value;
-            const w = cardDimensions.value.w;
-            const h = cardDimensions.value.h;
-            ctx.beginPath();
-            ctx.moveTo(r, 0);
-            ctx.lineTo(w - r, 0);
-            ctx.arcTo(w, 0, w, r, r);
-            ctx.lineTo(w, h - r);
-            ctx.arcTo(w, h, w - r, h, r);
-            ctx.lineTo(r, h);
-            ctx.arcTo(0, h, 0, h - r, r);
-            ctx.lineTo(0, r);
-            ctx.arcTo(0, 0, r, 0, r);
-            ctx.closePath();
-        },
+        // The card group is never clipped — the background should always fill
+        // the full rectangular card area. Clipping is handled by nested groups:
+        // frameGroupConfig (when a frame is present) and imageClipGroupConfig
+        // (when no frame is present).
+        clipFunc: undefined,
     }));
 
     const frameGroupConfig = computed(() => ({
@@ -890,8 +876,11 @@ export function useCanvas(
 
     const imageClipConfig = computed(() => {
         const { x, y, width, height } = imageBounds.value;
-        const radius = Math.max(0, (store.activeSettings?.radius ?? 12) - 2);
+        const settingsRadius = store.activeSettings?.radius ?? 12;
         const ft = store.activeSettings?.frameType;
+        const radius = ft === 'none' || !ft
+            ? settingsRadius
+            : Math.max(0, settingsRadius - 2);
 
         let topLeft: number;
         let topRight: number;
@@ -1012,7 +1001,7 @@ export function useCanvas(
 
         const bounds = hasFrameOverlay.value
             ? frameAbsoluteBounds.value
-            : cardBounds.value;
+            : imageAbsoluteBounds.value;
         const bw = s.border;
         const strokeColor = getBorderStrokeColor(style, s.borderColor);
         const isShadowBorder =
@@ -1767,6 +1756,7 @@ export function useCanvas(
         cardBounds,
         frameBounds,
         frameAbsoluteBounds,
+        imageAbsoluteBounds,
         frameOverlayBounds,
         imageBounds,
         contentArea: imageBounds,

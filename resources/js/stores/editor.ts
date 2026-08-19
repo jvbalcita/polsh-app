@@ -30,6 +30,19 @@ function firstValidationError(payload: ValidationErrorResponse): string {
     return firstFieldError ?? payload.message ?? 'Unable to save preset.';
 }
 
+function generateId(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+
+        return v.toString(16);
+    });
+}
+
 function getBorderColorFromStyle(style: StyleConfig): string {
     switch (style.border.type) {
         case 'glass':
@@ -66,6 +79,7 @@ function settingsFromStyle(style: StyleConfig): Partial<ImageSettings> {
         shadow: Math.round(style.shadow.opacity * 100),
         shadowBlur: style.shadow.blur,
         shadowColor: style.shadow.color,
+        shadowOffsetY: style.shadow.offsetY,
         border: style.border.width,
         borderColor: getBorderColorFromStyle(style),
         noiseGrain: style.noise,
@@ -238,6 +252,15 @@ export const useEditorStore = defineStore('editor', () => {
         trackEvent('style_applied');
     }
 
+    const DESKTOP_FRAMES = new Set([
+        'browser',
+        'terminal',
+        'window-minimal',
+        'code-editor',
+        'macos-dark',
+        'macos-light',
+    ]);
+
     function updateSetting<K extends keyof ImageSettings>(
         key: K,
         value: ImageSettings[K],
@@ -248,7 +271,24 @@ export const useEditorStore = defineStore('editor', () => {
             return;
         }
 
-        img.settings = { ...img.settings, [key]: value };
+        const next: ImageSettings = { ...img.settings, [key]: value };
+
+        if (key === 'frameType') {
+            const prevFrame = img.settings.frameType;
+            const nextFrame = value as string;
+
+            if (prevFrame === 'none' && nextFrame !== 'none') {
+                if (DESKTOP_FRAMES.has(nextFrame)) {
+                    next.radius = 0;
+                }
+            } else if (prevFrame !== 'none' && nextFrame === 'none') {
+                const style = allStyles.find((s) => s.slug === next.styleSlug);
+
+                next.radius = style?.radius ?? DEFAULT_SETTINGS.radius;
+            }
+        }
+
+        img.settings = next;
     }
 
     function setFramePlatform(platform: ImageSettings['framePlatform']): void {
@@ -305,7 +345,7 @@ export const useEditorStore = defineStore('editor', () => {
                         images.value[activeIndex.value]?.settings ??
                         DEFAULT_SETTINGS;
                     images.value.push({
-                        id: crypto.randomUUID(),
+                        id: generateId(),
                         src,
                         element: img,
                         naturalWidth: img.naturalWidth,
