@@ -98,7 +98,8 @@ test('export session policy mirrors ownership rules', function () {
 });
 
 test('storing a session with a data url thumbnail persists and returns expected json fields', function () {
-    Storage::fake('public');
+    $disk = config('services.polsh.export_disk', 'public');
+    Storage::fake($disk);
 
     $user = User::factory()->create();
 
@@ -126,10 +127,12 @@ test('storing a session with a data url thumbnail persists and returns expected 
         ->and($session->settings)->toBe([
             'styleSlug' => 'soft-glow',
             'saturation' => 14,
-        ])
-        ->and($session->thumbnail_url)->toStartWith('/storage/thumbnails/');
+        ]);
 
-    expect(Storage::disk('public')->exists(str_replace('/storage/', '', $session->thumbnail_url)))->toBeTrue();
+    if ($disk === 'public') {
+        expect($session->thumbnail_url)->toStartWith('/storage/thumbnails/');
+        expect(Storage::disk($disk)->exists(str_replace('/storage/', '', $session->thumbnail_url)))->toBeTrue();
+    }
 });
 
 function createManagedSessions(User $user, int $count): void

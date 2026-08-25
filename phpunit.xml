@@ -34,5 +34,6 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="LEMON_SQUEEZY_STORE" value="test-store"/>
         <env name="LEMON_SQUEEZY_API_KEY" value="test-key"/>
+        <env name="POLSH_EXPORT_DISK" value="public" force="true"/>
     </php>
 </phpunit>
