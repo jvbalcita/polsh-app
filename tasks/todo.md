@@ -80,13 +80,14 @@
 - [x] Reproduce the OAuth callback and session-storage failures locally.
 - [x] Add or update focused regression coverage before changing production code.
 - [x] Implement the smallest fixes and run focused plus required repository checks.
-- [ ] Review the scoped diff, commit the fix, push the PR 22 head branch, and verify the updated checks.
+- [x] Review the scoped diff, commit the fix, push the PR 22 head branch, and verify the updated checks.
 
 ## Review
 
 - PR 22's `ci (8.4)` failure had two OAuth callback tests redirecting to `/editor` because the Socialite fixture replaced explicit null emails with its default email. The helper now preserves explicit null values with `array_replace`.
 - The session test used a faked `public` disk while CI's copied `.env.example` selected S3, causing an empty-bucket error during URL generation. PHPUnit now pins the export disk to `public`, and the test fakes the configured disk before checking the public-disk URL contract.
 - Verification passed: `POLSH_EXPORT_DISK=s3 vendor/bin/sail artisan test --compact tests/Feature/Auth/OauthAccountTest.php tests/Feature/Sessions/SessionManagementTest.php` (15 tests, 76 assertions), `vendor/bin/sail artisan test --compact` (173 tests, 1007 assertions), `vendor/bin/sail bin pint --dirty --format agent`, and `vendor/bin/sail npm run build`.
+- GitHub Actions passed for commit `d2c1062`: `quality`, `ci (8.4)`, and `ci (8.5)` on PR 22.
 
 - Registered `sitemap:generate` in `routes/console.php` so Laravel's scheduler runs it daily without overlapping previous runs.
 - Added `tests/Feature/Console/SchedulerTest.php` to assert the schedule listing includes the sitemap generation command.
