@@ -7,14 +7,24 @@ use Laravel\Socialite\Two\User as SocialiteUser;
 
 function makeSocialiteUser(array $attributes = []): SocialiteUser
 {
+    $attributes = array_replace([
+        'token' => 'github-token-123',
+        'refresh_token' => null,
+        'id' => '12345',
+        'name' => 'Jane Dev',
+        'nickname' => 'janedev',
+        'email' => 'jane@example.com',
+        'avatar' => 'https://avatars.example.com/jane.png',
+    ], $attributes);
+
     $socialiteUser = Mockery::mock(SocialiteUser::class);
-    $socialiteUser->token = $attributes['token'] ?? 'github-token-123';
-    $socialiteUser->refreshToken = $attributes['refresh_token'] ?? null;
-    $socialiteUser->shouldReceive('getId')->andReturn($attributes['id'] ?? '12345');
-    $socialiteUser->shouldReceive('getName')->andReturn($attributes['name'] ?? 'Jane Dev');
-    $socialiteUser->shouldReceive('getNickname')->andReturn($attributes['nickname'] ?? 'janedev');
-    $socialiteUser->shouldReceive('getEmail')->andReturn($attributes['email'] ?? 'jane@example.com');
-    $socialiteUser->shouldReceive('getAvatar')->andReturn($attributes['avatar'] ?? 'https://avatars.example.com/jane.png');
+    $socialiteUser->token = $attributes['token'];
+    $socialiteUser->refreshToken = $attributes['refresh_token'];
+    $socialiteUser->shouldReceive('getId')->andReturn($attributes['id']);
+    $socialiteUser->shouldReceive('getName')->andReturn($attributes['name']);
+    $socialiteUser->shouldReceive('getNickname')->andReturn($attributes['nickname']);
+    $socialiteUser->shouldReceive('getEmail')->andReturn($attributes['email']);
+    $socialiteUser->shouldReceive('getAvatar')->andReturn($attributes['avatar']);
 
     return $socialiteUser;
 }
