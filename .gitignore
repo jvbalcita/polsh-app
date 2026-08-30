@@ -81,3 +81,6 @@ mailpit
 
 # Claude Code superpowers
 /.superpowers
+
+# Cursor local hook state (machine-specific, never commit)
+.cursor/hooks/state/
